@@ -1,0 +1,27 @@
+{
+  "name": "sermon-reader",
+  "version": "1.0.0",
+  "description": "Free private sermon reader with document import and local speech synthesis",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test",
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@huggingface/transformers": "3.8.1",
+    "kokoro-js": "1.2.1",
+    "mammoth": "1.13.0",
+    "pdfjs-dist": "6.4.299"
+  },
+  "devDependencies": {
+    "vite": "8.3.5"
+  },
+  "overrides": {
+    "sharp": "0.35.5"
+  }
+}
