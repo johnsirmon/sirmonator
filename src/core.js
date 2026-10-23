@@ -5,10 +5,16 @@ export function chunkText(text, max = 240) {
   let start = 0;
   while (start < text.length) {
     let end = Math.min(start + max, text.length);
-    if (end < text.length) {
+    const paragraph=/\n\s*\n+/u.exec(text.slice(start,end));
+    if(paragraph&&paragraph.index>0&&start+paragraph.index+paragraph[0].length<text.length){
+      end=start+paragraph.index+paragraph[0].length;
+    } else if (end < text.length) {
       const part = text.slice(start, end);
-      const boundaries = [...part.matchAll(/[.!?;:]\s+|\n+|\s+/gu)];
-      const boundary = boundaries.at(-1);
+      const paragraphs=[...part.matchAll(/\n\s*\n+/gu)];
+      const sentences=[...part.matchAll(/[.!?]["'”’)]*\s+/gu)];
+      const spaces=[...part.matchAll(/\s+/gu)];
+      const useful=list=>list.filter(b=>b.index>max/3).at(-1);
+      const boundary=useful(paragraphs)??useful(sentences)??spaces.at(-1);
       if (boundary && boundary.index > max / 3) end = start + boundary.index + boundary[0].length;
       else if (/[\uD800-\uDBFF]/.test(text[end - 1])) end--;
     }
