@@ -9,7 +9,7 @@ Paste a sermon or choose a TXT, DOCX, or text-based PDF. Review the imported tex
 1. Open the link in Safari.
 2. Paste text or choose a document from Files. Review the displayed text, especially PDF reading order.
 3. Choose a voice and try Preview voice. Confirm your text, then choose Read my sermon.
-4. For car listening, choose Natural voices first and wait for the whole audio file. Keep the page open and awake during creation. First use downloads roughly 100 MB of model weights plus runtime assets. A computer is recommended for long sermons.
+4. For car listening, choose Natural voices first and wait for the whole audio file. Keep the page open and awake during creation. First use downloads roughly 100–330 MB of model weights plus runtime assets. WebGPU acceleration is selected when supported, with a CPU fallback. CPU-only generation can be much slower than playback; a computer with WebGPU is recommended for long sermons.
 5. Use Share audio / Save to Files when available, or Save audio for the car. Save to Files and open the WAV there for lock-screen/Bluetooth playback. You can also generate on a computer and AirDrop or send the WAV to your iPhone. No email-ingestion address is configured.
 
 ## Text accuracy
