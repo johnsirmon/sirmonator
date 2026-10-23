@@ -27,6 +27,10 @@ const assets='https://huggingface.co/supertone-oss-archive/supertonic-3/resolve/
 let supertonic,kokoro;const styles=new Map();const manifest=[];
 for(const profile of voices){
   const destination=resolve(output,`${profile.id}.wav`);
+  if(profile.engine==='pocket'){
+    await access(destination).catch(()=>{throw Error('Run node scripts/generate-character-auditions.mjs first.');});
+    manifest.push({id:profile.id,file:`${profile.id}.wav`,text});continue;
+  }
   try{await access(destination);console.log(`Exists: ${profile.id}`);manifest.push({id:profile.id,file:`${profile.id}.wav`,text});continue;}catch{}
   console.log(`Rendering: ${profile.name}`);
   let samples,sampleRate;

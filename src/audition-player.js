@@ -1,7 +1,7 @@
 import {getVoice} from './voices.js';
 export function auditionUrl(id,base='./'){
-  getVoice(id);
-  return `${base}auditions/${id}.wav`;
+  const voice=getVoice(id);
+  return `${base}auditions/${id}.wav${voice.revision?'?v='+voice.revision:''}`;
 }
 export function createAuditionPlayer({audio,setBusy,notify}){
   let sequence=0;

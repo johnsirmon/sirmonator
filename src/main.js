@@ -37,7 +37,10 @@ function narratorNote(){
   const naturalMode=$('engine').value==='kokoro';
   $('delivery').disabled=!naturalMode;
   $('engine-note').textContent=naturalMode?'Auditions play instantly. Creating your sermon downloads the free voice model once; use Wi-Fi and keep the page open. A computer works best for long sermons.':'Your device’s built-in voices. Quality varies. Keep this page open while listening; choose Studio voices for character presets and downloads.';
-  $('voice-note').textContent=naturalMode?(getVoice($('voice').value).pitch?'A character-inspired performance made with a free narrator plus pitch, bass, and texture effects. This is an approximation, not an official voice or an actor clone.':'A free neural narrator. Preview a few voices to find the one that fits your sermon.'):'Studio voices offer the richest options.';
+  $('voice-note').textContent=naturalMode?(getVoice($('voice').value).engine==='pocket'?'An unofficial character impression conditioned on original speech references using free Pocket TTS. No added pitch lowering, bass boost, distortion, or metallic filter. Similarity varies; audition the result.':'A free neural narrator. Preview a few voices to find the one that fits your sermon.'):'Studio voices offer the richest options.';
+  const character=naturalMode&&getVoice($('voice').value).engine==='pocket';
+  $('voice-reference').hidden=!character;$('reference-audio').pause();
+  if(character){const profile=getVoice($('voice').value);$('reference-audio').src=import.meta.env.BASE_URL+'references/'+profile.id+'.wav';$('reference-credit').textContent=profile.referenceCredit;$('reference-source').href=profile.referencePage;$('reference-interview').href=profile.performancePage;}
   document.querySelectorAll('[data-voice]').forEach(b=>b.setAttribute('aria-pressed',String(naturalMode&&b.dataset.voice===$('voice').value)));
 }
 $('engine').onchange=()=>{fillVoices();narratorNote();};$('voice').onchange=narratorNote;

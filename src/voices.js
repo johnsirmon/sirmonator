@@ -1,6 +1,6 @@
 export const voices = [
-  {id:'prime',name:'Prime Preacher',detail:'Optimus Prime–inspired · deep, heroic, metallic',engine:'supertonic',base:'M1',pitch:.79,bass:5,grit:.08,metal:.05,pace:.94},
-  {id:'fenix',name:'Grit & Grace',detail:'Marcus Fenix–inspired · low, rough soldier',engine:'supertonic',base:'M3',pitch:.83,bass:4,grit:.22,metal:0,pace:.98},
+  {id:'prime',name:'Prime Preacher',detail:'Optimus Prime–inspired · reference-conditioned, unfiltered',engine:'pocket',base:'prime',revision:2,referencePage:'https://www.101soundboards.com/sounds/480877-freedom-is-the-right-of-all-sentient-beings',performancePage:'https://www.youtube.com/watch?v=zryfjSaxXLo',referenceCredit:'Optimus Prime / Peter Cullen · Transformers speech excerpt'},
+  {id:'fenix',name:'Grit & Grace',detail:'Marcus Fenix–inspired · reference-conditioned, unfiltered',engine:'pocket',base:'fenix',revision:2,referencePage:'https://www.101soundboards.com/boards/34116-gears-of-war-2-marcus-soundboard',performancePage:'https://www.youtube.com/watch?v=IHc7ILzNO2E',referenceCredit:'Marcus Fenix / John DiMaggio · Gears of War 2 dialogue excerpts'},
   {id:'st-m1',name:'The Storyteller',detail:'Supertonic 3 · male voice M1',engine:'supertonic',base:'M1'},
   {id:'st-m2',name:'Sunday Drive',detail:'Supertonic 3 · male voice M2',engine:'supertonic',base:'M2'},
   {id:'st-m3',name:'The Fireside',detail:'Supertonic 3 · male voice M3',engine:'supertonic',base:'M3'},

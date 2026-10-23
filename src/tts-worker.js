@@ -29,7 +29,9 @@ self.onmessage=async({data})=>{
       if(text.trim()){
         const speed=data.speed*(profile.pace??1)/(profile.pitch??1);
         const progress=message=>self.postMessage({type:'stage',message});
-        const audio=profile.engine==='supertonic'
+        const audio=profile.engine==='pocket'
+          ?await (await import('./pocket-engine.js')).pocket(text,profile.base,speed,progress)
+          :profile.engine==='supertonic'
           ?await (await import('./supertonic-engine.js')).supertonic(text,profile.base,speed,progress)
           :await kokoro(text,profile.base,speed,progress);
         if(!audio.samples?.length)throw Error('A passage produced no audio. No completed file was created.');
