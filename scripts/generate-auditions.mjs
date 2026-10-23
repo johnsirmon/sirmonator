@@ -41,8 +41,11 @@ for(const profile of voices){
     const audio=await supertonic.batch([text],['en'],styles.get(profile.base),8,speed);
     sampleRate=supertonic.sampleRate;samples=Float32Array.from(audio.wav.slice(0,Math.floor(audio.duration[0]*sampleRate)));
   }else{
+    const loadStarted=performance.now();
     kokoro??=await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX',{dtype:'q8',device:'cpu'});
+    const loadedMs=performance.now()-loadStarted,started=performance.now();
     const audio=await kokoro.generate(text,{voice:profile.base,speed});samples=audio.audio;sampleRate=audio.sampling_rate;
+    console.log(JSON.stringify({voice:profile.id,backend:'Node CPU q8',loadMs:loadedMs,synthesisMs:performance.now()-started,audioSeconds:samples.length/sampleRate,rssMB:process.memoryUsage().rss/1048576}));
   }
   if(!samples.length)throw Error(`Empty sample: ${profile.id}`);
   const wav=encodeWav([characterEffect(samples,sampleRate,profile)],sampleRate);

@@ -11,6 +11,10 @@ export const voices = [
   {id:'st-f3',name:'Golden Hour',detail:'Supertonic 3 · female voice F3',engine:'supertonic',base:'F3'},
   {id:'st-f4',name:'The Kindred Voice',detail:'Supertonic 3 · female voice F4',engine:'supertonic',base:'F4'},
   {id:'st-f5',name:'The Clear Horizon',detail:'Supertonic 3 · female voice F5',engine:'supertonic',base:'F5'},
+  {id:'af_sarah',name:'Sarah',detail:'Kokoro · American woman',engine:'kokoro',base:'af_sarah'},
+  {id:'af_kore',name:'Kore',detail:'Kokoro · American woman',engine:'kokoro',base:'af_kore'},
+  {id:'bf_alice',name:'Alice',detail:'Kokoro · British woman',engine:'kokoro',base:'bf_alice'},
+  {id:'bm_lewis',name:'Lewis',detail:'Kokoro · British man',engine:'kokoro',base:'bm_lewis'},
   {id:'af_heart',name:'Heart',detail:'Kokoro · American woman',engine:'kokoro',base:'af_heart'},
   {id:'af_bella',name:'Bella',detail:'Kokoro · American woman',engine:'kokoro',base:'af_bella'},
   {id:'af_nicole',name:'Nicole',detail:'Kokoro · American woman',engine:'kokoro',base:'af_nicole'},
@@ -23,3 +27,5 @@ export const voices = [
   {id:'bm_fable',name:'Fable',detail:'Kokoro · British man',engine:'kokoro',base:'bm_fable'},
 ];
 export function getVoice(id){const voice=voices.find(v=>v.id===id);if(!voice)throw Error('Unknown narrator');return voice;}
+
+export function voiceCapabilities(id){const voice=getVoice(id);return voice.engine==='kokoro'?{language:'English',license:'Apache-2.0 model weights',download:true,note:'Local neural synthesis; initial model download required. No per-character fee. Review pronunciation.'}:voice.engine==='supertonic'?{language:'English',license:'OpenRAIL-M model; MIT code',download:true,note:'Archived upstream; support ended. Choose a Kokoro voice if this engine fails.'}:{language:'English',license:'CC-BY-4.0 model; original character recordings retain their rights',download:true,note:'Unofficial character impression. Do not assume permission for public podcast distribution.'};}
