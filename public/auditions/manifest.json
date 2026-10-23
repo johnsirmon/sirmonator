@@ -1,0 +1,115 @@
+{
+  "text": "Good morning, church. Take a breath. Now, let us begin.",
+  "voices": [
+    {
+      "id": "prime",
+      "file": "prime.wav",
+      "text": "Good morning, church. Take a breath. Now, let us begin."
+    },
+    {
+      "id": "fenix",
+      "file": "fenix.wav",
+      "text": "Good morning, church. Take a breath. Now, let us begin."
+    },
+    {
+      "id": "st-m1",
+      "file": "st-m1.wav",
+      "text": "Good morning, church. Take a breath. Now, let us begin."
+    },
+    {
+      "id": "st-m2",
+      "file": "st-m2.wav",
+      "text": "Good morning, church. Take a breath. Now, let us begin."
+    },
+    {
+      "id": "st-m3",
+      "file": "st-m3.wav",
+      "text": "Good morning, church. Take a breath. Now, let us begin."
+    },
+    {
+      "id": "st-m4",
+      "file": "st-m4.wav",
+      "text": "Good morning, church. Take a breath. Now, let us begin."
+    },
+    {
+      "id": "st-m5",
+      "file": "st-m5.wav",
+      "text": "Good morning, church. Take a breath. Now, let us begin."
+    },
+    {
+      "id": "st-f1",
+      "file": "st-f1.wav",
+      "text": "Good morning, church. Take a breath. Now, let us begin."
+    },
+    {
+      "id": "st-f2",
+      "file": "st-f2.wav",
+      "text": "Good morning, church. Take a breath. Now, let us begin."
+    },
+    {
+      "id": "st-f3",
+      "file": "st-f3.wav",
+      "text": "Good morning, church. Take a breath. Now, let us begin."
+    },
+    {
+      "id": "st-f4",
+      "file": "st-f4.wav",
+      "text": "Good morning, church. Take a breath. Now, let us begin."
+    },
+    {
+      "id": "st-f5",
+      "file": "st-f5.wav",
+      "text": "Good morning, church. Take a breath. Now, let us begin."
+    },
+    {
+      "id": "af_heart",
+      "file": "af_heart.wav",
+      "text": "Good morning, church. Take a breath. Now, let us begin."
+    },
+    {
+      "id": "af_bella",
+      "file": "af_bella.wav",
+      "text": "Good morning, church. Take a breath. Now, let us begin."
+    },
+    {
+      "id": "af_nicole",
+      "file": "af_nicole.wav",
+      "text": "Good morning, church. Take a breath. Now, let us begin."
+    },
+    {
+      "id": "am_michael",
+      "file": "am_michael.wav",
+      "text": "Good morning, church. Take a breath. Now, let us begin."
+    },
+    {
+      "id": "am_fenrir",
+      "file": "am_fenrir.wav",
+      "text": "Good morning, church. Take a breath. Now, let us begin."
+    },
+    {
+      "id": "am_onyx",
+      "file": "am_onyx.wav",
+      "text": "Good morning, church. Take a breath. Now, let us begin."
+    },
+    {
+      "id": "am_puck",
+      "file": "am_puck.wav",
+      "text": "Good morning, church. Take a breath. Now, let us begin."
+    },
+    {
+      "id": "bf_emma",
+      "file": "bf_emma.wav",
+      "text": "Good morning, church. Take a breath. Now, let us begin."
+    },
+    {
+      "id": "bm_george",
+      "file": "bm_george.wav",
+      "text": "Good morning, church. Take a breath. Now, let us begin."
+    },
+    {
+      "id": "bm_fable",
+      "file": "bm_fable.wav",
+      "text": "Good morning, church. Take a breath. Now, let us begin."
+    }
+  ]
+}

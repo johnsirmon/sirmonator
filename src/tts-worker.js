@@ -1,18 +1,22 @@
 import {encodeWav} from './core.js';
 import {getVoice} from './voices.js';
 import {characterEffect,pauseAfter} from './audio-effects.js';
-let tts;
-async function kokoro(text,voice,speed){
-  if(!tts){
+import {createSpeechRunner} from './speech-runner.js';
+let kokoroRunner;
+async function kokoro(text,voice,speed,progress){
+  if(!kokoroRunner){
     const [{KokoroTTS},{env}]=await Promise.all([import('kokoro-js'),import('@huggingface/transformers')]);
     env.backends.onnx.wasm.numThreads=1;
     let gpu=false;try{gpu=!!await navigator.gpu?.requestAdapter();}catch{}
     const load=device=>KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX',{
       dtype:device==='webgpu'?'fp32':'q8',device,progress_callback:p=>{if(p.status==='progress')self.postMessage({type:'loading',file:p.file,progress:p.progress});}
     });
-    try{tts=await load(gpu?'webgpu':'wasm');}catch(e){if(!gpu)throw e;tts=await load('wasm');}
+    kokoroRunner=createSpeechRunner({load,initialProvider:gpu?'webgpu':'wasm',
+      infer:async(tts,{text,voice,speed})=>{const audio=await tts.generate(text,{voice,speed});return {samples:audio.audio,sampleRate:audio.sampling_rate};},
+      release:tts=>tts.model.dispose()
+    });
   }
-  const audio=await tts.generate(text,{voice,speed});return {samples:audio.audio,sampleRate:audio.sampling_rate};
+  return kokoroRunner({text,voice,speed},progress);
 }
 self.onmessage=async({data})=>{
   try{
@@ -27,7 +31,7 @@ self.onmessage=async({data})=>{
         const progress=message=>self.postMessage({type:'stage',message});
         const audio=profile.engine==='supertonic'
           ?await (await import('./supertonic-engine.js')).supertonic(text,profile.base,speed,progress)
-          :await kokoro(text,profile.base,speed);
+          :await kokoro(text,profile.base,speed,progress);
         if(!audio.samples?.length)throw Error('A passage produced no audio. No completed file was created.');
         sampleRate=audio.sampleRate;
         parts.push(characterEffect(audio.samples,sampleRate,profile));

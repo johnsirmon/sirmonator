@@ -8,8 +8,8 @@ Paste a sermon or choose a TXT, DOCX, or text-based PDF. Review the imported tex
 
 1. Open the link in Safari.
 2. Paste text or choose a document from Files. Review the displayed text, especially PDF reading order.
-3. Choose a voice and try Preview voice. Confirm your text, then choose Read my sermon.
-4. For car listening, choose Studio voices first and wait for the whole audio file. Keep the page open and awake during creation. First use downloads roughly 100–400 MB of model weights plus runtime assets. WebGPU acceleration is selected when supported, with a CPU fallback. CPU-only generation can be much slower than playback; a computer with WebGPU is recommended for long sermons.
+3. Choose a voice and click Audition this voice. A small, pre-rendered sample plays immediately, without downloading a model. Confirm your text, then choose Sirmonate my sermon.
+4. For car listening, choose Studio voices first and wait for the whole audio file. Keep the page open and awake during creation. Full sermon creation downloads roughly 100–400 MB of model weights plus runtime assets on first use. Supertonic uses CPU/WASM by default to avoid GPU-device-loss failures. Kokoro can use WebGPU, with an automatic CPU retry if either loading or inference fails. A computer is recommended for long sermons.
 5. Use Share audio / Save to Files when available, or Save audio for the car. Save to Files and open the WAV there for lock-screen/Bluetooth playback. You can also generate on a computer and AirDrop or send the WAV to your iPhone. No email-ingestion address is configured.
 
 ## Text accuracy
@@ -51,3 +51,11 @@ Application code: MIT. Third-party packages and model assets retain their own li
 Supertonic first use downloads approximately 398 MB of model weights plus runtime files. Model files are cached when the browser permits it. For lengthy manuscripts, use a computer and share the resulting WAV to your iPhone. Voice names such as The Storyteller are application display names for the underlying model presets; preview them to choose the sound you prefer.
 
 Attributions: [Supertonic 3 archive](https://github.com/supertone-oss-archive/supertonic), code snapshot `1e9799e964ea4c0dad7cde993b65c3c813a7b373`, model snapshot `aafc6e32416a594460b32413efc49d7fe4ce6d46`. The vendored helper and license notices are in `src/vendor/`. Local adaptations are documented at the top of the helper.
+
+## Audition reliability
+
+All 22 studio auditions are checked-in WAV files under `public/auditions/`, generated from the same underlying models and character effects as full narration. The fixed sample text is in `manifest.json`. Samples use normal delivery at 1× speed; they never contain a visitor's manuscript. Auditions call native audio playback directly from the click gesture and do not start an ONNX worker, GPU, or model download. If the browser blocks autoplay, the visible native audio player offers a manual Play button.
+
+`node scripts/generate-auditions.mjs` regenerates missing samples using the Node CPU runtime. Its model cache and temporary runtime adaptation stay in ignored `.cache/`; the generated public samples are explicitly included in Git. Regeneration needs network access and a few hundred MB of disk space. CI verifies every WAV's format, duration, audible sample energy, file size, and voice-manifest coverage.
+
+The GPU recovery regression test injects the reported `OrtRun` / `mapAsync` device-loss error during inference and verifies that the **same text and settings** are retried exactly once on CPU, with subsequent passages staying on CPU. Recovery discards failed-attempt audio and never publishes an incomplete recording.

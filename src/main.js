@@ -1,10 +1,12 @@
 import './style.css';
 import {chunkText} from './core.js';
 import {voices as catalog,getVoice} from './voices.js';
+import {auditionUrl,createAuditionPlayer} from './audition-player.js';
 const $ = id => document.getElementById(id);
 const natural=catalog.map(v=>[v.id,`${v.name} · ${v.detail}`]);
 let voices=[],worker=null,busy=false,paused=false,run=0,audioURL=null,transcript='',audioFile=null,wake=null;
 const status = text => $('status').textContent=text;
+const audition=createAuditionPlayer({audio:$('audition-audio'),setBusy:state,notify:status});
 $('file').previousElementSibling.tabIndex=0;
 $('file').previousElementSibling.setAttribute('role','button');
 $('file').previousElementSibling.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();if(!busy)$('file').click();}};
@@ -27,14 +29,14 @@ function invalidate(){
   $('count').textContent=`${count.toLocaleString()} words · about ${Math.max(1,Math.ceil(count/150))} min`;
 }
 function state(value){busy=value;for(const id of ['text','file','sample','clear','engine','voice','delivery','speed','review','start','preview'])$(id).disabled=value;document.querySelectorAll('[data-voice]').forEach(b=>b.disabled=value);$('stop').disabled=!value;$('pause').disabled=!value||$('engine').value==='kokoro';if(!value){paused=false;$('pause').textContent='Pause';wake?.release().catch(()=>{});wake=null;}}
-function stop(){run++;worker?.terminate();worker=null;window.speechSynthesis?.cancel();state(false);$('progress').hidden=true;status('Stopped. You can start again from the beginning.');}
+function stop(){run++;audition.stop();worker?.terminate();worker=null;window.speechSynthesis?.cancel();state(false);$('progress').hidden=true;status('Stopped. You can start again from the beginning.');}
 $('stop').onclick=stop;
 $('pause').onclick=()=>{if(!window.speechSynthesis)return;paused=!paused;paused?window.speechSynthesis.pause():window.speechSynthesis.resume();$('pause').textContent=paused?'Resume':'Pause';};
 $('text').oninput=invalidate;
 function narratorNote(){
   const naturalMode=$('engine').value==='kokoro';
   $('delivery').disabled=!naturalMode;
-  $('engine-note').textContent=naturalMode?'Free neural voices, thoughtful pauses, and downloadable audio. First use downloads a model; use Wi-Fi and keep the page open. A computer works best for long sermons.':'Your device’s built-in voices. Quality varies. Keep this page open while listening; choose Studio voices for character presets and downloads.';
+  $('engine-note').textContent=naturalMode?'Auditions play instantly. Creating your sermon downloads the free voice model once; use Wi-Fi and keep the page open. A computer works best for long sermons.':'Your device’s built-in voices. Quality varies. Keep this page open while listening; choose Studio voices for character presets and downloads.';
   $('voice-note').textContent=naturalMode?(getVoice($('voice').value).pitch?'A character-inspired performance made with a free narrator plus pitch, bass, and texture effects. This is an approximation, not an official voice or an actor clone.':'A free neural narrator. Preview a few voices to find the one that fits your sermon.'):'Studio voices offer the richest options.';
   document.querySelectorAll('[data-voice]').forEach(b=>b.setAttribute('aria-pressed',String(naturalMode&&b.dataset.voice===$('voice').value)));
 }
@@ -67,13 +69,23 @@ $('file').onchange=async()=>{
 };
 async function speak(preview=false){
   if(busy)return;
+  if(preview&&$('engine').value==='kokoro'){
+    $('progress').hidden=true;
+    $('audio').pause();
+    // Call play directly from the click gesture: no worker, GPU, model download,
+    // wake-lock request, or manuscript review is needed to hear a sample.
+    await audition.play(auditionUrl($('voice').value,import.meta.env.BASE_URL));
+    return;
+  }
   const text=preview?'Good morning, church. Take a breath.\n\nNow, let us begin.':$('text').value;
   if(!text.trim()){status('Add your sermon text first.');$('text').focus();return;}
   if(!preview&&!$('review').checked){status('Please review the text and check the confirmation below it.');$('review').focus();return;}
   if(text.length>150000){status('Please split this sermon into sections under 150,000 characters.');return;}
+  audition.stop();
   const chunks=chunkText(text),token=++run,speed=Number($('speed').value),voice=$('voice').value;
   state(true);$('progress').hidden=false;$('progress').value=0;status('Preparing your reading…');
-  try{wake=await navigator.wakeLock?.request('screen');}catch{/* Optional on iPhone. */}
+  // Do not await permissions before audio: preserve the browser's click gesture.
+  navigator.wakeLock?.request('screen').then(lock=>{if(token===run&&busy)wake=lock;else lock.release().catch(()=>{});}).catch(()=>{});
   if(token!==run)return;
   if($('engine').value==='device'){
     if(!window.speechSynthesis||!voices.length){state(false);status('No device voices available. Choose Natural voices instead.');return;}
@@ -109,4 +121,4 @@ async function speak(preview=false){
 $('preview').onclick=()=>speak(true);$('start').onclick=()=>speak(false);
 $('share').onclick=async()=>{try{await navigator.share({files:[audioFile],title:'My sermon'});}catch(e){if(e.name!=='AbortError')status('Sharing unavailable. Use Save audio instead.');}};
 $('transcript').onclick=()=>{const url=URL.createObjectURL(new Blob([transcript],{type:'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='sirmonator-reading-transcript.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
-window.addEventListener('pagehide',()=>{window.speechSynthesis?.cancel();worker?.terminate();});
+window.addEventListener('pagehide',()=>{audition.stop();window.speechSynthesis?.cancel();worker?.terminate();});
