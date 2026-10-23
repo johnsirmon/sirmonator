@@ -4,6 +4,9 @@ const $ = id => document.getElementById(id);
 const natural = [['af_heart','Heart · American woman'],['af_bella','Bella · American woman'],['af_nicole','Nicole · American woman'],['am_michael','Michael · American man'],['am_fenrir','Fenrir · American man'],['am_puck','Puck · American man'],['bf_emma','Emma · British woman'],['bm_george','George · British man'],['bm_fable','Fable · British man']];
 let voices=[],worker=null,busy=false,paused=false,run=0,audioURL=null,transcript='',audioFile=null,wake=null;
 const status = text => $('status').textContent=text;
+$('file').previousElementSibling.tabIndex=0;
+$('file').previousElementSibling.setAttribute('role','button');
+$('file').previousElementSibling.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();if(!busy)$('file').click();}};
 function fillVoices(){
   const prior=$('voice').value;$('voice').replaceChildren();
   voices=window.speechSynthesis?.getVoices()??[];
@@ -77,6 +80,7 @@ async function speak(preview=false){
   worker??=new Worker(new URL('./tts-worker.js',import.meta.url),{type:'module'});
   worker.onmessage=({data})=>{
     if(token!==run)return;
+    if(data.type==='stage')status(data.message);
     if(data.type==='loading')status(`Downloading voice engine: ${Math.round(data.progress??0)}% of ${data.file??'file'}. First use can take several minutes.`);
     if(data.type==='progress'){$('progress').value=data.done/data.total;status(`Creating passage ${data.done} of ${data.total}. Keep this page open. Stop discards unfinished audio.`);}
     if(data.type==='error'){worker.terminate();worker=null;state(false);status(`Could not finish: ${data.message}. Try Quick listen, or generate on a computer.`);}
