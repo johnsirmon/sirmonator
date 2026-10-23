@@ -1,4 +1,5 @@
 import {encodeWav} from './core.js';
+import {characterVoice} from './character-settings.js';
 import {getVoice} from './voices.js';
 import {characterEffect,pauseAfter} from './audio-effects.js';
 import {createSpeechRunner} from './speech-runner.js';
@@ -30,7 +31,7 @@ self.onmessage=async({data})=>{
         const speed=data.speed*(profile.pace??1)/(profile.pitch??1);
         const progress=message=>self.postMessage({type:'stage',message});
         const audio=profile.engine==='pocket'
-          ?await (await import('./pocket-engine.js')).pocket(text,profile.base,speed,progress)
+          ?await (await import('./pocket-engine.js')).pocket(text,characterVoice(profile.base,data.edition),speed,progress)
           :profile.engine==='supertonic'
           ?await (await import('./supertonic-engine.js')).supertonic(text,profile.base,speed,progress)
           :await kokoro(text,profile.base,speed,progress);

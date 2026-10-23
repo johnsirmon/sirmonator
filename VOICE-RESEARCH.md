@@ -38,3 +38,14 @@ Primary technical sources: [Kyutai Pocket TTS report](https://kyutai.org/pocket-
 ## Reliability fix delivered first
 
 The preceding release removed speech synthesis from auditions entirely, checked all 22 samples for real media playback, and switched Supertonic to CPU/WASM. GPU recovery now covers inference-time loss as well as model loading, retrying the same passage once on CPU. See `tests/recovery.test.js` and `tests/audition-assets.test.js`.
+
+
+## Iteration 3: retain Prime, rebuild Marcus delivery
+
+John preferred Prime v2 but described Grit & Grace as strained. The [implementation plan](VOICE-ITERATION-PLAN.md) preserves both previous references and audition files and makes that edition selectable for complete readings as well as previews.
+
+- Prime retains the identical reference recording. Refined synthesis uses four flow steps and temperature 0.65 rather than one step / 0.70. This is a listening candidate for smoother delivery, not proof of greater naturalness.
+- Marcus now conditions on [Anybody need some sniper practice?](https://www.101soundboards.com/sounds/618333-marcus-anybody-need-some-sniper-practice) and [We've got an appointment with royalty](https://www.101soundboards.com/sounds/618523-marcus-weve-got-an-appointment-with-royalty). These replace the earlier hushed/quiet reassurance. Leading/trailing silence is trimmed, clips concatenated at 24 kHz mono, peak ceiling 0.95. No pitch lowering, tremolo, distortion, bass or denoising effects. Refined generation uses four steps / temperature 0.60.
+- A vendored MIT worker from pinned pocket-tts-js 0.1.0 exposes per-edition sampling settings. Node auditions and browser readings use the same modified worker. See `src/vendor/pocket/README.md` and [official sampling controls](https://github.com/kyutai-labs/pocket-tts/blob/main/docs/API%20Reference/python-api.md).
+- Node CPU audition generation completed at approximately 1.46x real time for Prime and 1.59x for Marcus on this workstation, using four CPU threads. Browser WASM is single-threaded and slower; these figures are not phone performance claims.
+- Fifteen automated tests cover valid audible/unclipped assets, edition routing, preserved Prime reference, replaced Marcus reference, exact manuscript reconstruction, pitch-preserving tempo, document import, and GPU failure recovery. Perceptual resemblance remains a listening judgment.

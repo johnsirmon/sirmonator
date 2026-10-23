@@ -1,7 +1,8 @@
+import {characterVoice} from './character-settings.js';
 import {getVoice} from './voices.js';
-export function auditionUrl(id,base='./'){
+export function auditionUrl(id,base='./',edition='refined'){
   const voice=getVoice(id);
-  return `${base}auditions/${id}.wav${voice.revision?'?v='+voice.revision:''}`;
+  return `${base}auditions/${voice.engine==='pocket'?characterVoice(id,edition):id}.wav${voice.revision?'?v='+voice.revision:''}`;
 }
 export function createAuditionPlayer({audio,setBusy,notify}){
   let sequence=0;

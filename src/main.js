@@ -1,4 +1,5 @@
 import './style.css';
+import {characterVoice} from './character-settings.js';
 import {chunkText} from './core.js';
 import {voices as catalog,getVoice} from './voices.js';
 import {auditionUrl,createAuditionPlayer} from './audition-player.js';
@@ -28,7 +29,7 @@ function invalidate(){
   const count=$('text').value.match(/\S+/gu)?.length??0;
   $('count').textContent=`${count.toLocaleString()} words · about ${Math.max(1,Math.ceil(count/150))} min`;
 }
-function state(value){busy=value;for(const id of ['text','file','sample','clear','engine','voice','delivery','speed','review','start','preview'])$(id).disabled=value;document.querySelectorAll('[data-voice]').forEach(b=>b.disabled=value);$('stop').disabled=!value;$('pause').disabled=!value||$('engine').value==='kokoro';if(!value){paused=false;$('pause').textContent='Pause';wake?.release().catch(()=>{});wake=null;}}
+function state(value){busy=value;for(const id of ['text','file','sample','clear','engine','voice','voice-edition','delivery','speed','review','start','preview'])$(id).disabled=value;document.querySelectorAll('[data-voice]').forEach(b=>b.disabled=value);$('stop').disabled=!value;$('pause').disabled=!value||$('engine').value==='kokoro';if(!value){paused=false;$('pause').textContent='Pause';wake?.release().catch(()=>{});wake=null;}}
 function stop(){run++;audition.stop();worker?.terminate();worker=null;window.speechSynthesis?.cancel();state(false);$('progress').hidden=true;status('Stopped. You can start again from the beginning.');}
 $('stop').onclick=stop;
 $('pause').onclick=()=>{if(!window.speechSynthesis)return;paused=!paused;paused?window.speechSynthesis.pause():window.speechSynthesis.resume();$('pause').textContent=paused?'Resume':'Pause';};
@@ -39,12 +40,14 @@ function narratorNote(){
   $('engine-note').textContent=naturalMode?'Auditions play instantly. Creating your sermon downloads the free voice model once; use Wi-Fi and keep the page open. A computer works best for long sermons.':'Your device’s built-in voices. Quality varies. Keep this page open while listening; choose Studio voices for character presets and downloads.';
   $('voice-note').textContent=naturalMode?(getVoice($('voice').value).engine==='pocket'?'An unofficial character impression conditioned on original speech references using free Pocket TTS. No added pitch lowering, bass boost, distortion, or metallic filter. Similarity varies; audition the result.':'A free neural narrator. Preview a few voices to find the one that fits your sermon.'):'Studio voices offer the richest options.';
   const character=naturalMode&&getVoice($('voice').value).engine==='pocket';
+  $('character-controls').hidden=!character;
   $('voice-reference').hidden=!character;$('reference-audio').pause();
-  if(character){const profile=getVoice($('voice').value);$('reference-audio').src=import.meta.env.BASE_URL+'references/'+profile.id+'.wav';$('reference-credit').textContent=profile.referenceCredit;$('reference-source').href=profile.referencePage;$('reference-interview').href=profile.performancePage;}
+  if(character){const profile=getVoice($('voice').value);$('reference-audio').src=import.meta.env.BASE_URL+'references/'+characterVoice(profile.id,$('voice-edition').value)+'.wav?v=3';$('reference-credit').textContent=profile.referenceCredit;$('reference-source').href=profile.referencePage;$('reference-interview').href=profile.performancePage;}
   document.querySelectorAll('[data-voice]').forEach(b=>b.setAttribute('aria-pressed',String(naturalMode&&b.dataset.voice===$('voice').value)));
 }
-$('engine').onchange=()=>{fillVoices();narratorNote();};$('voice').onchange=narratorNote;
-document.querySelectorAll('[data-voice]').forEach(b=>b.onclick=()=>{$('engine').value='kokoro';fillVoices();$('voice').value=b.dataset.voice;narratorNote();});
+$('engine').onchange=()=>{fillVoices();narratorNote();};$('voice').onchange=()=>{$('voice-edition').value='refined';narratorNote();};
+$('voice-edition').onchange=()=>{audition.stop();narratorNote();};
+document.querySelectorAll('[data-voice]').forEach(b=>b.onclick=()=>{$('engine').value='kokoro';fillVoices();$('voice').value=b.dataset.voice;$('voice-edition').value='refined';narratorNote();});
 narratorNote();
 $('speed').oninput=()=>{$('speed-value').textContent=`${Number($('speed').value)}×`;};
 $('clear').onclick=()=>{$('text').value='';$('source').textContent='Nothing stored after you leave';$('import-note').hidden=true;invalidate();};
@@ -77,7 +80,7 @@ async function speak(preview=false){
     $('audio').pause();
     // Call play directly from the click gesture: no worker, GPU, model download,
     // wake-lock request, or manuscript review is needed to hear a sample.
-    await audition.play(auditionUrl($('voice').value,import.meta.env.BASE_URL));
+    await audition.play(auditionUrl($('voice').value,import.meta.env.BASE_URL,$('voice-edition').value));
     return;
   }
   const text=preview?'Good morning, church. Take a breath.\n\nNow, let us begin.':$('text').value;
@@ -119,7 +122,7 @@ async function speak(preview=false){
     }
   };
   worker.onerror=e=>{if(token!==run)return;worker?.terminate();worker=null;state(false);status(`Voice engine could not start. Try Quick listen or a current desktop browser. ${e.message??''}`);};
-  worker.postMessage({chunks,voice,speed,delivery:$('delivery').value});
+  worker.postMessage({chunks,voice,speed,edition:$('voice-edition').value,delivery:$('delivery').value});
 }
 $('preview').onclick=()=>speak(true);$('start').onclick=()=>speak(false);
 $('share').onclick=async()=>{try{await navigator.share({files:[audioFile],title:'My sermon'});}catch(e){if(e.name!=='AbortError')status('Sharing unavailable. Use Save audio instead.');}};

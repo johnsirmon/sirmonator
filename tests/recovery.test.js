@@ -21,7 +21,7 @@ test('audition plays immediately without a synthesis engine and unlocks controls
  const states=[],messages=[],audio={pause(){},play(){this.started=true;return Promise.resolve();}};
  const player=createAuditionPlayer({audio,setBusy:v=>states.push(v),notify:m=>messages.push(m)});
  await player.play(auditionUrl('prime','/sirmonator/'));
- assert.equal(audio.src,'/sirmonator/auditions/prime.wav?v=2');assert.equal(audio.started,true);assert.equal(audio.hidden,false);
+ assert.equal(audio.src,'/sirmonator/auditions/prime.wav?v=3');assert.equal(audio.started,true);assert.equal(audio.hidden,false);
  assert.equal(states.at(-1),true);audio.onended();assert.equal(states.at(-1),false);assert.match(messages.at(-1),/finished/);
 });
 test('autoplay block offers native play control; missing audio and stop unlock controls',async()=>{
