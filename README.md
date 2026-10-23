@@ -61,3 +61,5 @@ All 22 studio auditions are checked-in WAV files under `public/auditions/`, gene
 The GPU recovery regression test injects the reported `OrtRun` / `mapAsync` device-loss error during inference and verifies that the **same text and settings** are retried exactly once on CPU, with subsequent passages staying on CPU. Recovery discards failed-attempt audio and never publishes an incomplete recording.
 
 Character voices offer **Refined** and **Previous (v2)** editions for direct comparison. The edition applies to both the instant audition and full sermon. See [the iteration plan](VOICE-ITERATION-PLAN.md) and [voice research](VOICE-RESEARCH.md) for sources, tuning, and limitations.
+
+The artwork in `public/art/sirmonator-sermon-to-audio.webp` is a web-optimized copy of the Sirmonator poster supplied by John Sirmon. Its gold, cream, burgundy, and sky colors define the app theme. The complete artwork remains visible on desktop and narrow screens, with an Open reader shortcut to the tools.
