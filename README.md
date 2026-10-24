@@ -88,3 +88,21 @@ npm run build
 ```
 
 Checkpoint benchmarking uses synthetic PCM and fake-indexeddb in Node, not browser storage or TTS. On the 144,000-character/2,000-passage fixture, an ordered storage snapshot reduced export reads from 4,000 to 1 and measured first/warm export from 219/189 ms to 42/36 ms. Output remained 33,024,000 bytes and 4,128 seconds of synthetic tones; Node RSS was about 226 MB before and 237 MB after. Results vary and do not establish faster speech inference. The synthesis benchmark separately measures actual CPU model initialization, first and warm identical-text inference, RTF and RSS using an existing local model cache; it does not measure an uncached download or browser WebGPU.
+
+## Warm synthesis sessions
+
+The reader keeps one synthesis worker/model family warm for up to 30 idle seconds after successful passages, previews and passage-safe pauses. A rapid Resume or another reading can reuse that model; Stop, errors, starting a request in another engine family, leaving the page and idle expiry dispose of the worker. No full-document PCM cache or parallel inference queue is added. Request IDs and cancelled-worker checks discard late responses. Source text, voice settings, delivery pauses and encoded output are unchanged.
+
+Worker replies include local per-passage render time (including any model load), MP3 encoding/frame-validation time, model-load count and the actual selected Kokoro provider. These measurements are not uploaded. The progress message starts before model initialization. Existing CPU fallback after GPU failure remains in place; physical WebGPU performance has not been established by CPU verification.
+
+A single before/after run on Intel i7-1065G7, Node 24.21.0, cached Kokoro CPU q8/Sarah at 1x used three distinct synthetic paragraphs (265 characters, 20.136 seconds of output audio), treating each as a separate creation/resume flow. Recreating the worker took 30.560 seconds; warm reuse took 27.492 seconds (10.0% lower elapsed time), with worker creation reduced from three to one. Every MP3 passage was byte-identical and both combined files decoded with ffmpeg. This measures real synthesis and restart overhead, separately from the earlier synthetic export benchmark. It does not claim faster inference during one uninterrupted long reading or constitute a long-book soak. Timing varies; this is one comparison, not a statistical speed guarantee.
+
+The tradeoff was higher peak Node RSS: about 460 MB before versus 634 MB after. Browser memory is not inferred from Node RSS. The short idle timeout and one-family limit bound retention, but do not impose a hard per-worker heap limit. Actual pending CPU inference cancellation rejected the request in about 65 ms and a fresh-worker retry produced identical audio bytes; that measures client rejection latency, not native CPU thread cleanup or spoken-word accuracy.
+
+```sh
+node scripts/benchmark-worker-sessions.mjs before
+node scripts/benchmark-worker-sessions.mjs after
+node scripts/verify-worker-recovery.mjs
+```
+
+These scripts reuse existing model caches and dependencies. The production worker is adapted only for Node transport, CPU selection and local encoder URL resolution. Results go to ignored `.cache/`. No private text, paid API or alternative model is needed.

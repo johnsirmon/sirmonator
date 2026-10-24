@@ -1,3 +1,4 @@
+import {createSynthesisClient} from './synthesis-client.js';
 import {episodePackage,packageZip,appleValidationUrl,publicUrl} from './podcast.js';
 import './style.css';
 import {voices as catalog,getVoice,voiceCapabilities} from './voices.js';
@@ -8,7 +9,7 @@ import {openStorage} from './storage.js';
 import {runRecording,recordingBlob,validateCheckpoint} from './job-runner.js';
 import {importDocument} from './import-document.js';
 const $=id=>document.getElementById(id),base=import.meta.env.BASE_URL;
-let store,chapters=[],deviceVoices=[],selectedJob=null,worker=null,pending=null,requestId=0;
+let store,chapters=[],deviceVoices=[],selectedJob=null;
 let creating=false,auditionBusy=false,importing=false,quick=false,quickPaused=false,pauseRequested=false,cancelled=false;
 let audioURL=null,previewURL=null,wake=null,owner=crypto.randomUUID(),draftTimer,saveChain=Promise.resolve(),dirty=false,undo=null;
 let renderToken=0,selectionToken=0,loadedChapter=0,loadedThrough=0,loadedJobId=null,positionSaved=0,exporting=false;
@@ -131,20 +132,12 @@ function mediaControls(job){
 }
 function skip(delta){const a=$('audio');if(Number.isFinite(a.duration))a.currentTime=Math.max(0,Math.min(a.duration,a.currentTime+delta));}
 async function savePosition(){if(store&&loadedJobId&&Number.isFinite($('audio').currentTime)&&$('audio').currentSrc===audioURL)await store.position(loadedJobId,{chapter:loadedChapter,time:$('audio').currentTime});}
-function killWorker(){worker?.terminate();worker=null;if(pending){pending.reject(new Error('Current passage cancelled. Saved passages were kept.'));pending=null;}}
-function generate(text,voiceSettings,last){
-  worker??=new Worker(new URL('./tts-worker.js',import.meta.url),{type:'module'});
-  worker.onmessage=({data})=>{
-    if(!pending)return;
-    if(data.type==='loading'){status(`Downloading voice: ${Math.round(data.progress??0)}% of ${data.file??'file'}. Keep this page open.`);return;}
-    if(data.requestId!==pending.id)return;
-    if(data.type==='stage')status(data.message);
-    if(data.type==='error'){const p=pending;pending=null;p.reject(Error(data.message));}
-    if(data.type==='passage'){const p=pending;pending=null;p.resolve(data);}
-  };
-  worker.onerror=e=>{if(pending){const p=pending;pending=null;p.reject(Error(e.message||'Voice worker failed.'));}};
-  return new Promise((resolve,reject)=>{const id=++requestId;pending={id,resolve,reject};worker.postMessage({requestId:id,text,settings:voiceSettings,last});});
-}
+const synthesisClient=createSynthesisClient({
+ createWorker:()=>new Worker(new URL('./tts-worker.js',import.meta.url),{type:'module'}),
+ onStage:status,onLoading:data=>status(`Downloading voice: ${Math.round(data.progress??0)}% of ${data.file??'file'}. Keep this page open.`)
+});
+function killWorker(){synthesisClient.cancel();}
+function generate(text,voiceSettings,last){return synthesisClient.generate({text,settings:voiceSettings,last},getVoice(voiceSettings.voice).engine);}
 async function withLease(action){
   const execute=async force=>{
     if(!await store.claim(owner,force))throw Error('Another window is creating audio. If it was closed, try Resume again in 20 seconds.');
@@ -188,7 +181,7 @@ async function createAudio(id){
     }}));
     status(job.next===job.passages.length?'Complete. Your MP3 is ready to listen or save.':`Paused. ${job.next} passages are saved. Resume whenever you are ready.`);
   }catch(error){status(warn(error));}
-  finally{creating=false;killWorker();wake?.release().catch(()=>{});wake=null;controls();
+  finally{creating=false;synthesisClient.idle();wake?.release().catch(()=>{});wake=null;controls();
     if(job&&selection===selectionToken)try{const latest=await store.job(job.id)??job;await validateCheckpoint(store,latest);if(selection===selectionToken){selectedJob=latest;displayProgress(selectedJob);await refreshLibrary();}}catch(error){if(selection===selectionToken)status(warn(error));}
   }
 }
@@ -209,10 +202,10 @@ async function exportAudio({chapter=null,share=false}={}){
 }
 $('start').onclick=()=>createAudio();$('resume-recording').onclick=()=>createAudio(selectedJob?.id);
 $('pause').onclick=()=>{if(quick){quickPaused=!quickPaused;quickPaused?window.speechSynthesis.pause():window.speechSynthesis.resume();}else{pauseRequested=true;status('Pausing after the current passage is saved…');}controls();};
-$('stop').onclick=()=>{if(creating){cancelled=true;killWorker();status('Cancelled the current passage. Completed passages are saved.');}else if(quick){quick=false;window.speechSynthesis.cancel();controls();status('Quick listening stopped.');}else audition.stop();};
+$('stop').onclick=()=>{killWorker();if(creating){cancelled=true;status('Cancelled the current passage. Completed passages are saved.');}else if(quick){quick=false;window.speechSynthesis.cancel();controls();status('Quick listening stopped.');}else audition.stop();};
 $('preview').onclick=()=>{if($('engine').value==='studio')audition.play(auditionUrl($('voice').value,base,$('voice-edition').value));else quickListen('Good morning, church. Let us begin.');};
 $('custom-preview').onclick=async()=>{if(busy())return;const first=rangeText().split(/\n\s*\n/)[0].slice(0,240);if(!first.trim()){status('Add text first.');return;}if($('engine').value==='device'){quickListen(first);return;}
-  creating=true;cancelled=false;controls();try{const audio=await generate(first,settings(),true);if(previewURL)URL.revokeObjectURL(previewURL);previewURL=URL.createObjectURL(new Blob([audio.bytes],{type:'audio/mpeg'}));$('audition-audio').src=previewURL;$('audition-audio').hidden=false;$('audition-audio').play().catch(()=>{});status('Your passage preview is ready. Press Play in the sample player.');}catch(error){status(warn(error));}finally{creating=false;killWorker();controls();}
+  creating=true;cancelled=false;controls();try{const audio=await generate(first,settings(),true);if(previewURL)URL.revokeObjectURL(previewURL);previewURL=URL.createObjectURL(new Blob([audio.bytes],{type:'audio/mpeg'}));$('audition-audio').src=previewURL;$('audition-audio').hidden=false;$('audition-audio').play().catch(()=>{});status('Your passage preview is ready. Press Play in the sample player.');}catch(error){status(warn(error));}finally{creating=false;synthesisClient.idle();controls();}
 };
 $('engine').onchange=()=>{fillVoices();narratorNote();scheduleSave();};$('voice').onchange=()=>{$('voice-edition').value='refined';narratorNote();scheduleSave();};
 for(const id of ['voice-edition','delivery','speed'])$(id).onchange=()=>{narratorNote();scheduleSave();};$('speed').oninput=()=>{$('speed-value').textContent=Number($('speed').value)+'×';preflight();};
