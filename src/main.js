@@ -11,7 +11,7 @@ const $=id=>document.getElementById(id),base=import.meta.env.BASE_URL;
 let store,chapters=[],deviceVoices=[],selectedJob=null,worker=null,pending=null,requestId=0;
 let creating=false,auditionBusy=false,importing=false,quick=false,quickPaused=false,pauseRequested=false,cancelled=false;
 let audioURL=null,previewURL=null,wake=null,owner=crypto.randomUUID(),draftTimer,saveChain=Promise.resolve(),dirty=false,undo=null;
-let renderToken=0,loadedChapter=0,loadedThrough=0,loadedJobId=null,positionSaved=0,exporting=false;
+let renderToken=0,selectionToken=0,loadedChapter=0,loadedThrough=0,loadedJobId=null,positionSaved=0,exporting=false;
 const status=message=>$('status').textContent=message;
 const warn=error=>error?.name==='QuotaExceededError'?'This device is low on storage. Saved passages are safe. Download them, delete an older recording, then resume.':(error?.message||'Could not save on this device.');
 const busy=()=>creating||auditionBusy||importing||quick||exporting;
@@ -100,20 +100,27 @@ function displayProgress(job){
   $('play-chapter').disabled=!chapters.length;$('refresh-audio').disabled=!job.next;
   $('share').hidden=typeof navigator.share!=='function';controls();
 }
-async function showRecording(job,{keepAudio=false}={}){
-  await validateCheckpoint(store,job);
-  await flushPodcast();
-  selectedJob=job;restorePodcast(job);$('empty-player').hidden=true;$('result').hidden=false;displayProgress(job);
+function beginSelection(){renderToken++;return ++selectionToken;}
+async function showRecording(job,{keepAudio=false,selection=beginSelection()}={}){
+  // Cancel old reads before validation or metadata saving can yield to another selection.
+  if(selection!==selectionToken)return;
+  try{await validateCheckpoint(store,job);if(selection!==selectionToken)return;
+    await flushPodcast();if(selection!==selectionToken)return;
+  }catch(error){if(selection===selectionToken)throw error;return;}
+  renderToken++;selectedJob=job;restorePodcast(job);$('empty-player').hidden=true;$('result').hidden=false;displayProgress(job);
   if(!keepAudio&&job.next){const available=availableChapters(job),c=available.includes(job.position?.chapter)?job.position.chapter:available[0];$('play-chapter').value=String(c);await loadChapter(c,job.position?.chapter===c?job.position.time:0);}
-  if(!job.next){$('audio').pause();$('audio').removeAttribute('src');if(audioURL)URL.revokeObjectURL(audioURL);audioURL=null;loadedJobId=null;}
+  if(!job.next){$('audio').pause();$('audio').onloadedmetadata=null;$('audio').removeAttribute('src');if(audioURL)URL.revokeObjectURL(audioURL);audioURL=null;loadedJobId=null;}
 }
 async function loadChapter(chapter,time=0){
-  if(!selectedJob?.next)return;const token=++renderToken,id=selectedJob.id;
-  try{const job=await store.job(id),{blob}=await recordingBlob(store,job,chapter);if(token!==renderToken)return;
+  if(!selectedJob?.next)return;const token=++renderToken,id=selectedJob.id,selection=selectionToken;
+  const current=()=>token===renderToken&&selection===selectionToken&&selectedJob?.id===id;
+  try{const job=await store.job(id);if(!current())return;
+    if(job?.id!==id)throw Error('The selected recording is no longer available.');
+    const {blob}=await recordingBlob(store,job,chapter);if(!current())return;
     $('audio').pause();if(audioURL)URL.revokeObjectURL(audioURL);audioURL=URL.createObjectURL(blob);loadedChapter=chapter;loadedThrough=job.next;loadedJobId=job.id;selectedJob=job;$('play-chapter').value=String(chapter);
-    $('audio').onloadedmetadata=()=>{if(Number.isFinite($('audio').duration))$('audio').currentTime=Math.max(0,Math.min(time,$('audio').duration-.05));};
+    $('audio').onloadedmetadata=()=>{if(current()&&loadedJobId===id&&Number.isFinite($('audio').duration))$('audio').currentTime=Math.max(0,Math.min(time,$('audio').duration-.05));};
     $('audio').src=audioURL;$('audio').playbackRate=Number($('playback-speed').value);mediaControls(job);
-  }catch(error){$('export-status').textContent=warn(error);}
+  }catch(error){if(current())$('export-status').textContent=warn(error);}
 }
 function mediaControls(job){
   if(!navigator.mediaSession)return;
@@ -150,7 +157,7 @@ async function createAudio(id){
   if(!id&&$('engine').value==='device'){if(!$('review').checked){status('Review the selected text and check the confirmation.');return;}quickListen(rangeText());return;}
   if(!id&&!$('review').checked){status('Review your selected text and check the confirmation.');$('review').focus();return;}
   if(!store){status('Local storage is unavailable. Download a text backup, or use Quick listen in More settings.');return;}
-  creating=true;pauseRequested=false;cancelled=false;controls();status('Preparing your recording.');
+  const selection=beginSelection();creating=true;pauseRequested=false;cancelled=false;controls();status('Preparing your recording.');
   let job;
   try{
     await flushDraft();
@@ -164,8 +171,9 @@ async function createAudio(id){
       job=await store.ensureJob(await makeRecording(text,settings(),$('title').value));
     }
     if(!job)throw Error('Recording not found.');
-    audition.stop();$('audio').pause();creating=true;pauseRequested=false;cancelled=false;controls();$('progress').hidden=false;
-    await showRecording(job);await refreshLibrary();
+    audition.stop();$('audio').pause();controls();$('progress').hidden=false;
+    await showRecording(job,{selection});if(selection!==selectionToken)return;await refreshLibrary();
+    if(cancelled||pauseRequested){status(cancelled?'Cancelled preparation. Saved passages were kept.':'Paused before synthesis. Resume this recording when ready.');return;}
     if(job.next===job.passages.length){status('This recording is already complete. Listen or save it below.');return;}
     navigator.wakeLock?.request('screen').then(lock=>{if(creating)wake=lock;else lock.release().catch(()=>{});}).catch(()=>{});
     const started=performance.now(),initial=job.next;let sinceSaved=0;
@@ -179,7 +187,7 @@ async function createAudio(id){
     status(job.next===job.passages.length?'Complete. Your MP3 is ready to listen or save.':`Paused. ${job.next} passages are saved. Resume whenever you are ready.`);
   }catch(error){status(warn(error));}
   finally{creating=false;killWorker();wake?.release().catch(()=>{});wake=null;controls();
-    if(job)try{const latest=await store.job(job.id)??job;await validateCheckpoint(store,latest);selectedJob=latest;displayProgress(selectedJob);await refreshLibrary();}catch(error){status(warn(error));}
+    if(job&&selection===selectionToken)try{const latest=await store.job(job.id)??job;await validateCheckpoint(store,latest);if(selection===selectionToken){selectedJob=latest;displayProgress(selectedJob);await refreshLibrary();}}catch(error){if(selection===selectionToken)status(warn(error));}
   }
 }
 function quickListen(text){
@@ -217,15 +225,15 @@ $('sample').onclick=()=>{$('text').value='Good morning, church. Today, let us ma
 document.querySelectorAll('[data-voice]').forEach(b=>b.onclick=()=>{$('engine').value='studio';fillVoices();$('voice').value=b.dataset.voice;$('voice-edition').value='refined';narratorNote();scheduleSave();$('choose-voice').scrollIntoView({behavior:'smooth'});});
 $('file').onchange=async()=>{const file=$('file').files[0];if(!file)return;importing=true;controls();status('Reading your document locally…');try{const result=await importDocument(file);$('text').value=result.text;$('title').value=file.name.replace(/\.[^.]+$/,'');$('source').textContent=file.name;$('review').checked=false;$('import-note').hidden=false;$('import-note').textContent=result.note;updateText();await flushDraft();status('Document loaded. Review its chapter range.');}catch(error){status(warn(error));}finally{importing=false;controls();$('file').value='';}};
 const upload=$('file').previousElementSibling;upload.tabIndex=0;upload.setAttribute('role','button');upload.onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&!busy()){e.preventDefault();$('file').click();}};
-$('saved-recordings').onchange=controls;$('open-recording').onclick=async()=>{try{await savePosition();const job=await store.job($('saved-recordings').value);if(job)await showRecording(job);}catch(error){status(warn(error));}};
-$('delete-recording').onclick=async()=>{const id=$('saved-recordings').value;if(!id||!confirm('Delete this saved recording and its audio from this browser? Download a copy first.'))return;try{await store.deleteJob(id);if(selectedJob?.id===id){renderToken++;selectedJob=null;$('audio').pause();$('audio').removeAttribute('src');if(audioURL)URL.revokeObjectURL(audioURL);audioURL=null;$('result').hidden=true;$('empty-player').hidden=false;}await refreshLibrary();status('Recording deleted from this browser. Your draft was kept.');}catch(error){status(warn(error));}};
+$('saved-recordings').onchange=controls;$('open-recording').onclick=async()=>{const id=$('saved-recordings').value,selection=beginSelection();try{await savePosition();const job=await store.job(id);if(job)await showRecording(job,{selection});}catch(error){if(selection===selectionToken)status(warn(error));}};
+$('delete-recording').onclick=async()=>{const id=$('saved-recordings').value;if(!id||!confirm('Delete this saved recording and its audio from this browser? Download a copy first.'))return;beginSelection();try{await store.deleteJob(id);if(selectedJob?.id===id){renderToken++;selectedJob=null;$('audio').pause();$('audio').removeAttribute('src');if(audioURL)URL.revokeObjectURL(audioURL);audioURL=null;$('result').hidden=true;$('empty-player').hidden=false;}await refreshLibrary();status('Recording deleted from this browser. Your draft was kept.');}catch(error){status(warn(error));}};
 $('play-chapter').onchange=async()=>{await savePosition().catch(()=>{});await loadChapter(Number($('play-chapter').value));};$('refresh-audio').onclick=()=>loadChapter(loadedChapter,$('audio').currentTime);
 $('back').onclick=()=>skip(-15);$('forward').onclick=()=>skip(15);$('playback-speed').onchange=()=>{$('audio').playbackRate=Number($('playback-speed').value);};
 $('audio').ontimeupdate=()=>{if(Date.now()-positionSaved>1000){positionSaved=Date.now();savePosition().catch(()=>{});}};$('audio').onpause=()=>savePosition().catch(()=>{});
-$('audio').onended=async()=>{if(!selectedJob)return;const job=await store.job(selectedJob.id);selectedJob=job;
+$('audio').onended=async()=>{if(!selectedJob||selectedJob.id!==loadedJobId)return;const id=loadedJobId,selection=selectionToken;const job=await store.job(id);if(selection!==selectionToken||selectedJob?.id!==id||loadedJobId!==id||!job)return;selectedJob=job;
   const moreCurrent=job.passages.slice(loadedThrough,job.next).some(p=>p.chapter===loadedChapter);
-  if(moreCurrent){const time=$('audio').currentTime;await loadChapter(loadedChapter,time);$('audio').play().catch(()=>{});}
-  else if(availableChapters(job).includes(loadedChapter+1)){await loadChapter(loadedChapter+1);$('audio').play().catch(()=>{});}
+  if(moreCurrent){const time=$('audio').currentTime;await loadChapter(loadedChapter,time);if(selection!==selectionToken||selectedJob?.id!==id)return;$('audio').play().catch(()=>{});}
+  else if(availableChapters(job).includes(loadedChapter+1)){await loadChapter(loadedChapter+1);if(selection!==selectionToken||selectedJob?.id!==id)return;$('audio').play().catch(()=>{});}
   else if(job.next<job.passages.length)$('export-status').textContent='You reached the saved audio. More is still being created; use Load latest saved audio when ready.';
 };
 $('download').onclick=()=>exportAudio();$('download-chapter').onclick=()=>exportAudio({chapter:loadedChapter});$('share').onclick=()=>exportAudio({share:true});
@@ -234,10 +242,11 @@ window.addEventListener('pagehide',()=>{queueSave();savePosition().catch(()=>{})
 window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();queueSave();}});
 fillVoices();window.speechSynthesis?.addEventListener('voiceschanged',()=>{if(!busy()){fillVoices();narratorNote();}});narratorNote();controls();
 async function initialize(){
+  const selection=beginSelection();
   try{store=await openStorage();const saved=await store.draft();
     if(saved&&!dirty){$('text').value=saved.text;$('title').value=saved.title;$('engine').value=saved.engine??'studio';fillVoices();if([...$('voice').options].some(o=>o.value===saved.settings?.voice))$('voice').value=saved.settings.voice;for(const [key,id] of [['edition','voice-edition'],['delivery','delivery'],['speed','speed']])if(saved.settings?.[key]!==undefined)$(id).value=saved.settings[key];updateText({save:false});$('range-from').value=String(Math.min(saved.from??0,Math.max(0,chapters.length-1)));$('range-to').value=String(Math.min(saved.to??0,Math.max(0,chapters.length-1)));updateRange(false);$('review').checked=!!saved.review;document.body.classList.toggle('has-draft',!!saved.text);}
     $('save-status').textContent=saved?'Draft restored from this device. Download a text backup for safekeeping.':'Autosave ready. Drafts and recordings stay on this browser and device.';
-    narratorNote();const jobs=await refreshLibrary();if(jobs?.length){document.body.classList.add('has-draft');$('saved-recordings').value=jobs[0].id;await showRecording(jobs[0]);}
+    narratorNote();const jobs=await refreshLibrary();if(jobs?.length&&selection===selectionToken){document.body.classList.add('has-draft');$('saved-recordings').value=jobs[0].id;await showRecording(jobs[0],{selection});}
     const estimate=await navigator.storage?.estimate?.();if(estimate?.quota)$('storage-info').textContent=`Browser estimates ${Math.round((estimate.quota-estimate.usage)/1048576)} MB of storage quota available. This is not a device memory measurement.`;
   }catch(error){if(store){$('save-status').textContent='Saved data could not be fully restored. Download a text backup and check My recordings.';status(warn(error));}else{$('save-status').textContent='Local saving unavailable: '+warn(error);status('Use a regular browser window for saved recordings. Text backup and Quick listen remain available.');}}
 }
