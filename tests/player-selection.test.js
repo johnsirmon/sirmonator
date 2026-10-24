@@ -1,3 +1,4 @@
+import {abortable,assertActive} from '../src/continuity.js';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
@@ -10,7 +11,7 @@ const deferred=()=>{let resolve,reject;const promise=new Promise((yes,no)=>{reso
 function harness({read,blob,validate=async()=>{}}={}){
  const A={id:'A',title:'Recording A',next:1,passages:[{chapter:0}],position:{chapter:0,time:7}},B={id:'B',title:'Recording B',next:0,passages:[{chapter:0}],position:{chapter:0,time:0}};
  A.source='Source A';B.source='Source B';const elements=new Map(),urls=[],actions=[];const $=id=>{if(!elements.has(id))elements.set(id,{textContent:'',value:'0',hidden:false,src:'',currentTime:0,duration:200,pause(){},play(){actions.push({play:true});return Promise.resolve();},removeAttribute(name){this[name]='';}});return elements.get(id);};
- const context=vm.createContext({$,store:{job:read??(async id=>id==='A'?A:B)},validateCheckpoint:(_store,job)=>validate(job),flushPodcast:async()=>{},restorePodcast:()=>{},availableChapters:job=>[...new Set(job.passages.slice(0,job.next).map(p=>p.chapter))],displayProgress:job=>{$('recording-title').textContent=job.title;},recordingBlob:blob??(async()=>({blob:{id:'A'}})),URL:{createObjectURL:value=>{const url='blob:'+value.id;urls.push(url);return url;},revokeObjectURL:()=>{}},mediaControls:()=>{},warn:error=>error.message,Blob,saveFile:(blob,name)=>actions.push({blob,name}),safeFilename:value=>value,createAudio:id=>actions.push({resume:id}),savePosition:async()=>{},controls:()=>{},status:text=>{$('status').textContent=text;}});
+ const context=vm.createContext({AbortController,abortable,assertActive,cancelPreparations:()=>{},playbackController:null,exportController:null,chapterCache:{get:(...args)=>context.recordingBlob(context.store,...args),prefetch:()=>{}},$,store:{job:read??(async id=>id==='A'?A:B)},validateCheckpoint:(_store,job)=>validate(job),flushPodcast:async()=>{},restorePodcast:()=>{},availableChapters:job=>[...new Set(job.passages.slice(0,job.next).map(p=>p.chapter))],displayProgress:job=>{$('recording-title').textContent=job.title;},recordingBlob:blob??(async()=>({blob:{id:'A'}})),URL:{createObjectURL:value=>{const url='blob:'+value.id;urls.push(url);return url;},revokeObjectURL:()=>{}},mediaControls:()=>{},warn:error=>error.message,Blob,saveFile:(blob,name)=>actions.push({blob,name}),safeFilename:value=>value,createAudio:id=>actions.push({resume:id}),savePosition:async()=>{},controls:()=>{},status:text=>{$('status').textContent=text;}});
  const ended=main.slice(main.indexOf("$('audio').onended="),main.indexOf("$('download').onclick="));
  const handlers=main.split('\n').filter(line=>line.startsWith("$('start').onclick=")||line.startsWith("$('transcript').onclick=")||line.startsWith("$('saved-recordings').onchange=")).join('\n');
  vm.runInContext(`let selectedJob=null,renderToken=0,selectionToken=0,audioURL=null,loadedChapter=0,loadedThrough=0,loadedJobId=null;\n${player}\n${handlers}\n${ended}\nglobalThis.api={showRecording,loadChapter,state:()=>({selectedId:selectedJob?.id,loadedJobId,title:$('recording-title').textContent,src:$('audio').src,status:$('export-status').textContent})};`,context);
@@ -63,4 +64,11 @@ test('old ended handler cannot autoplay the newly selected recording after a def
  fixture.A.next=2;fixture.A.passages=[{chapter:0},{chapter:1}];await fixture.showRecording(fixture.A);
  const old=fixture.$('audio').onended();await started.promise;await fixture.showRecording(fixture.B);gate.resolve();await old;
  assert.equal(fixture.state().selectedId,'B');assert.ok(!fixture.actions.some(action=>action.play));
+});
+test('manual chapter navigation supersedes an ended handler with a deferred storage read',async()=>{
+ const gate=deferred(),started=deferred();let delay=false,fixture;
+ fixture=harness({read:async id=>{if(delay){delay=false;started.resolve();await gate.promise;}return id==='A'?fixture.A:fixture.B;}});
+ fixture.A.next=3;fixture.A.passages=[{chapter:0},{chapter:1},{chapter:2}];await fixture.showRecording(fixture.A);
+ delay=true;const old=fixture.$('audio').onended();await started.promise;await fixture.loadChapter(2);gate.resolve();await old;
+ assert.equal(fixture.$('play-chapter').value,'2');assert.ok(!fixture.actions.some(action=>action.play));
 });

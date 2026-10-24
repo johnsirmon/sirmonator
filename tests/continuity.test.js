@@ -46,3 +46,20 @@ test('PCM checkpoints survive restart and cancellation; legacy identities remain
   await assert.rejects(store.commit(other.id,0,{...audio(),sampleCount:1},'owner'),/PCM/);
   assert.equal((await store.job(other.id)).next,0);store.close();
 });
+test('positive legacy MP3 resume and export retain original committed bytes',async()=>{
+  const store=await openStorage(indexedDB,'legacy-'+crypto.randomUUID());
+  const job=await makeRecording(('Legacy words in order.\n\n').repeat(12),{...settings,pipeline:LEGACY_PIPELINE});
+  await store.ensureJob(job);await store.claim('legacy');let calls=0;
+  const bytes=encodeMp3(new Float32Array(2400).fill(.1),24000,Mp3Encoder);
+  const generate=async()=>{calls++;return {bytes,seconds:.1,sampleRate:24000};};
+  await runRecording({store,id:job.id,owner:'legacy',generate,shouldPause:()=>calls===1});
+  const resumed=await runRecording({store,id:job.id,owner:'legacy',generate});assert.equal(calls,job.passages.length);
+  const result=await recordingBlob(store,resumed);assert.deepEqual(Buffer.from(await result.blob.arrayBuffer()),Buffer.concat(job.passages.map(()=>bytes)));store.close();
+});
+test('empty boundaries, final impulse and intentional pause samples survive single-encoder assembly',async()=>{
+  const signal=new Float32Array(2400);signal[signal.length-1]=.9;
+  const silence=new Float32Array(11520),parts=[new Float32Array(0),signal,silence,new Float32Array(0)].map(samples=>{const a=audio(samples);return {...a,blob:new Blob([a.bytes])};});
+  const joined=new Float32Array(signal.length+silence.length);joined.set(signal);
+  const result=await encodePcmParts(parts,24000,options);
+  assert.deepEqual(new Uint8Array(await result.arrayBuffer()),encodeMp3(joined,24000,Mp3Encoder));
+});

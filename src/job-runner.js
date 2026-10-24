@@ -1,5 +1,5 @@
 import {makeRecording} from './recording.js';
-import {CONTINUITY_PIPELINE,validatePcm,encodePcmParts} from './continuity.js';
+import {CONTINUITY_PIPELINE,validatePcm,encodePcmParts,assertActive,abortable} from './continuity.js';
 
 // Never trust persisted routing metadata to choose which manuscript words to skip.
 export async function validateCheckpoint(store,job){
@@ -38,7 +38,7 @@ export async function runRecording({store,id,owner,generate,shouldPause=()=>fals
   return job;
 }
 export async function recordingBlob(store,job,chapter=null,maxBytes=96*1024*1024,options={}){
-  const parts=await validateCheckpoint(store,job);
+  assertActive(options);const parts=await abortable(validateCheckpoint(store,job),options.signal);assertActive(options);
   const blobs=[],pcmParts=[];let size=0,seconds=0;
   for(let i=0;i<job.next;i++){
     if(chapter!==null&&job.passages[i].chapter!==chapter)continue;
@@ -48,5 +48,6 @@ export async function recordingBlob(store,job,chapter=null,maxBytes=96*1024*1024
     if(part.blob.size)blobs.push(part.blob);seconds+=part.seconds;
   }
   if(!size)throw Error('No saved audio in this chapter yet.');
-  return {blob:job.settings.pipeline===CONTINUITY_PIPELINE?await encodePcmParts(pcmParts,job.sampleRate,{...options,maxBytes}):new Blob(blobs,{type:'audio/mpeg'}),seconds};
+  const blob=job.settings.pipeline===CONTINUITY_PIPELINE?await encodePcmParts(pcmParts,job.sampleRate,{...options,maxBytes}):new Blob(blobs,{type:'audio/mpeg'});
+  assertActive(options);return {blob,seconds};
 }
