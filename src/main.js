@@ -1,4 +1,5 @@
 import {createSynthesisClient} from './synthesis-client.js';
+import {CONTINUITY_PIPELINE,LEGACY_PIPELINE} from './continuity.js';
 import {episodePackage,packageZip,appleValidationUrl,publicUrl} from './podcast.js';
 import './style.css';
 import {voices as catalog,getVoice,voiceCapabilities} from './voices.js';
@@ -29,7 +30,7 @@ function controls(){
   podcastHandoff();
 }
 const audition=createAuditionPlayer({audio:$('audition-audio'),setBusy:value=>{auditionBusy=value;controls();},notify:status});
-function settings(){return {voice:$('voice').value,edition:$('voice-edition').value,speed:Number($('speed').value),delivery:$('delivery').value};}
+function settings(){return {voice:$('voice').value,edition:$('voice-edition').value,speed:Number($('speed').value),delivery:$('delivery').value,pipeline:CONTINUITY_PIPELINE};}
 function fillVoices(){
   const prior=$('voice').value;deviceVoices=window.speechSynthesis?.getVoices()??[];$('voice').replaceChildren();
   const entries=$('engine').value==='studio'?catalog.map(v=>[v.id,`${v.name} · ${v.detail}`]):deviceVoices.map((v,i)=>[String(i),`${v.name} · ${v.lang}`]);
@@ -70,7 +71,7 @@ function preflight(){
   const minutes=countWords(text)/150,profile=$('engine').value==='studio'?getVoice($('voice').value):null;
   if(!profile){$('preflight').textContent=`About ${Math.ceil(minutes)} minutes of device speech. No download or saved audio.`;return;}
   const mb=profile.engine==='pocket'?150:profile.engine==='supertonic'?400:100;
-  $('preflight').textContent=`About ${Math.ceil(minutes/Number($('speed').value))} min listening · estimated MP3 ${(minutes/Number($('speed').value)*.48).toFixed(1)} MB. First voice use may download about ${mb} MB; cached files may be reused. Creation time depends on your device.`;
+  $('preflight').textContent=`About ${Math.ceil(minutes/Number($('speed').value))} min listening · estimated MP3 ${(minutes/Number($('speed').value)*.48).toFixed(1)} MB. Smooth recordings keep uncompressed local checkpoints (about 3–6 MB/min); MP3 preparation takes additional time. First voice use may download about ${mb} MB; cached files may be reused. Creation time depends on your device.`;
 }
 function draft(){return {text:$('text').value,title:$('title').value,settings:settings(),engine:$('engine').value,review:$('review').checked,from:Number($('range-from').value),to:Number($('range-to').value),updatedAt:Date.now()};}
 function scheduleSave(){dirty=true;clearTimeout(draftTimer);if(!$('remember').checked){$('save-status').textContent='Draft autosave is off. Created recordings are saved separately.';return;}$('save-status').textContent='Saving draft…';draftTimer=setTimeout(()=>queueSave(),350);}
@@ -119,7 +120,7 @@ async function loadChapter(chapter,time=0){
   const current=()=>token===renderToken&&selection===selectionToken&&selectedJob?.id===id;
   try{const job=await store.job(id);if(!current())return;
     if(job?.id!==id)throw Error('The selected recording is no longer available.');
-    const {blob}=await recordingBlob(store,job,chapter);if(!current())return;
+    const {blob}=await recordingBlob(store,job,chapter,undefined,{isCurrent:current});if(!current())return;
     $('audio').pause();if(audioURL)URL.revokeObjectURL(audioURL);audioURL=URL.createObjectURL(blob);loadedChapter=chapter;loadedThrough=job.next;loadedJobId=job.id;selectedJob=job;$('play-chapter').value=String(chapter);
     $('audio').onloadedmetadata=()=>{if(current()&&loadedJobId===id&&Number.isFinite($('audio').duration))$('audio').currentTime=Math.max(0,Math.min(time,$('audio').duration-.05));};
     $('audio').src=audioURL;$('audio').playbackRate=Number($('playback-speed').value);mediaControls(job);
@@ -161,7 +162,7 @@ async function createAudio(id){
       const text=rangeText();if(!$('review').checked){status('Review your selected text and check the confirmation.');$('review').focus();return;}
       if($('text').value.length>MAX_DOCUMENT)throw Error('Reduce the draft to under 2 million characters.');
       if($('engine').value==='device'){quickListen(text);return;}
-      const estimate=await navigator.storage?.estimate?.();const needed=countWords(text)/150/Number($('speed').value)*60*8000*1.5+2*1024*1024;
+      const estimate=await navigator.storage?.estimate?.();const needed=countWords(text)/150/Number($('speed').value)*60*96000*1.5+2*1024*1024;
       if(estimate?.quota&&estimate.quota-estimate.usage<needed)throw Error('Not enough estimated browser storage. Choose fewer chapters or delete an older downloaded recording.');
       job=await store.ensureJob(await makeRecording(text,settings(),$('title').value));
     }
@@ -205,7 +206,7 @@ $('pause').onclick=()=>{if(quick){quickPaused=!quickPaused;quickPaused?window.sp
 $('stop').onclick=()=>{killWorker();if(creating){cancelled=true;status('Cancelled the current passage. Completed passages are saved.');}else if(quick){quick=false;window.speechSynthesis.cancel();controls();status('Quick listening stopped.');}else audition.stop();};
 $('preview').onclick=()=>{if($('engine').value==='studio')audition.play(auditionUrl($('voice').value,base,$('voice-edition').value));else quickListen('Good morning, church. Let us begin.');};
 $('custom-preview').onclick=async()=>{if(busy())return;const first=rangeText().split(/\n\s*\n/)[0].slice(0,240);if(!first.trim()){status('Add text first.');return;}if($('engine').value==='device'){quickListen(first);return;}
-  creating=true;cancelled=false;controls();try{const audio=await generate(first,settings(),true);if(previewURL)URL.revokeObjectURL(previewURL);previewURL=URL.createObjectURL(new Blob([audio.bytes],{type:'audio/mpeg'}));$('audition-audio').src=previewURL;$('audition-audio').hidden=false;$('audition-audio').play().catch(()=>{});status('Your passage preview is ready. Press Play in the sample player.');}catch(error){status(warn(error));}finally{creating=false;synthesisClient.idle();controls();}
+  creating=true;cancelled=false;controls();try{const audio=await generate(first,{...settings(),pipeline:LEGACY_PIPELINE},true);if(previewURL)URL.revokeObjectURL(previewURL);previewURL=URL.createObjectURL(new Blob([audio.bytes],{type:'audio/mpeg'}));$('audition-audio').src=previewURL;$('audition-audio').hidden=false;$('audition-audio').play().catch(()=>{});status('Your passage preview is ready. Press Play in the sample player.');}catch(error){status(warn(error));}finally{creating=false;synthesisClient.idle();controls();}
 };
 $('engine').onchange=()=>{fillVoices();narratorNote();scheduleSave();};$('voice').onchange=()=>{$('voice-edition').value='refined';narratorNote();scheduleSave();};
 for(const id of ['voice-edition','delivery','speed'])$(id).onchange=()=>{narratorNote();scheduleSave();};$('speed').oninput=()=>{$('speed-value').textContent=Number($('speed').value)+'×';preflight();};

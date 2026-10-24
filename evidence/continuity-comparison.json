@@ -1,0 +1,294 @@
+{
+  "kind": "Deterministic same-PCM split encoders versus production single-encoder worker",
+  "matrix": [
+    {
+      "label": "synthetic-tone",
+      "rate": 22050,
+      "passages": 1,
+      "samples": 2756,
+      "before": {
+        "bytes": 1462,
+        "encodeMs": 66.304,
+        "decodedSamples": 4032,
+        "paddingMs": 57.868480725623584
+      },
+      "after": {
+        "bytes": 1462,
+        "stagingMs": 1.1980000000000075,
+        "exportMs": 112.37129999999999,
+        "decodedSamples": 4032,
+        "paddingMs": 57.868480725623584
+      },
+      "checkpointBytes": 5512,
+      "largestPassageBytes": 5512,
+      "caveat": "Cold export worker startup included only in after. One run is not a statistical speed comparison; before encoding runs on main Node thread."
+    },
+    {
+      "label": "synthetic-tone",
+      "rate": 22050,
+      "passages": 10,
+      "samples": 27560,
+      "before": {
+        "bytes": 14620,
+        "encodeMs": 245.57619999999997,
+        "decodedSamples": 40320,
+        "paddingMs": 578.6848072562358
+      },
+      "after": {
+        "bytes": 10448,
+        "stagingMs": 2.1445000000001073,
+        "exportMs": 233.27549999999997,
+        "decodedSamples": 28800,
+        "paddingMs": 56.235827664399096
+      },
+      "checkpointBytes": 55120,
+      "largestPassageBytes": 5512,
+      "caveat": "Cold export worker startup included only in after. One run is not a statistical speed comparison; before encoding runs on main Node thread."
+    },
+    {
+      "label": "synthetic-tone",
+      "rate": 22050,
+      "passages": 100,
+      "samples": 275600,
+      "before": {
+        "bytes": 146200,
+        "encodeMs": 865.5172,
+        "decodedSamples": 403200,
+        "paddingMs": 5786.848072562358
+      },
+      "after": {
+        "bytes": 100519,
+        "stagingMs": 14.764000000000124,
+        "exportMs": 587.6700000000001,
+        "decodedSamples": 277056,
+        "paddingMs": 66.03174603174604
+      },
+      "checkpointBytes": 551200,
+      "largestPassageBytes": 5512,
+      "caveat": "Cold export worker startup included only in after. One run is not a statistical speed comparison; before encoding runs on main Node thread."
+    },
+    {
+      "label": "synthetic-tone",
+      "rate": 24000,
+      "passages": 1,
+      "samples": 3000,
+      "before": {
+        "bytes": 1536,
+        "encodeMs": 65.50910000000022,
+        "decodedSamples": 4608,
+        "paddingMs": 67
+      },
+      "after": {
+        "bytes": 1536,
+        "stagingMs": 0.11479999999983193,
+        "exportMs": 124.81439999999975,
+        "decodedSamples": 4608,
+        "paddingMs": 67
+      },
+      "checkpointBytes": 6000,
+      "largestPassageBytes": 6000,
+      "caveat": "Cold export worker startup included only in after. One run is not a statistical speed comparison; before encoding runs on main Node thread."
+    },
+    {
+      "label": "synthetic-tone",
+      "rate": 24000,
+      "passages": 10,
+      "samples": 30000,
+      "before": {
+        "bytes": 15360,
+        "encodeMs": 255.60609999999997,
+        "decodedSamples": 46080,
+        "paddingMs": 670
+      },
+      "after": {
+        "bytes": 10560,
+        "stagingMs": 0.6098999999999251,
+        "exportMs": 204.1958999999997,
+        "decodedSamples": 31680,
+        "paddingMs": 70
+      },
+      "checkpointBytes": 60000,
+      "largestPassageBytes": 6000,
+      "caveat": "Cold export worker startup included only in after. One run is not a statistical speed comparison; before encoding runs on main Node thread."
+    },
+    {
+      "label": "synthetic-tone",
+      "rate": 24000,
+      "passages": 100,
+      "samples": 300000,
+      "before": {
+        "bytes": 153600,
+        "encodeMs": 918.2484000000004,
+        "decodedSamples": 460800,
+        "paddingMs": 6700
+      },
+      "after": {
+        "bytes": 100416,
+        "stagingMs": 6.742200000000594,
+        "exportMs": 746.9211999999998,
+        "decodedSamples": 301248,
+        "paddingMs": 52
+      },
+      "checkpointBytes": 600000,
+      "largestPassageBytes": 6000,
+      "caveat": "Cold export worker startup included only in after. One run is not a statistical speed comparison; before encoding runs on main Node thread."
+    },
+    {
+      "label": "synthetic-tone",
+      "rate": 44100,
+      "passages": 1,
+      "samples": 5513,
+      "before": {
+        "bytes": 1253,
+        "encodeMs": 79.40920000000006,
+        "decodedSamples": 6912,
+        "paddingMs": 31.723356009070294
+      },
+      "after": {
+        "bytes": 1253,
+        "stagingMs": 0.1811999999999898,
+        "exportMs": 138.38630000000012,
+        "decodedSamples": 6912,
+        "paddingMs": 31.723356009070294
+      },
+      "checkpointBytes": 11026,
+      "largestPassageBytes": 11026,
+      "caveat": "Cold export worker startup included only in after. One run is not a statistical speed comparison; before encoding runs on main Node thread."
+    },
+    {
+      "label": "synthetic-tone",
+      "rate": 44100,
+      "passages": 10,
+      "samples": 55130,
+      "before": {
+        "bytes": 12530,
+        "encodeMs": 208.6223,
+        "decodedSamples": 69120,
+        "paddingMs": 317.23356009070295
+      },
+      "after": {
+        "bytes": 10240,
+        "stagingMs": 1.2804999999998472,
+        "exportMs": 232.61109999999917,
+        "decodedSamples": 56448,
+        "paddingMs": 29.88662131519274
+      },
+      "checkpointBytes": 110260,
+      "largestPassageBytes": 11026,
+      "caveat": "Cold export worker startup included only in after. One run is not a statistical speed comparison; before encoding runs on main Node thread."
+    },
+    {
+      "label": "synthetic-tone",
+      "rate": 44100,
+      "passages": 100,
+      "samples": 551300,
+      "before": {
+        "bytes": 125300,
+        "encodeMs": 1200.9846000000007,
+        "decodedSamples": 691200,
+        "paddingMs": 3172.3356009070294
+      },
+      "after": {
+        "bytes": 100310,
+        "stagingMs": 12.378300000000309,
+        "exportMs": 612.5920000000006,
+        "decodedSamples": 552960,
+        "paddingMs": 37.641723356009074
+      },
+      "checkpointBytes": 1102600,
+      "largestPassageBytes": 11026,
+      "caveat": "Cold export worker startup included only in after. One run is not a statistical speed comparison; before encoding runs on main Node thread."
+    },
+    {
+      "label": "synthetic-tone",
+      "rate": 48000,
+      "passages": 1,
+      "samples": 6000,
+      "before": {
+        "bytes": 1344,
+        "encodeMs": 67.66479999999865,
+        "decodedSamples": 8064,
+        "paddingMs": 43
+      },
+      "after": {
+        "bytes": 1344,
+        "stagingMs": 0.22230000000126893,
+        "exportMs": 124.89969999999994,
+        "decodedSamples": 8064,
+        "paddingMs": 43
+      },
+      "checkpointBytes": 12000,
+      "largestPassageBytes": 12000,
+      "caveat": "Cold export worker startup included only in after. One run is not a statistical speed comparison; before encoding runs on main Node thread."
+    },
+    {
+      "label": "synthetic-tone",
+      "rate": 48000,
+      "passages": 10,
+      "samples": 60000,
+      "before": {
+        "bytes": 13440,
+        "encodeMs": 169.68299999999908,
+        "decodedSamples": 80640,
+        "paddingMs": 430
+      },
+      "after": {
+        "bytes": 10368,
+        "stagingMs": 1.3309000000008382,
+        "exportMs": 249.67250000000058,
+        "decodedSamples": 62208,
+        "paddingMs": 46
+      },
+      "checkpointBytes": 120000,
+      "largestPassageBytes": 12000,
+      "caveat": "Cold export worker startup included only in after. One run is not a statistical speed comparison; before encoding runs on main Node thread."
+    },
+    {
+      "label": "synthetic-tone",
+      "rate": 48000,
+      "passages": 100,
+      "samples": 600000,
+      "before": {
+        "bytes": 134400,
+        "encodeMs": 1065.5622000000003,
+        "decodedSamples": 806400,
+        "paddingMs": 4300
+      },
+      "after": {
+        "bytes": 100224,
+        "stagingMs": 10.320000000001528,
+        "exportMs": 582.7633999999998,
+        "decodedSamples": 601344,
+        "paddingMs": 28
+      },
+      "checkpointBytes": 1200000,
+      "largestPassageBytes": 12000,
+      "caveat": "Cold export worker startup included only in after. One run is not a statistical speed comparison; before encoding runs on main Node thread."
+    }
+  ],
+  "real": {
+    "label": "cached-real-speech",
+    "rate": 24000,
+    "passages": 3,
+    "samples": 428640,
+    "before": {
+      "bytes": 144192,
+      "encodeMs": 624.9300000000003,
+      "decodedSamples": 432576,
+      "paddingMs": 164
+    },
+    "after": {
+      "bytes": 143424,
+      "stagingMs": 10.933700000001409,
+      "exportMs": 726.4160000000011,
+      "decodedSamples": 430272,
+      "paddingMs": 68
+    },
+    "checkpointBytes": 857280,
+    "largestPassageBytes": 362640,
+    "caveat": "Cold export worker startup included only in after. One run is not a statistical speed comparison; before encoding runs on main Node thread.",
+    "originalRenderMs": 23535.8847,
+    "intentionalPauseSeconds": 0.96,
+    "sourceExact": true
+  }
+}

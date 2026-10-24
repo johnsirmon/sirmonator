@@ -1,7 +1,8 @@
 import {chunkText} from './core.js';
 import {getVoice} from './voices.js';
+import {LEGACY_PIPELINE,CONTINUITY_PIPELINE} from './continuity.js';
 export const MAX_DOCUMENT=2_000_000, MAX_READING=150_000, CHAPTER_SIZE=6000;
-export const PIPELINE='mp3-passages-v1-2026-10-23';
+export const PIPELINE=CONTINUITY_PIPELINE;
 export function chaptersFor(text,target=CHAPTER_SIZE){
   const passages=chunkText(text),chapters=[];let start=0,end=0;
   for(const passage of passages){
@@ -23,7 +24,9 @@ export function normalizeSettings(settings){
   if(!['refined','previous'].includes(settings.edition))throw Error('Unknown voice edition.');
   if(!['natural','reflective','continuous'].includes(settings.delivery))throw Error('Unknown delivery.');
   const speed=Number(settings.speed);if(!Number.isFinite(speed)||speed<.7||speed>1.3)throw Error('Invalid narration speed.');
-  return {voice:profile.id,edition:settings.edition,delivery:settings.delivery,speed,voiceRevision:profile.revision??1,pipeline:PIPELINE};
+  const pipeline=settings.pipeline??LEGACY_PIPELINE;
+  if(![LEGACY_PIPELINE,PIPELINE].includes(pipeline))throw Error('Unknown audio pipeline.');
+  return {voice:profile.id,edition:settings.edition,delivery:settings.delivery,speed,voiceRevision:profile.revision??1,pipeline};
 }
 export async function makeRecording(text,settings,title='My sermon'){
   if(!text.trim())throw Error('Add some text first.');

@@ -1,4 +1,5 @@
 import {makeRecording} from './recording.js';
+import {CONTINUITY_PIPELINE,validatePcm,encodePcmParts} from './continuity.js';
 
 // Never trust persisted routing metadata to choose which manuscript words to skip.
 export async function validateCheckpoint(store,job){
@@ -17,6 +18,10 @@ export async function validateCheckpoint(store,job){
     if(!part||part.jobId!==job.id||part.index!==index||!Number.isFinite(part.seconds)||part.seconds<0||
        !(part.blob instanceof Blob)||
        (!part.blob.size&&job.source.slice(job.passages[index].start,job.passages[index].end).trim()))fail();
+    if(job.settings.pipeline===CONTINUITY_PIPELINE){
+      try{validatePcm(part,part.blob.size);}catch{fail();}
+      if((part.sampleCount&&part.sampleRate!==job.sampleRate)||Math.abs(part.seconds-part.sampleCount/part.sampleRate)>1e-9)fail();
+    }else if(part.format==='pcm-s16le')fail();
   }
   return parts;
 }
@@ -32,15 +37,16 @@ export async function runRecording({store,id,owner,generate,shouldPause=()=>fals
   }
   return job;
 }
-export async function recordingBlob(store,job,chapter=null,maxBytes=96*1024*1024){
+export async function recordingBlob(store,job,chapter=null,maxBytes=96*1024*1024,options={}){
   const parts=await validateCheckpoint(store,job);
-  const blobs=[];let size=0,seconds=0;
+  const blobs=[],pcmParts=[];let size=0,seconds=0;
   for(let i=0;i<job.next;i++){
     if(chapter!==null&&job.passages[i].chapter!==chapter)continue;
     const part=parts[i];if(!part)throw Error('A saved passage is missing. Resume or restore a backup.');
-    size+=part.blob.size;if(size>maxBytes)throw Error('This download is large. Choose an individual chapter instead.');
+    size+=part.blob.size;if(job.settings.pipeline!==CONTINUITY_PIPELINE&&size>maxBytes)throw Error('This download is large. Choose an individual chapter instead.');
+    pcmParts.push(part);
     if(part.blob.size)blobs.push(part.blob);seconds+=part.seconds;
   }
   if(!size)throw Error('No saved audio in this chapter yet.');
-  return {blob:new Blob(blobs,{type:'audio/mpeg'}),seconds};
+  return {blob:job.settings.pipeline===CONTINUITY_PIPELINE?await encodePcmParts(pcmParts,job.sampleRate,{...options,maxBytes}):new Blob(blobs,{type:'audio/mpeg'}),seconds};
 }
