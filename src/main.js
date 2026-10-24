@@ -1,4 +1,6 @@
 import {createSynthesisClient} from './synthesis-client.js';
+import {CONTINUITY_PIPELINE,LEGACY_PIPELINE,abortable,assertActive} from './continuity.js';
+import {createChapterCache} from './chapter-cache.js';
 import {episodePackage,packageZip,appleValidationUrl,publicUrl} from './podcast.js';
 import './style.css';
 import {voices as catalog,getVoice,voiceCapabilities} from './voices.js';
@@ -13,6 +15,9 @@ let store,chapters=[],deviceVoices=[],selectedJob=null;
 let creating=false,auditionBusy=false,importing=false,quick=false,quickPaused=false,pauseRequested=false,cancelled=false;
 let audioURL=null,previewURL=null,wake=null,owner=crypto.randomUUID(),draftTimer,saveChain=Promise.resolve(),dirty=false,undo=null;
 let renderToken=0,selectionToken=0,loadedChapter=0,loadedThrough=0,loadedJobId=null,positionSaved=0,exporting=false;
+let exportController=null,playbackController=null;
+const chapterCache=createChapterCache({prepare:(job,chapter,options)=>recordingBlob(store,job,chapter,undefined,options),onChange:()=>controls()});
+function cancelPreparations(){exportController?.abort();playbackController?.abort();chapterCache.clear();}
 const status=message=>$('status').textContent=message;
 const warn=error=>error?.name==='QuotaExceededError'?'This device is low on storage. Saved passages are safe. Download them, delete an older recording, then resume.':(error?.message||'Could not save on this device.');
 const busy=()=>creating||auditionBusy||importing||quick||exporting;
@@ -20,7 +25,8 @@ function controls(){
   for(const id of ['text','title','file','sample','clear','undo-clear','engine','voice','voice-edition','delivery','speed','review','start','preview','custom-preview','range-from','range-to','remember','open-recording','saved-recordings'])$(id).disabled=busy();
   document.querySelectorAll('[data-voice]').forEach(b=>b.disabled=busy());
   $('pause').disabled=!(creating||quick)||pauseRequested;$('pause').textContent=quick?(quickPaused?'Resume listening':'Pause listening'):(pauseRequested?'Saving current passage…':'Pause creation');
-  $('stop').disabled=!(creating||quick||auditionBusy);$('resume-recording').disabled=busy();
+  $('stop').disabled=!(creating||quick||auditionBusy||exporting||playbackController||chapterCache.preparing);$('resume-recording').disabled=busy();
+  $('stop').textContent=exporting||playbackController||chapterCache.preparing?'Cancel audio preparation':'Cancel creation';
   $('delete-recording').disabled=busy()||!$('saved-recordings').value;
   if(!busy())$('open-recording').disabled=!$('saved-recordings').value;
   for(const id of ['download','download-chapter','share'])$(id).disabled=exporting||!selectedJob?.next;
@@ -29,7 +35,7 @@ function controls(){
   podcastHandoff();
 }
 const audition=createAuditionPlayer({audio:$('audition-audio'),setBusy:value=>{auditionBusy=value;controls();},notify:status});
-function settings(){return {voice:$('voice').value,edition:$('voice-edition').value,speed:Number($('speed').value),delivery:$('delivery').value};}
+function settings(){return {voice:$('voice').value,edition:$('voice-edition').value,speed:Number($('speed').value),delivery:$('delivery').value,pipeline:CONTINUITY_PIPELINE};}
 function fillVoices(){
   const prior=$('voice').value;deviceVoices=window.speechSynthesis?.getVoices()??[];$('voice').replaceChildren();
   const entries=$('engine').value==='studio'?catalog.map(v=>[v.id,`${v.name} · ${v.detail}`]):deviceVoices.map((v,i)=>[String(i),`${v.name} · ${v.lang}`]);
@@ -70,7 +76,7 @@ function preflight(){
   const minutes=countWords(text)/150,profile=$('engine').value==='studio'?getVoice($('voice').value):null;
   if(!profile){$('preflight').textContent=`About ${Math.ceil(minutes)} minutes of device speech. No download or saved audio.`;return;}
   const mb=profile.engine==='pocket'?150:profile.engine==='supertonic'?400:100;
-  $('preflight').textContent=`About ${Math.ceil(minutes/Number($('speed').value))} min listening · estimated MP3 ${(minutes/Number($('speed').value)*.48).toFixed(1)} MB. First voice use may download about ${mb} MB; cached files may be reused. Creation time depends on your device.`;
+  $('preflight').textContent=`About ${Math.ceil(minutes/Number($('speed').value))} min listening · estimated MP3 ${(minutes/Number($('speed').value)*.48).toFixed(1)} MB. Smooth recordings keep uncompressed local checkpoints (about 3–6 MB/min); MP3 preparation takes additional time. First voice use may download about ${mb} MB; cached files may be reused. Creation time depends on your device.`;
 }
 function draft(){return {text:$('text').value,title:$('title').value,settings:settings(),engine:$('engine').value,review:$('review').checked,from:Number($('range-from').value),to:Number($('range-to').value),updatedAt:Date.now()};}
 function scheduleSave(){dirty=true;clearTimeout(draftTimer);if(!$('remember').checked){$('save-status').textContent='Draft autosave is off. Created recordings are saved separately.';return;}$('save-status').textContent='Saving draft…';draftTimer=setTimeout(()=>queueSave(),350);}
@@ -101,7 +107,7 @@ function displayProgress(job){
   $('play-chapter').disabled=!chapters.length;$('refresh-audio').disabled=!job.next;
   $('share').hidden=typeof navigator.share!=='function';controls();
 }
-function beginSelection(){renderToken++;return ++selectionToken;}
+function beginSelection(){cancelPreparations();renderToken++;return ++selectionToken;}
 async function showRecording(job,{keepAudio=false,selection=beginSelection()}={}){
   // Cancel old reads before validation or metadata saving can yield to another selection.
   if(selection!==selectionToken)return;
@@ -116,14 +122,19 @@ async function showRecording(job,{keepAudio=false,selection=beginSelection()}={}
 }
 async function loadChapter(chapter,time=0){
   if(!selectedJob?.next)return;const token=++renderToken,id=selectedJob.id,selection=selectionToken;
+  playbackController?.abort();const controller=new AbortController();playbackController=controller;controls();
   const current=()=>token===renderToken&&selection===selectionToken&&selectedJob?.id===id;
-  try{const job=await store.job(id);if(!current())return;
+  try{const job=await abortable(store.job(id),controller.signal);if(!current())return;
     if(job?.id!==id)throw Error('The selected recording is no longer available.');
-    const {blob}=await recordingBlob(store,job,chapter);if(!current())return;
+    await abortable(validateCheckpoint(store,job),controller.signal);if(!current())return;
+    const {blob}=await abortable(chapterCache.get(job,chapter),controller.signal);if(!current()||controller.signal.aborted)return;
     $('audio').pause();if(audioURL)URL.revokeObjectURL(audioURL);audioURL=URL.createObjectURL(blob);loadedChapter=chapter;loadedThrough=job.next;loadedJobId=job.id;selectedJob=job;$('play-chapter').value=String(chapter);
     $('audio').onloadedmetadata=()=>{if(current()&&loadedJobId===id&&Number.isFinite($('audio').duration))$('audio').currentTime=Math.max(0,Math.min(time,$('audio').duration-.05));};
     $('audio').src=audioURL;$('audio').playbackRate=Number($('playback-speed').value);mediaControls(job);
+    if(availableChapters(job).includes(chapter+1))chapterCache.prefetch(job,chapter+1);
+    return true;
   }catch(error){if(current())$('export-status').textContent=warn(error);}
+  finally{if(playbackController===controller)playbackController=null;controls();}
 }
 function mediaControls(job){
   if(!navigator.mediaSession)return;
@@ -161,7 +172,7 @@ async function createAudio(id){
       const text=rangeText();if(!$('review').checked){status('Review your selected text and check the confirmation.');$('review').focus();return;}
       if($('text').value.length>MAX_DOCUMENT)throw Error('Reduce the draft to under 2 million characters.');
       if($('engine').value==='device'){quickListen(text);return;}
-      const estimate=await navigator.storage?.estimate?.();const needed=countWords(text)/150/Number($('speed').value)*60*8000*1.5+2*1024*1024;
+      const estimate=await navigator.storage?.estimate?.();const needed=countWords(text)/150/Number($('speed').value)*60*96000*1.5+2*1024*1024;
       if(estimate?.quota&&estimate.quota-estimate.usage<needed)throw Error('Not enough estimated browser storage. Choose fewer chapters or delete an older downloaded recording.');
       job=await store.ensureJob(await makeRecording(text,settings(),$('title').value));
     }
@@ -193,19 +204,21 @@ function quickListen(text){
 }
 async function exportAudio({chapter=null,share=false}={}){
   if(exporting||!selectedJob)return;exporting=true;controls();$('export-status').textContent='Preparing saved MP3 passages…';
-  try{const job=await store.job(selectedJob.id),{blob}=await recordingBlob(store,job,chapter);
+  const id=selectedJob.id,selection=selectionToken,controller=new AbortController();exportController=controller;
+  const options={signal:controller.signal,isCurrent:()=>selectedJob?.id===id&&selectionToken===selection},check=()=>assertActive(options);
+  try{const job=await abortable(store.job(id),controller.signal);check();const {blob}=await recordingBlob(store,job,chapter,undefined,options);check();
     const partial=job.next<job.passages.length;const filename=safeFilename(job.title)+(chapter!==null?'-chapter-'+(chapter+1):'')+(partial?'-partial':'')+'.mp3';
     const file=new File([blob],filename,{type:'audio/mpeg'});
     if(share){if(!navigator.canShare?.({files:[file]}))throw Error('File sharing is unavailable here. Use Save MP3 instead.');await navigator.share({files:[file],title:job.title});$('export-status').textContent='Share sheet closed. Your saved recording is still available.';}
     else{saveFile(blob,filename);$('export-status').textContent=`Download started: ${filename} (${(blob.size/1048576).toFixed(1)} MB).${partial?' This contains saved passages only, not the complete source.':''}`;}
-  }catch(error){$('export-status').textContent=error.name==='AbortError'?'Sharing cancelled. Your audio is still saved.':warn(error);}finally{exporting=false;controls();}
+  }catch(error){$('export-status').textContent=error.name==='AbortError'?'Audio preparation cancelled. Your audio is still saved.':warn(error);}finally{if(exportController===controller)exportController=null;exporting=false;controls();}
 }
 $('start').onclick=()=>createAudio();$('resume-recording').onclick=()=>createAudio(selectedJob?.id);
 $('pause').onclick=()=>{if(quick){quickPaused=!quickPaused;quickPaused?window.speechSynthesis.pause():window.speechSynthesis.resume();}else{pauseRequested=true;status('Pausing after the current passage is saved…');}controls();};
-$('stop').onclick=()=>{killWorker();if(creating){cancelled=true;status('Cancelled the current passage. Completed passages are saved.');}else if(quick){quick=false;window.speechSynthesis.cancel();controls();status('Quick listening stopped.');}else audition.stop();};
+$('stop').onclick=()=>{killWorker();cancelPreparations();renderToken++;if(creating){cancelled=true;status('Cancelled the current passage. Completed passages are saved.');}else if(quick){quick=false;window.speechSynthesis.cancel();controls();status('Quick listening stopped.');}else{audition.stop();status('Audio preparation cancelled. Saved passages were kept.');}};
 $('preview').onclick=()=>{if($('engine').value==='studio')audition.play(auditionUrl($('voice').value,base,$('voice-edition').value));else quickListen('Good morning, church. Let us begin.');};
 $('custom-preview').onclick=async()=>{if(busy())return;const first=rangeText().split(/\n\s*\n/)[0].slice(0,240);if(!first.trim()){status('Add text first.');return;}if($('engine').value==='device'){quickListen(first);return;}
-  creating=true;cancelled=false;controls();try{const audio=await generate(first,settings(),true);if(previewURL)URL.revokeObjectURL(previewURL);previewURL=URL.createObjectURL(new Blob([audio.bytes],{type:'audio/mpeg'}));$('audition-audio').src=previewURL;$('audition-audio').hidden=false;$('audition-audio').play().catch(()=>{});status('Your passage preview is ready. Press Play in the sample player.');}catch(error){status(warn(error));}finally{creating=false;synthesisClient.idle();controls();}
+  creating=true;cancelled=false;controls();try{const audio=await generate(first,{...settings(),pipeline:LEGACY_PIPELINE},true);if(previewURL)URL.revokeObjectURL(previewURL);previewURL=URL.createObjectURL(new Blob([audio.bytes],{type:'audio/mpeg'}));$('audition-audio').src=previewURL;$('audition-audio').hidden=false;$('audition-audio').play().catch(()=>{});status('Your passage preview is ready. Press Play in the sample player.');}catch(error){status(warn(error));}finally{creating=false;synthesisClient.idle();controls();}
 };
 $('engine').onchange=()=>{fillVoices();narratorNote();scheduleSave();};$('voice').onchange=()=>{$('voice-edition').value='refined';narratorNote();scheduleSave();};
 for(const id of ['voice-edition','delivery','speed'])$(id).onchange=()=>{narratorNote();scheduleSave();};$('speed').oninput=()=>{$('speed-value').textContent=Number($('speed').value)+'×';preflight();};
@@ -225,15 +238,15 @@ $('delete-recording').onclick=async()=>{const id=$('saved-recordings').value;if(
 $('play-chapter').onchange=async()=>{await savePosition().catch(()=>{});await loadChapter(Number($('play-chapter').value));};$('refresh-audio').onclick=()=>loadChapter(loadedChapter,$('audio').currentTime);
 $('back').onclick=()=>skip(-15);$('forward').onclick=()=>skip(15);$('playback-speed').onchange=()=>{$('audio').playbackRate=Number($('playback-speed').value);};
 $('audio').ontimeupdate=()=>{if(Date.now()-positionSaved>1000){positionSaved=Date.now();savePosition().catch(()=>{});}};$('audio').onpause=()=>savePosition().catch(()=>{});
-$('audio').onended=async()=>{if(!selectedJob||selectedJob.id!==loadedJobId)return;const id=loadedJobId,selection=selectionToken;const job=await store.job(id);if(selection!==selectionToken||selectedJob?.id!==id||loadedJobId!==id||!job)return;selectedJob=job;
+$('audio').onended=async()=>{if(!selectedJob||selectedJob.id!==loadedJobId)return;const id=loadedJobId,selection=selectionToken,render=renderToken;const job=await store.job(id);if(render!==renderToken||selection!==selectionToken||selectedJob?.id!==id||loadedJobId!==id||!job)return;selectedJob=job;
   const moreCurrent=job.passages.slice(loadedThrough,job.next).some(p=>p.chapter===loadedChapter);
-  if(moreCurrent){const time=$('audio').currentTime;await loadChapter(loadedChapter,time);if(selection!==selectionToken||selectedJob?.id!==id)return;$('audio').play().catch(()=>{});}
-  else if(availableChapters(job).includes(loadedChapter+1)){await loadChapter(loadedChapter+1);if(selection!==selectionToken||selectedJob?.id!==id)return;$('audio').play().catch(()=>{});}
+  if(moreCurrent){const time=$('audio').currentTime;if(!await loadChapter(loadedChapter,time))return;if(selection!==selectionToken||selectedJob?.id!==id)return;$('audio').play().catch(()=>{});}
+  else if(availableChapters(job).includes(loadedChapter+1)){if(!await loadChapter(loadedChapter+1))return;if(selection!==selectionToken||selectedJob?.id!==id)return;$('audio').play().catch(()=>{});}
   else if(job.next<job.passages.length)$('export-status').textContent='You reached the saved audio. More is still being created; use Load latest saved audio when ready.';
 };
 $('download').onclick=()=>exportAudio();$('download-chapter').onclick=()=>exportAudio({chapter:loadedChapter});$('share').onclick=()=>exportAudio({share:true});
 $('transcript').onclick=()=>{if(selectedJob)saveFile(new Blob([selectedJob.source],{type:'text/plain;charset=utf-8'}),safeFilename(selectedJob.title)+'-reviewed-source.txt');};
-window.addEventListener('pagehide',()=>{queueSave();savePosition().catch(()=>{});cancelled=true;killWorker();store?.release(owner).catch(()=>{});window.speechSynthesis?.cancel();});
+window.addEventListener('pagehide',()=>{cancelPreparations();queueSave();savePosition().catch(()=>{});cancelled=true;killWorker();store?.release(owner).catch(()=>{});window.speechSynthesis?.cancel();});
 window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();queueSave();}});
 fillVoices();window.speechSynthesis?.addEventListener('voiceschanged',()=>{if(!busy()){fillVoices();narratorNote();}});narratorNote();controls();
 async function initialize(){
@@ -251,10 +264,12 @@ function podcastFields(){return {showTitle:$('pod-show-title').value,showDescrip
 $('pod-export').onclick=async()=>{
  if(busy()||!selectedJob||!store){$('pod-status').textContent='Select a saved complete recording first.';return;}
  const id=selectedJob.id,fields=podcastFields();exporting=true;controls();
- try{await flushPodcast();let job=await store.job(id);if(job.next!==job.passages.length)throw Error('Finish this recording first. Partial audio is not an episode.');
- await store.podcastGuid(job.id);job=await store.job(job.id);const {blob}=await recordingBlob(store,job),result=await episodePackage(job,blob,fields);
+ const selection=selectionToken,controller=new AbortController();exportController=controller;
+ const options={signal:controller.signal,isCurrent:()=>selectedJob?.id===id&&selectionToken===selection},check=()=>assertActive(options);
+ try{await abortable(flushPodcast(),controller.signal);check();let job=await abortable(store.job(id),controller.signal);check();if(job.next!==job.passages.length)throw Error('Finish this recording first. Partial audio is not an episode.');
+ await abortable(store.podcastGuid(job.id),controller.signal);check();job=await abortable(store.job(job.id),controller.signal);check();const {blob}=await recordingBlob(store,job,null,undefined,options);check();const result=await abortable(episodePackage(job,blob,fields),controller.signal);check();
  saveFile(packageZip(result.files),safeFilename(job.title)+'-podcast-preparation.zip');$('pod-status').textContent='Preparation ZIP download started. Nothing was uploaded. '+result.metadata.warnings.join(' ');
- }catch(error){$('pod-status').textContent=warn(error);}finally{exporting=false;$('pod-export').disabled=false;controls();}
+ }catch(error){$('pod-status').textContent=warn(error);}finally{if(exportController===controller)exportController=null;exporting=false;$('pod-export').disabled=false;controls();}
 };
 function podcastHandoff(){const fields=podcastFields();$('pod-apple').disabled=busy()||!(publicUrl(fields.feedUrl)&&fields.rightsConfirmed&&fields.spokenDisclosureConfirmed&&fields.artworkConfirmed);}
 for(const id of ['pod-feed-url','pod-rights','pod-spoken','pod-artwork'])$(id).addEventListener('change',podcastHandoff);

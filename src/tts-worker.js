@@ -1,6 +1,7 @@
 import {encodeMp3,mp3Duration} from './mp3.js';
 import {characterVoice} from './character-settings.js';
 import {getVoice} from './voices.js';
+import {quantizePcm,LEGACY_PIPELINE,CONTINUITY_PIPELINE} from './continuity.js';
 import {characterEffect,pauseAfter} from './audio-effects.js';
 import {createSpeechRunner} from './speech-runner.js';
 let kokoroRunner,kokoroLoads=0,kokoroProvider=null;
@@ -23,7 +24,10 @@ self.onmessage=async({data})=>{
   const requestId=data.requestId,started=performance.now(),initialLoads=kokoroLoads;
   const progress=message=>self.postMessage({type:'stage',requestId,message});
   try{
-    if(!data.text.trim()){self.postMessage({type:'passage',requestId,bytes:new ArrayBuffer(0),seconds:0});return;}
+    if(!data.text.trim()){
+      const pcm=data.settings.pipeline===CONTINUITY_PIPELINE;
+      self.postMessage({type:'passage',requestId,bytes:new ArrayBuffer(0),seconds:0,...(pcm?{format:'pcm-s16le',sampleCount:0,channels:1,sampleRate:getVoice(data.settings.voice).engine==='supertonic'?44100:24000}:{})});return;
+    }
     const profile=getVoice(data.settings.voice),speed=data.settings.speed;
     progress('Synthesizing this passage. First use may need to load the voice model.');
     const audio=profile.engine==='pocket'
@@ -34,8 +38,14 @@ self.onmessage=async({data})=>{
     if(!audio.samples?.length)throw Error('A passage produced no audio.');
     const synthesized=performance.now();
     const samples=characterEffect(audio.samples,audio.sampleRate,profile);
+    const pipeline=data.settings.pipeline??LEGACY_PIPELINE;
+    if(![LEGACY_PIPELINE,CONTINUITY_PIPELINE].includes(pipeline))throw Error('Unknown audio pipeline.');
     const pause=data.last?0:pauseAfter(data.text,data.settings.delivery);
     const padded=new Float32Array(samples.length+Math.round(pause*audio.sampleRate));padded.set(samples);
+    if(pipeline===CONTINUITY_PIPELINE){
+      const bytes=quantizePcm(padded);
+      self.postMessage({type:'passage',requestId,bytes,seconds:padded.length/audio.sampleRate,sampleRate:audio.sampleRate,sampleCount:padded.length,channels:1,format:'pcm-s16le'},[bytes]);return;
+    }
     progress('Encoding this passage as MP3…');
     const encoderPath='../vendor/lamejs.js';
     const {Mp3Encoder}=await import(/* @vite-ignore */ new URL(encoderPath,import.meta.url).href);
