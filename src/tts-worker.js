@@ -1,4 +1,4 @@
-import {encodeWav} from './core.js';
+import {encodeMp3,mp3Duration} from './mp3.js';
 import {characterVoice} from './character-settings.js';
 import {getVoice} from './voices.js';
 import {characterEffect,pauseAfter} from './audio-effects.js';
@@ -20,28 +20,24 @@ async function kokoro(text,voice,speed,progress){
   return kokoroRunner({text,voice,speed},progress);
 }
 self.onmessage=async({data})=>{
+  const requestId=data.requestId;
+  const progress=message=>self.postMessage({type:'stage',requestId,message});
   try{
-    const profile=getVoice(data.voice);
-    self.postMessage({type:'stage',message:'Waking up your narrator. First use downloads the free voice model…'});
-    const parts=[];let sampleRate=24000;
-    for(let i=0;i<data.chunks.length;i++){
-      const text=data.chunks[i];
-      self.postMessage({type:'stage',message:`Voicing passage ${i+1} of ${data.chunks.length}. Keep this page open.`});
-      if(text.trim()){
-        const speed=data.speed*(profile.pace??1)/(profile.pitch??1);
-        const progress=message=>self.postMessage({type:'stage',message});
-        const audio=profile.engine==='pocket'
-          ?await (await import('./pocket-engine.js')).pocket(text,characterVoice(profile.base,data.edition),speed,progress)
-          :profile.engine==='supertonic'
-          ?await (await import('./supertonic-engine.js')).supertonic(text,profile.base,speed,progress)
-          :await kokoro(text,profile.base,speed,progress);
-        if(!audio.samples?.length)throw Error('A passage produced no audio. No completed file was created.');
-        sampleRate=audio.sampleRate;
-        parts.push(characterEffect(audio.samples,sampleRate,profile));
-        if(i<data.chunks.length-1){const pause=pauseAfter(text,data.delivery);if(pause)parts.push(new Float32Array(Math.round(pause*sampleRate)));}
-      }
-      self.postMessage({type:'progress',done:i+1,total:data.chunks.length});
-    }
-    const wav=encodeWav(parts,sampleRate);self.postMessage({type:'complete',wav},[wav]);
-  }catch(e){self.postMessage({type:'error',message:e.message});}
+    if(!data.text.trim()){self.postMessage({type:'passage',requestId,bytes:new ArrayBuffer(0),seconds:0});return;}
+    const profile=getVoice(data.settings.voice),speed=data.settings.speed;
+    const audio=profile.engine==='pocket'
+      ?await (await import('./pocket-engine.js')).pocket(data.text,characterVoice(profile.base,data.settings.edition),speed,progress)
+      :profile.engine==='supertonic'
+      ?await (await import('./supertonic-engine.js')).supertonic(data.text,profile.base,speed,progress)
+      :await kokoro(data.text,profile.base,speed,progress);
+    if(!audio.samples?.length)throw Error('A passage produced no audio.');
+    const samples=characterEffect(audio.samples,audio.sampleRate,profile);
+    const pause=data.last?0:pauseAfter(data.text,data.settings.delivery);
+    const padded=new Float32Array(samples.length+Math.round(pause*audio.sampleRate));padded.set(samples);
+    progress('Encoding this passage as MP3…');
+    const encoderPath='../vendor/lamejs.js';
+    const {Mp3Encoder}=await import(/* @vite-ignore */ new URL(encoderPath,import.meta.url).href);
+    const encoded=encodeMp3(padded,audio.sampleRate,Mp3Encoder),seconds=mp3Duration(encoded);
+    self.postMessage({type:'passage',requestId,bytes:encoded.buffer,seconds,sampleRate:audio.sampleRate},[encoded.buffer]);
+  }catch(error){self.postMessage({type:'error',requestId,message:error.message});}
 };

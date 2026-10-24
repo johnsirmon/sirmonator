@@ -1,130 +1,266 @@
+import {episodePackage,packageZip,appleValidationUrl,publicUrl} from './podcast.js';
 import './style.css';
-import {characterVoice} from './character-settings.js';
-import {chunkText} from './core.js';
-import {voices as catalog,getVoice} from './voices.js';
+import {voices as catalog,getVoice,voiceCapabilities} from './voices.js';
 import {auditionUrl,createAuditionPlayer} from './audition-player.js';
-const $ = id => document.getElementById(id);
-const natural=catalog.map(v=>[v.id,`${v.name} · ${v.detail}`]);
-let voices=[],worker=null,busy=false,paused=false,run=0,audioURL=null,transcript='',audioFile=null,wake=null;
-const status = text => $('status').textContent=text;
-const audition=createAuditionPlayer({audio:$('audition-audio'),setBusy:state,notify:status});
-$('file').previousElementSibling.tabIndex=0;
-$('file').previousElementSibling.setAttribute('role','button');
-$('file').previousElementSibling.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();if(!busy)$('file').click();}};
+import {characterVoice} from './character-settings.js';
+import {chaptersFor,selectedText,makeRecording,MAX_DOCUMENT,MAX_READING,safeFilename} from './recording.js';
+import {openStorage} from './storage.js';
+import {runRecording,recordingBlob,validateCheckpoint} from './job-runner.js';
+import {importDocument} from './import-document.js';
+const $=id=>document.getElementById(id),base=import.meta.env.BASE_URL;
+let store,chapters=[],deviceVoices=[],selectedJob=null,worker=null,pending=null,requestId=0;
+let creating=false,auditionBusy=false,importing=false,quick=false,quickPaused=false,pauseRequested=false,cancelled=false;
+let audioURL=null,previewURL=null,wake=null,owner=crypto.randomUUID(),draftTimer,saveChain=Promise.resolve(),dirty=false,undo=null;
+let renderToken=0,loadedChapter=0,loadedThrough=0,loadedJobId=null,positionSaved=0,exporting=false;
+const status=message=>$('status').textContent=message;
+const warn=error=>error?.name==='QuotaExceededError'?'This device is low on storage. Saved passages are safe. Download them, delete an older recording, then resume.':(error?.message||'Could not save on this device.');
+const busy=()=>creating||auditionBusy||importing||quick||exporting;
+function controls(){
+  for(const id of ['text','title','file','sample','clear','undo-clear','engine','voice','voice-edition','delivery','speed','review','start','preview','custom-preview','range-from','range-to','remember','open-recording','saved-recordings'])$(id).disabled=busy();
+  document.querySelectorAll('[data-voice]').forEach(b=>b.disabled=busy());
+  $('pause').disabled=!(creating||quick)||pauseRequested;$('pause').textContent=quick?(quickPaused?'Resume listening':'Pause listening'):(pauseRequested?'Saving current passage…':'Pause creation');
+  $('stop').disabled=!(creating||quick||auditionBusy);$('resume-recording').disabled=busy();
+  $('delete-recording').disabled=busy()||!$('saved-recordings').value;
+  if(!busy())$('open-recording').disabled=!$('saved-recordings').value;
+  for(const id of ['download','download-chapter','share'])$(id).disabled=exporting||!selectedJob?.next;
+  document.querySelectorAll('#podcast-prep input,#podcast-prep select,#podcast-prep textarea').forEach(input=>input.disabled=busy());
+  $('pod-export').disabled=busy()||!selectedJob||selectedJob.next!==selectedJob.passages.length;
+  podcastHandoff();
+}
+const audition=createAuditionPlayer({audio:$('audition-audio'),setBusy:value=>{auditionBusy=value;controls();},notify:status});
+function settings(){return {voice:$('voice').value,edition:$('voice-edition').value,speed:Number($('speed').value),delivery:$('delivery').value};}
 function fillVoices(){
-  const prior=$('voice').value;$('voice').replaceChildren();
-  voices=window.speechSynthesis?.getVoices()??[];
-  const options=$('engine').value==='kokoro'?natural:voices.map((v,i)=>[String(i),`${v.name} · ${v.lang}`]);
-  for(const [value,label] of options){const o=document.createElement('option');o.value=value;o.textContent=label;$('voice').append(o);}
-  if(options.some(([id])=>id===prior))$('voice').value=prior;
-  else if($('engine').value==='kokoro')$('voice').value='st-m1';
-  else if($('engine').value==='device'){const en=voices.findIndex(v=>v.lang.startsWith('en'));if(en>=0)$('voice').value=String(en);}
-  if(!options.length){const o=document.createElement('option');o.textContent='No device voices yet — try Natural voices';o.value='';$('voice').append(o);}
+  const prior=$('voice').value;deviceVoices=window.speechSynthesis?.getVoices()??[];$('voice').replaceChildren();
+  const entries=$('engine').value==='studio'?catalog.map(v=>[v.id,`${v.name} · ${v.detail}`]):deviceVoices.map((v,i)=>[String(i),`${v.name} · ${v.lang}`]);
+  for(const [value,label] of entries){const option=new Option(label,value);$('voice').add(option);}
+  if(entries.some(([id])=>id===prior))$('voice').value=prior;
+  else if($('engine').value==='studio')$('voice').value='st-m1';
+  else {const en=deviceVoices.findIndex(v=>v.lang.startsWith('en'));if(en>=0)$('voice').value=String(en);}
 }
-fillVoices();if(window.speechSynthesis)window.speechSynthesis.onvoiceschanged=fillVoices;
-function invalidate(){
-  $('review').checked=false;$('result').hidden=true;transcript='';audioFile=null;
-  $('audio').pause();$('audio').removeAttribute('src');
-  if(audioURL){URL.revokeObjectURL(audioURL);audioURL=null;}
-  const count=$('text').value.match(/\S+/gu)?.length??0;
-  $('count').textContent=`${count.toLocaleString()} words · about ${Math.max(1,Math.ceil(count/150))} min`;
-}
-function state(value){busy=value;for(const id of ['text','file','sample','clear','engine','voice','voice-edition','delivery','speed','review','start','preview'])$(id).disabled=value;document.querySelectorAll('[data-voice]').forEach(b=>b.disabled=value);$('stop').disabled=!value;$('pause').disabled=!value||$('engine').value==='kokoro';if(!value){paused=false;$('pause').textContent='Pause';wake?.release().catch(()=>{});wake=null;}}
-function stop(){run++;audition.stop();worker?.terminate();worker=null;window.speechSynthesis?.cancel();state(false);$('progress').hidden=true;status('Stopped. You can start again from the beginning.');}
-$('stop').onclick=stop;
-$('pause').onclick=()=>{if(!window.speechSynthesis)return;paused=!paused;paused?window.speechSynthesis.pause():window.speechSynthesis.resume();$('pause').textContent=paused?'Resume':'Pause';};
-$('text').oninput=invalidate;
 function narratorNote(){
-  const naturalMode=$('engine').value==='kokoro';
-  $('delivery').disabled=!naturalMode;
-  $('engine-note').textContent=naturalMode?'Auditions play instantly. Creating your sermon downloads the free voice model once; use Wi-Fi and keep the page open. A computer works best for long sermons.':'Your device’s built-in voices. Quality varies. Keep this page open while listening; choose Studio voices for character presets and downloads.';
-  $('voice-note').textContent=naturalMode?(getVoice($('voice').value).engine==='pocket'?'An unofficial character impression conditioned on original speech references using free Pocket TTS. No added pitch lowering, bass boost, distortion, or metallic filter. Similarity varies; audition the result.':'A free neural narrator. Preview a few voices to find the one that fits your sermon.'):'Studio voices offer the richest options.';
-  const character=naturalMode&&getVoice($('voice').value).engine==='pocket';
-  $('character-controls').hidden=!character;
-  $('voice-reference').hidden=!character;$('reference-audio').pause();
-  if(character){const profile=getVoice($('voice').value);$('reference-audio').src=import.meta.env.BASE_URL+'references/'+characterVoice(profile.id,$('voice-edition').value)+'.wav?v=3';$('reference-credit').textContent=profile.referenceCredit;$('reference-source').href=profile.referencePage;$('reference-interview').href=profile.performancePage;}
-  document.querySelectorAll('[data-voice]').forEach(b=>b.setAttribute('aria-pressed',String(naturalMode&&b.dataset.voice===$('voice').value)));
+  const studio=$('engine').value==='studio',profile=studio?getVoice($('voice').value):null,character=profile?.engine==='pocket';
+  $('character-controls').hidden=!character;$('voice-reference').hidden=!character;$('reference-audio').pause();
+  $('voice-note').textContent=character?'An unofficial character impression. Compare the sample; resemblance varies.':'Choose a narrator, then audition a short sample. More choices are available in this list.';
+  if(studio){const capability=voiceCapabilities(profile.id);$('voice-note').textContent+=' '+capability.license+'. '+capability.note;}
+  $('engine-note').textContent=studio?'Studio creates MP3 recordings with saved progress.':'Device voices read now without creating a recording. Keep the page open; interruption restarts this quick reading.';
+  if(character){$('reference-audio').src=base+'references/'+characterVoice(profile.id,$('voice-edition').value)+'.wav?v=3';$('reference-credit').textContent=profile.referenceCredit;$('reference-source').href=profile.referencePage;$('reference-interview').href=profile.performancePage;}
+  document.querySelectorAll('[data-voice]').forEach(b=>b.setAttribute('aria-pressed',String(studio&&b.dataset.voice===$('voice').value)));
+  $('speed-value').textContent=Number($('speed').value)+'×';preflight();
 }
-$('engine').onchange=()=>{fillVoices();narratorNote();};$('voice').onchange=()=>{$('voice-edition').value='refined';narratorNote();};
-$('voice-edition').onchange=()=>{audition.stop();narratorNote();};
-document.querySelectorAll('[data-voice]').forEach(b=>b.onclick=()=>{$('engine').value='kokoro';fillVoices();$('voice').value=b.dataset.voice;$('voice-edition').value='refined';narratorNote();});
-narratorNote();
-$('speed').oninput=()=>{$('speed-value').textContent=`${Number($('speed').value)}×`;};
-$('clear').onclick=()=>{$('text').value='';$('source').textContent='Nothing stored after you leave';$('import-note').hidden=true;invalidate();};
-$('sample').onclick=()=>{$('text').value='Good morning, church. Today, let us make room for hope.\n\nEven in a difficult season, we can show kindness to a neighbor, listen to a friend, and take the next faithful step.\n\nMay our words become actions, and may our actions reflect love. Amen.';$('source').textContent='Example sermon';$('import-note').hidden=true;invalidate();};
-$('file').onchange=async()=>{
-  const file=$('file').files[0];if(!file)return;
-  state(true);$('stop').disabled=true;status('Reading your document locally…');
-  try{
-    if(file.size>10*1024*1024)throw Error('Please choose a document under 10 MB.');
-    const ext=file.name.split('.').pop().toLowerCase();let text;
-    if(ext==='txt')text=await file.text();
-    else if(ext==='docx'){const {default:mammoth}=await import('mammoth/mammoth.browser');text=(await mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()})).value;}
-    else if(ext==='pdf'){
-      const pdfjs=await import('pdfjs-dist');const {default:url}=await import('pdfjs-dist/build/pdf.worker.min.mjs?url');pdfjs.GlobalWorkerOptions.workerSrc=url;
-      const pdf=await pdfjs.getDocument({data:await file.arrayBuffer(),isEvalSupported:false}).promise;
-      try{if(pdf.numPages>100)throw Error('Please use a PDF with 100 pages or fewer.');const pages=[];
-      for(let p=1;p<=pdf.numPages;p++){const page=await pdf.getPage(p);const content=await page.getTextContent();pages.push(content.items.map(item=>item.str===undefined?'':item.str+(item.hasEOL?'\n':' ')).join(''));}text=pages.join('\n\n');}finally{await pdf.destroy();}
-    }else throw Error('Please choose a .txt, .docx, or text-based .pdf document.');
-    if(!text.trim())throw Error('No readable text found. Scanned PDFs need text copied from another source.');
-    if(text.length>150000)throw Error('Please split this document into smaller sermons (under 150,000 characters).');
-    $('text').value=text;invalidate();$('source').textContent=file.name;
-    $('import-note').hidden=false;$('import-note').textContent=ext==='txt'?'Text loaded. Review it, then check the confirmation below.':'Review the imported text before listening. Columns, headers, tables, footnotes, and text boxes may appear out of order or be missing. Compare against your original document.';
-    status('Document loaded. Review the text, then confirm it below.');
-  }catch(e){status(e.message);}finally{state(false);$('file').value='';}
-};
-async function speak(preview=false){
-  if(busy)return;
-  if(preview&&$('engine').value==='kokoro'){
-    $('progress').hidden=true;
-    $('audio').pause();
-    // Call play directly from the click gesture: no worker, GPU, model download,
-    // wake-lock request, or manuscript review is needed to hear a sample.
-    await audition.play(auditionUrl($('voice').value,import.meta.env.BASE_URL,$('voice-edition').value));
-    return;
-  }
-  const text=preview?'Good morning, church. Take a breath.\n\nNow, let us begin.':$('text').value;
-  if(!text.trim()){status('Add your sermon text first.');$('text').focus();return;}
-  if(!preview&&!$('review').checked){status('Please review the text and check the confirmation below it.');$('review').focus();return;}
-  if(text.length>150000){status('Please split this sermon into sections under 150,000 characters.');return;}
-  audition.stop();
-  const chunks=chunkText(text),token=++run,speed=Number($('speed').value),voice=$('voice').value;
-  state(true);$('progress').hidden=false;$('progress').value=0;status('Preparing your reading…');
-  // Do not await permissions before audio: preserve the browser's click gesture.
-  navigator.wakeLock?.request('screen').then(lock=>{if(token===run&&busy)wake=lock;else lock.release().catch(()=>{});}).catch(()=>{});
-  if(token!==run)return;
-  if($('engine').value==='device'){
-    if(!window.speechSynthesis||!voices.length){state(false);status('No device voices available. Choose Natural voices instead.');return;}
-    window.speechSynthesis.cancel();let i=0;
-    const next=()=>{
-      if(token!==run)return;
-      while(i<chunks.length&&!chunks[i].trim())i++;
-      if(i===chunks.length){state(false);$('progress').value=1;status('Reading finished.');return;}
-      const utterance=new SpeechSynthesisUtterance(chunks[i]);utterance.voice=voices[Number(voice)];utterance.rate=speed;utterance.lang=utterance.voice?.lang??'en-US';
-      utterance.onend=()=>{i++;$('progress').value=i/chunks.length;next();};
-      utterance.onerror=e=>{if(token!==run)return;run++;state(false);status(`Reading interrupted (${e.error}). Start again or use Natural voices to create a file.`);};
-      status(`Reading passage ${i+1} of ${chunks.length}. Keep this page open.`);window.speechSynthesis.speak(utterance);
-    };next();return;
-  }
+function rangeText(){if(!chapters.length)return '';return selectedText($('text').value,chapters,Number($('range-from').value),Number($('range-to').value));}
+function countWords(text){let count=0;for(const _ of text.matchAll(/\S+/gu))count++;return count;}
+function updateText({resetRange=true,save=true}={}){
+  const text=$('text').value,words=countWords(text);chapters=chaptersFor(text);
+  const from=Number($('range-from').value)||0,to=Number($('range-to').value)||0;
+  $('range-from').replaceChildren();$('range-to').replaceChildren();
+  chapters.forEach((c,i)=>{const label=`${i+1} · ${countWords(text.slice(c.start,c.end)).toLocaleString()} words`;$('range-from').add(new Option(label,String(i)));$('range-to').add(new Option(label,String(i)));});
+  if(chapters.length){$('range-from').value=String(resetRange?0:Math.min(from,chapters.length-1));$('range-to').value=String(resetRange?(text.length<=MAX_READING?chapters.length-1:0):Math.max(Number($('range-from').value),Math.min(to,chapters.length-1)));}
+  $('chapter-range').hidden=!text.length;$('count').textContent=`${words.toLocaleString()} words · about ${Math.ceil(words/150)||0} min listening`;
+  updateRange(false);if(save)scheduleSave();
+}
+function updateRange(save=true){
+  if(Number($('range-to').value)<Number($('range-from').value))$('range-to').value=$('range-from').value;
+  const text=rangeText(),words=countWords(text);$('range-summary').textContent=`Selected: ${words.toLocaleString()} words · ${text.length.toLocaleString()} characters · about ${Math.ceil(words/150)||0} min listening${text.length>MAX_READING?' · choose fewer chapters for this recording':''}`;
+  $('range-preview').textContent=text.length>12000?text.slice(0,12000)+'\n\n[Preview shortened. The full selected text will be read.]':text;
+  if(save){$('review').checked=false;scheduleSave();}preflight();
+}
+function preflight(){
+  const text=rangeText();if(!text.trim()){$('preflight').textContent='Add text to see listening time and download details.';return;}
+  const minutes=countWords(text)/150,profile=$('engine').value==='studio'?getVoice($('voice').value):null;
+  if(!profile){$('preflight').textContent=`About ${Math.ceil(minutes)} minutes of device speech. No download or saved audio.`;return;}
+  const mb=profile.engine==='pocket'?150:profile.engine==='supertonic'?400:100;
+  $('preflight').textContent=`About ${Math.ceil(minutes/Number($('speed').value))} min listening · estimated MP3 ${(minutes/Number($('speed').value)*.48).toFixed(1)} MB. First voice use may download about ${mb} MB; cached files may be reused. Creation time depends on your device.`;
+}
+function draft(){return {text:$('text').value,title:$('title').value,settings:settings(),engine:$('engine').value,review:$('review').checked,from:Number($('range-from').value),to:Number($('range-to').value),updatedAt:Date.now()};}
+function scheduleSave(){dirty=true;clearTimeout(draftTimer);if(!$('remember').checked){$('save-status').textContent='Draft autosave is off. Created recordings are saved separately.';return;}$('save-status').textContent='Saving draft…';draftTimer=setTimeout(()=>queueSave(),350);}
+async function flushDraft(){
+  clearTimeout(draftTimer);if(!store||!$('remember').checked)return;
+  const snapshot=draft();if(snapshot.text.length>MAX_DOCUMENT){$('save-status').textContent='Draft exceeds 2 million characters. Download a text backup and reduce its size.';return;}
+  saveChain=saveChain.catch(()=>{}).then(()=>store.saveDraft(snapshot));
+  try{await saveChain;$('save-status').textContent='Draft saved on this device. Private browsing or clearing site data can remove it.';}
+  catch(error){$('save-status').textContent='Draft not saved: '+warn(error);throw error;}
+}
+function queueSave(){flushDraft().catch(()=>{});}
+function saveFile(blob,filename){const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=filename;link.click();setTimeout(()=>URL.revokeObjectURL(url),10000);}
+async function refreshLibrary(){
+  if(!store)return;const jobs=await store.jobs(),prior=selectedJob?.id||$('saved-recordings').value;
+  $('saved-recordings').replaceChildren(new Option(jobs.length?'Choose a saved recording':'No recordings yet',''));
+  for(const job of jobs)$('saved-recordings').add(new Option(`${job.title} · ${job.next===job.passages.length?'ready':job.next+'/'+job.passages.length+' passages saved'}`,job.id));
+  if(jobs.some(j=>j.id===prior))$('saved-recordings').value=prior;
+  $('library-count').textContent=String(jobs.length);controls();return jobs;
+}
+function availableChapters(job){return [...new Set(job.passages.slice(0,job.next).map(p=>p.chapter))];}
+function displayProgress(job){
+  $('recording-title').textContent=job.title;
+  $('recording-status').textContent=`${getVoice(job.settings.voice).name} · ${job.settings.edition} · ${job.next} of ${job.passages.length} passages saved · ${job.next===job.passages.length?'Complete recording':'Incomplete — saved audio only'}. ${Math.round(job.seconds/60)} min saved.`;
+  $('resume-recording').hidden=job.next===job.passages.length||creating;
+  const chapters=availableChapters(job),current=$('play-chapter').value;
+  $('play-chapter').replaceChildren();for(const i of chapters)$('play-chapter').add(new Option(`Chapter ${i+1}${job.next<job.passages.length&&job.passages[job.next].chapter===i?' · saved so far':''}`,String(i)));
+  if(chapters.includes(Number(current)))$('play-chapter').value=current;
+  $('play-chapter').disabled=!chapters.length;$('refresh-audio').disabled=!job.next;
+  $('share').hidden=typeof navigator.share!=='function';controls();
+}
+async function showRecording(job,{keepAudio=false}={}){
+  await validateCheckpoint(store,job);
+  await flushPodcast();
+  selectedJob=job;restorePodcast(job);$('empty-player').hidden=true;$('result').hidden=false;displayProgress(job);
+  if(!keepAudio&&job.next){const available=availableChapters(job),c=available.includes(job.position?.chapter)?job.position.chapter:available[0];$('play-chapter').value=String(c);await loadChapter(c,job.position?.chapter===c?job.position.time:0);}
+  if(!job.next){$('audio').pause();$('audio').removeAttribute('src');if(audioURL)URL.revokeObjectURL(audioURL);audioURL=null;loadedJobId=null;}
+}
+async function loadChapter(chapter,time=0){
+  if(!selectedJob?.next)return;const token=++renderToken,id=selectedJob.id;
+  try{const job=await store.job(id),{blob}=await recordingBlob(store,job,chapter);if(token!==renderToken)return;
+    $('audio').pause();if(audioURL)URL.revokeObjectURL(audioURL);audioURL=URL.createObjectURL(blob);loadedChapter=chapter;loadedThrough=job.next;loadedJobId=job.id;selectedJob=job;$('play-chapter').value=String(chapter);
+    $('audio').onloadedmetadata=()=>{if(Number.isFinite($('audio').duration))$('audio').currentTime=Math.max(0,Math.min(time,$('audio').duration-.05));};
+    $('audio').src=audioURL;$('audio').playbackRate=Number($('playback-speed').value);mediaControls(job);
+  }catch(error){$('export-status').textContent=warn(error);}
+}
+function mediaControls(job){
+  if(!navigator.mediaSession)return;
+  if(window.MediaMetadata)navigator.mediaSession.metadata=new MediaMetadata({title:job.title,artist:'Sirmonator',album:`Chapter ${loadedChapter+1}`,artwork:[{src:new URL(base+'art/sirmonator-sermon-to-audio.webp',location.href).href,sizes:'1254x1254',type:'image/webp'}]});
+  for(const [name,action] of Object.entries({play:()=>{$('audio').play().catch(()=>{});},pause:()=>{$('audio').pause();},seekbackward:()=>skip(-15),seekforward:()=>skip(15)})){try{navigator.mediaSession.setActionHandler(name,action);}catch{}}
+}
+function skip(delta){const a=$('audio');if(Number.isFinite(a.duration))a.currentTime=Math.max(0,Math.min(a.duration,a.currentTime+delta));}
+async function savePosition(){if(store&&loadedJobId&&Number.isFinite($('audio').currentTime)&&$('audio').currentSrc===audioURL)await store.position(loadedJobId,{chapter:loadedChapter,time:$('audio').currentTime});}
+function killWorker(){worker?.terminate();worker=null;if(pending){pending.reject(new Error('Current passage cancelled. Saved passages were kept.'));pending=null;}}
+function generate(text,voiceSettings,last){
   worker??=new Worker(new URL('./tts-worker.js',import.meta.url),{type:'module'});
   worker.onmessage=({data})=>{
-    if(token!==run)return;
+    if(!pending)return;
+    if(data.type==='loading'){status(`Downloading voice: ${Math.round(data.progress??0)}% of ${data.file??'file'}. Keep this page open.`);return;}
+    if(data.requestId!==pending.id)return;
     if(data.type==='stage')status(data.message);
-    if(data.type==='loading')status(`Downloading voice engine: ${Math.round(data.progress??0)}% of ${data.file??'file'}. First use can take several minutes.`);
-    if(data.type==='progress'){$('progress').value=data.done/data.total;status(`Creating passage ${data.done} of ${data.total}. Keep this page open. Stop discards unfinished audio.`);}
-    if(data.type==='error'){worker.terminate();worker=null;state(false);status(`Could not finish: ${data.message}. Try Quick listen, or generate on a computer.`);}
-    if(data.type==='complete'){
-      state(false);if(audioURL)URL.revokeObjectURL(audioURL);const blob=new Blob([data.wav],{type:'audio/wav'});audioURL=URL.createObjectURL(blob);
-      $('audio').src=audioURL;$('result').hidden=false;$('download').href=audioURL;
-      $('download').hidden=preview;$('share').hidden=true;$('transcript').hidden=preview;
-      if(!preview){transcript=text;audioFile=new File([blob],'sirmonator-sermon.wav',{type:'audio/wav'});$('share').hidden=!navigator.canShare?.({files:[audioFile]});}
-      $('progress').value=1;status(preview?'Voice preview ready. Press play below.':'Every text passage was processed. Your complete audio and reading transcript are ready.');
-    }
+    if(data.type==='error'){const p=pending;pending=null;p.reject(Error(data.message));}
+    if(data.type==='passage'){const p=pending;pending=null;p.resolve(data);}
   };
-  worker.onerror=e=>{if(token!==run)return;worker?.terminate();worker=null;state(false);status(`Voice engine could not start. Try Quick listen or a current desktop browser. ${e.message??''}`);};
-  worker.postMessage({chunks,voice,speed,edition:$('voice-edition').value,delivery:$('delivery').value});
+  worker.onerror=e=>{if(pending){const p=pending;pending=null;p.reject(Error(e.message||'Voice worker failed.'));}};
+  return new Promise((resolve,reject)=>{const id=++requestId;pending={id,resolve,reject};worker.postMessage({requestId:id,text,settings:voiceSettings,last});});
 }
-$('preview').onclick=()=>speak(true);$('start').onclick=()=>speak(false);
-$('share').onclick=async()=>{try{await navigator.share({files:[audioFile],title:'My sermon'});}catch(e){if(e.name!=='AbortError')status('Sharing unavailable. Use Save audio instead.');}};
-$('transcript').onclick=()=>{const url=URL.createObjectURL(new Blob([transcript],{type:'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='sirmonator-reading-transcript.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
-window.addEventListener('pagehide',()=>{audition.stop();window.speechSynthesis?.cancel();worker?.terminate();});
+async function withLease(action){
+  const execute=async force=>{
+    if(!await store.claim(owner,force))throw Error('Another window is creating audio. If it was closed, try Resume again in 20 seconds.');
+    let lost=false;const interval=setInterval(()=>{store.renew(owner).then(ok=>{if(!ok){lost=true;killWorker();}}).catch(()=>{lost=true;killWorker();});},5000);
+    try{return await action(()=>lost);}finally{clearInterval(interval);await store.release(owner);}
+  };
+  if(navigator.locks)return navigator.locks.request('sirmonator-generation',{ifAvailable:true},lock=>{if(!lock)throw Error('Another Sirmonator window is creating audio. Pause it first.');return execute(true);});
+  return execute(false);
+}
+async function createAudio(id){
+  if(busy())return;
+  if(!id&&$('engine').value==='device'){if(!$('review').checked){status('Review the selected text and check the confirmation.');return;}quickListen(rangeText());return;}
+  if(!id&&!$('review').checked){status('Review your selected text and check the confirmation.');$('review').focus();return;}
+  if(!store){status('Local storage is unavailable. Download a text backup, or use Quick listen in More settings.');return;}
+  creating=true;pauseRequested=false;cancelled=false;controls();status('Preparing your recording.');
+  let job;
+  try{
+    await flushDraft();
+    if(id)job=await store.job(id);
+    else{
+      const text=rangeText();if(!$('review').checked){status('Review your selected text and check the confirmation.');$('review').focus();return;}
+      if($('text').value.length>MAX_DOCUMENT)throw Error('Reduce the draft to under 2 million characters.');
+      if($('engine').value==='device'){quickListen(text);return;}
+      const estimate=await navigator.storage?.estimate?.();const needed=countWords(text)/150/Number($('speed').value)*60*8000*1.5+2*1024*1024;
+      if(estimate?.quota&&estimate.quota-estimate.usage<needed)throw Error('Not enough estimated browser storage. Choose fewer chapters or delete an older downloaded recording.');
+      job=await store.ensureJob(await makeRecording(text,settings(),$('title').value));
+    }
+    if(!job)throw Error('Recording not found.');
+    audition.stop();$('audio').pause();creating=true;pauseRequested=false;cancelled=false;controls();$('progress').hidden=false;
+    await showRecording(job);await refreshLibrary();
+    if(job.next===job.passages.length){status('This recording is already complete. Listen or save it below.');return;}
+    navigator.wakeLock?.request('screen').then(lock=>{if(creating)wake=lock;else lock.release().catch(()=>{});}).catch(()=>{});
+    const started=performance.now(),initial=job.next;let sinceSaved=0;
+    job=await withLease(lost=>runRecording({store,id:job.id,owner,generate,shouldPause:()=>pauseRequested||cancelled||lost(),onSaved:async saved=>{
+      job=saved;selectedJob=saved;$('progress').value=saved.next/saved.passages.length;displayProgress(saved);
+      const elapsed=(performance.now()-started)/1000,done=saved.next-initial,remaining=(saved.passages.length-saved.next)*elapsed/Math.max(1,done);
+      status(`${saved.next} of ${saved.passages.length} passages saved.${done>=2?' Roughly '+Math.max(1,Math.round(remaining/60))+' min creation remaining.':' Estimating creation time…'}`);
+      if(!audioURL&&saved.next)await loadChapter(availableChapters(saved)[0]);
+      if(++sinceSaved===1)await refreshLibrary();
+    }}));
+    status(job.next===job.passages.length?'Complete. Your MP3 is ready to listen or save.':`Paused. ${job.next} passages are saved. Resume whenever you are ready.`);
+  }catch(error){status(warn(error));}
+  finally{creating=false;killWorker();wake?.release().catch(()=>{});wake=null;controls();
+    if(job)try{const latest=await store.job(job.id)??job;await validateCheckpoint(store,latest);selectedJob=latest;displayProgress(selectedJob);await refreshLibrary();}catch(error){status(warn(error));}
+  }
+}
+function quickListen(text){
+  if(!text.trim()){status('Add some text first.');return;}if(!window.speechSynthesis||!deviceVoices.length){status('No device voices available. Choose Studio mode.');return;}
+  const passages=chaptersFor(text,240).map(p=>text.slice(p.start,p.end));let index=0;quick=true;quickPaused=false;controls();
+  const next=()=>{if(!quick)return;if(index===passages.length){quick=false;controls();status('Quick listening finished. No recording was created.');return;}
+    const u=new SpeechSynthesisUtterance(passages[index]);u.voice=deviceVoices[Number($('voice').value)];u.rate=Number($('speed').value);u.onend=()=>{index++;next();};u.onerror=()=>{if(quick){quick=false;controls();status('Device reading interrupted. Choose Studio for resumable recordings.');}};window.speechSynthesis.speak(u);};next();status('Quick listening. No MP3 is being saved.');
+}
+async function exportAudio({chapter=null,share=false}={}){
+  if(exporting||!selectedJob)return;exporting=true;controls();$('export-status').textContent='Preparing saved MP3 passages…';
+  try{const job=await store.job(selectedJob.id),{blob}=await recordingBlob(store,job,chapter);
+    const partial=job.next<job.passages.length;const filename=safeFilename(job.title)+(chapter!==null?'-chapter-'+(chapter+1):'')+(partial?'-partial':'')+'.mp3';
+    const file=new File([blob],filename,{type:'audio/mpeg'});
+    if(share){if(!navigator.canShare?.({files:[file]}))throw Error('File sharing is unavailable here. Use Save MP3 instead.');await navigator.share({files:[file],title:job.title});$('export-status').textContent='Share sheet closed. Your saved recording is still available.';}
+    else{saveFile(blob,filename);$('export-status').textContent=`Download started: ${filename} (${(blob.size/1048576).toFixed(1)} MB).${partial?' This contains saved passages only, not the complete source.':''}`;}
+  }catch(error){$('export-status').textContent=error.name==='AbortError'?'Sharing cancelled. Your audio is still saved.':warn(error);}finally{exporting=false;controls();}
+}
+$('start').onclick=()=>createAudio();$('resume-recording').onclick=()=>createAudio(selectedJob?.id);
+$('pause').onclick=()=>{if(quick){quickPaused=!quickPaused;quickPaused?window.speechSynthesis.pause():window.speechSynthesis.resume();}else{pauseRequested=true;status('Pausing after the current passage is saved…');}controls();};
+$('stop').onclick=()=>{if(creating){cancelled=true;killWorker();status('Cancelled the current passage. Completed passages are saved.');}else if(quick){quick=false;window.speechSynthesis.cancel();controls();status('Quick listening stopped.');}else audition.stop();};
+$('preview').onclick=()=>{if($('engine').value==='studio')audition.play(auditionUrl($('voice').value,base,$('voice-edition').value));else quickListen('Good morning, church. Let us begin.');};
+$('custom-preview').onclick=async()=>{if(busy())return;const first=rangeText().split(/\n\s*\n/)[0].slice(0,240);if(!first.trim()){status('Add text first.');return;}if($('engine').value==='device'){quickListen(first);return;}
+  creating=true;cancelled=false;controls();try{const audio=await generate(first,settings(),true);if(previewURL)URL.revokeObjectURL(previewURL);previewURL=URL.createObjectURL(new Blob([audio.bytes],{type:'audio/mpeg'}));$('audition-audio').src=previewURL;$('audition-audio').hidden=false;$('audition-audio').play().catch(()=>{});status('Your passage preview is ready. Press Play in the sample player.');}catch(error){status(warn(error));}finally{creating=false;killWorker();controls();}
+};
+$('engine').onchange=()=>{fillVoices();narratorNote();scheduleSave();};$('voice').onchange=()=>{$('voice-edition').value='refined';narratorNote();scheduleSave();};
+for(const id of ['voice-edition','delivery','speed'])$(id).onchange=()=>{narratorNote();scheduleSave();};$('speed').oninput=()=>{$('speed-value').textContent=Number($('speed').value)+'×';preflight();};
+$('title').oninput=scheduleSave;$('review').onchange=scheduleSave;
+$('text').oninput=()=>{$('review').checked=false;updateText();};
+for(const id of ['range-from','range-to'])$(id).onchange=()=>updateRange();
+$('remember').onchange=async()=>{try{if($('remember').checked)await flushDraft();else{clearTimeout(draftTimer);await saveChain.catch(()=>{});await store?.deleteDraft();$('save-status').textContent='Draft autosave off. Created recordings remain saved separately.';}}catch(error){$('save-status').textContent=warn(error);}};
+$('backup-draft').onclick=()=>saveFile(new Blob([$('text').value],{type:'text/plain;charset=utf-8'}),safeFilename($('title').value)+'-source.txt');
+$('clear').onclick=()=>{undo=draft();$('text').value='';$('review').checked=false;$('undo-clear').hidden=false;updateText();};
+$('undo-clear').onclick=()=>{if(!undo)return;$('text').value=undo.text;$('title').value=undo.title;$('undo-clear').hidden=true;updateText();};
+$('sample').onclick=()=>{$('text').value='Good morning, church. Today, let us make room for hope.\n\nEven in a difficult season, we can show kindness to a neighbor, listen to a friend, and take the next faithful step.\n\nMay our words become actions, and may our actions reflect love. Amen.';$('title').value='Example sermon';$('review').checked=false;$('source').textContent='Example sermon';updateText();};
+document.querySelectorAll('[data-voice]').forEach(b=>b.onclick=()=>{$('engine').value='studio';fillVoices();$('voice').value=b.dataset.voice;$('voice-edition').value='refined';narratorNote();scheduleSave();$('choose-voice').scrollIntoView({behavior:'smooth'});});
+$('file').onchange=async()=>{const file=$('file').files[0];if(!file)return;importing=true;controls();status('Reading your document locally…');try{const result=await importDocument(file);$('text').value=result.text;$('title').value=file.name.replace(/\.[^.]+$/,'');$('source').textContent=file.name;$('review').checked=false;$('import-note').hidden=false;$('import-note').textContent=result.note;updateText();await flushDraft();status('Document loaded. Review its chapter range.');}catch(error){status(warn(error));}finally{importing=false;controls();$('file').value='';}};
+const upload=$('file').previousElementSibling;upload.tabIndex=0;upload.setAttribute('role','button');upload.onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&!busy()){e.preventDefault();$('file').click();}};
+$('saved-recordings').onchange=controls;$('open-recording').onclick=async()=>{try{await savePosition();const job=await store.job($('saved-recordings').value);if(job)await showRecording(job);}catch(error){status(warn(error));}};
+$('delete-recording').onclick=async()=>{const id=$('saved-recordings').value;if(!id||!confirm('Delete this saved recording and its audio from this browser? Download a copy first.'))return;try{await store.deleteJob(id);if(selectedJob?.id===id){renderToken++;selectedJob=null;$('audio').pause();$('audio').removeAttribute('src');if(audioURL)URL.revokeObjectURL(audioURL);audioURL=null;$('result').hidden=true;$('empty-player').hidden=false;}await refreshLibrary();status('Recording deleted from this browser. Your draft was kept.');}catch(error){status(warn(error));}};
+$('play-chapter').onchange=async()=>{await savePosition().catch(()=>{});await loadChapter(Number($('play-chapter').value));};$('refresh-audio').onclick=()=>loadChapter(loadedChapter,$('audio').currentTime);
+$('back').onclick=()=>skip(-15);$('forward').onclick=()=>skip(15);$('playback-speed').onchange=()=>{$('audio').playbackRate=Number($('playback-speed').value);};
+$('audio').ontimeupdate=()=>{if(Date.now()-positionSaved>1000){positionSaved=Date.now();savePosition().catch(()=>{});}};$('audio').onpause=()=>savePosition().catch(()=>{});
+$('audio').onended=async()=>{if(!selectedJob)return;const job=await store.job(selectedJob.id);selectedJob=job;
+  const moreCurrent=job.passages.slice(loadedThrough,job.next).some(p=>p.chapter===loadedChapter);
+  if(moreCurrent){const time=$('audio').currentTime;await loadChapter(loadedChapter,time);$('audio').play().catch(()=>{});}
+  else if(availableChapters(job).includes(loadedChapter+1)){await loadChapter(loadedChapter+1);$('audio').play().catch(()=>{});}
+  else if(job.next<job.passages.length)$('export-status').textContent='You reached the saved audio. More is still being created; use Load latest saved audio when ready.';
+};
+$('download').onclick=()=>exportAudio();$('download-chapter').onclick=()=>exportAudio({chapter:loadedChapter});$('share').onclick=()=>exportAudio({share:true});
+$('transcript').onclick=()=>{if(selectedJob)saveFile(new Blob([selectedJob.source],{type:'text/plain;charset=utf-8'}),safeFilename(selectedJob.title)+'-reviewed-source.txt');};
+window.addEventListener('pagehide',()=>{queueSave();savePosition().catch(()=>{});cancelled=true;killWorker();store?.release(owner).catch(()=>{});window.speechSynthesis?.cancel();});
+window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();queueSave();}});
+fillVoices();window.speechSynthesis?.addEventListener('voiceschanged',()=>{if(!busy()){fillVoices();narratorNote();}});narratorNote();controls();
+async function initialize(){
+  try{store=await openStorage();const saved=await store.draft();
+    if(saved&&!dirty){$('text').value=saved.text;$('title').value=saved.title;$('engine').value=saved.engine??'studio';fillVoices();if([...$('voice').options].some(o=>o.value===saved.settings?.voice))$('voice').value=saved.settings.voice;for(const [key,id] of [['edition','voice-edition'],['delivery','delivery'],['speed','speed']])if(saved.settings?.[key]!==undefined)$(id).value=saved.settings[key];updateText({save:false});$('range-from').value=String(Math.min(saved.from??0,Math.max(0,chapters.length-1)));$('range-to').value=String(Math.min(saved.to??0,Math.max(0,chapters.length-1)));updateRange(false);$('review').checked=!!saved.review;document.body.classList.toggle('has-draft',!!saved.text);}
+    $('save-status').textContent=saved?'Draft restored from this device. Download a text backup for safekeeping.':'Autosave ready. Drafts and recordings stay on this browser and device.';
+    narratorNote();const jobs=await refreshLibrary();if(jobs?.length){document.body.classList.add('has-draft');$('saved-recordings').value=jobs[0].id;await showRecording(jobs[0]);}
+    const estimate=await navigator.storage?.estimate?.();if(estimate?.quota)$('storage-info').textContent=`Browser estimates ${Math.round((estimate.quota-estimate.usage)/1048576)} MB of storage quota available. This is not a device memory measurement.`;
+  }catch(error){if(store){$('save-status').textContent='Saved data could not be fully restored. Download a text backup and check My recordings.';status(warn(error));}else{$('save-status').textContent='Local saving unavailable: '+warn(error);status('Use a regular browser window for saved recordings. Text backup and Quick listen remain available.');}}
+}
+initialize();
+
+function podcastFields(){return {showTitle:$('pod-show-title').value,showDescription:$('pod-show-description').value,author:$('pod-author').value,episodeTitle:$('pod-episode-title').value,episodeDescription:$('pod-episode-description').value,language:$('pod-language').value,category:$('pod-category').value,explicit:$('pod-explicit').value,audioUrl:$('pod-audio-url').value,artworkUrl:$('pod-artwork-url').value,feedUrl:$('pod-feed-url').value,websiteUrl:$('pod-website-url').value,rightsConfirmed:$('pod-rights').checked,spokenDisclosureConfirmed:$('pod-spoken').checked,artworkConfirmed:$('pod-artwork').checked};}
+$('pod-export').onclick=async()=>{
+ if(busy()||!selectedJob||!store){$('pod-status').textContent='Select a saved complete recording first.';return;}
+ const id=selectedJob.id,fields=podcastFields();exporting=true;controls();
+ try{await flushPodcast();let job=await store.job(id);if(job.next!==job.passages.length)throw Error('Finish this recording first. Partial audio is not an episode.');
+ await store.podcastGuid(job.id);job=await store.job(job.id);const {blob}=await recordingBlob(store,job),result=await episodePackage(job,blob,fields);
+ saveFile(packageZip(result.files),safeFilename(job.title)+'-podcast-preparation.zip');$('pod-status').textContent='Preparation ZIP download started. Nothing was uploaded. '+result.metadata.warnings.join(' ');
+ }catch(error){$('pod-status').textContent=warn(error);}finally{exporting=false;$('pod-export').disabled=false;controls();}
+};
+function podcastHandoff(){const fields=podcastFields();$('pod-apple').disabled=busy()||!(publicUrl(fields.feedUrl)&&fields.rightsConfirmed&&fields.spokenDisclosureConfirmed&&fields.artworkConfirmed);}
+for(const id of ['pod-feed-url','pod-rights','pod-spoken','pod-artwork'])$(id).addEventListener('change',podcastHandoff);
+$('pod-apple').onclick=()=>{try{window.open(appleValidationUrl(podcastFields().feedUrl),'_blank','noopener,noreferrer');}catch(error){$('pod-status').textContent=warn(error);}};function restorePodcast(job){
+ const fields=job.podcast??{};
+ for(const [key,id] of Object.entries({showTitle:'pod-show-title',showDescription:'pod-show-description',author:'pod-author',episodeTitle:'pod-episode-title',episodeDescription:'pod-episode-description',language:'pod-language',category:'pod-category',explicit:'pod-explicit',audioUrl:'pod-audio-url',artworkUrl:'pod-artwork-url',feedUrl:'pod-feed-url',websiteUrl:'pod-website-url'}))$(id).value=fields[key]??(key==='episodeTitle'?job.title:key==='language'?'en':'');
+ for(const [key,id] of Object.entries({rightsConfirmed:'pod-rights',spokenDisclosureConfirmed:'pod-spoken',artworkConfirmed:'pod-artwork'}))$(id).checked=fields[key]===true;
+ podcastHandoff();
+}
+let podcastSaveTimer,podcastPending=null;
+async function flushPodcast(){clearTimeout(podcastSaveTimer);const pending=podcastPending;if(!pending||!store)return;podcastPending=null;await store.savePodcast(pending.id,pending.fields);}
+$('podcast-prep').addEventListener('input',()=>{if(!selectedJob||!store)return;podcastPending={id:selectedJob.id,fields:podcastFields()};clearTimeout(podcastSaveTimer);podcastSaveTimer=setTimeout(()=>flushPodcast().catch(error=>{$('pod-status').textContent=warn(error);}),300);podcastHandoff();});
+window.addEventListener('pagehide',()=>flushPodcast().catch(()=>{}));
