@@ -69,3 +69,25 @@ test('preparation metadata cannot be mistaken for publication or platform approv
  assert.ok(metadata.warnings.some(w=>w.includes('artwork dimensions')&&w.includes('not been verified')));
  assert.ok(!DISCLOSURE.includes('reviewed by its author'));store.close();
 });
+
+test('credential URLs are rejected before audio reads or artifact creation for every hosting field',async()=>{
+ const {store,job}=await fixture();let reads=0;
+ const audio={type:'audio/mpeg',arrayBuffer:async()=>{reads++;return bytes.buffer;}};
+ for(const key of ['audioUrl','artworkUrl','feedUrl','websiteUrl']){
+  await assert.rejects(episodePackage(job,audio,{...fields,[key]:'https://demo-user:demo-secret@host.example.com/file'}),error=>/embedded credentials/.test(error.message)&&!error.message.includes('demo-user')&&!error.message.includes('demo-secret'));
+ }
+ assert.equal(reads,0);store.close();
+});
+
+test('rejected hosting URLs never survive in any text entry of the preparation ZIP',async()=>{
+ const {store,job}=await fixture();
+ for(const key of ['audioUrl','artworkUrl','feedUrl','websiteUrl']){
+  const invalid='malformed demo-user:demo-secret@not-a-public-host';
+  const result=await episodePackage(job,new Blob([bytes],{type:'audio/mpeg'}),{...fields,[key]:invalid});
+  const zip=await JSZip.loadAsync(await packageZip(result.files).arrayBuffer(),{checkCRC32:true});
+  for(const entry of Object.values(zip.files))if(!entry.name.endsWith('.mp3')){
+   const text=await entry.async('string');assert.ok(!text.includes('demo-secret'),entry.name);assert.ok(!text.includes('demo-user'),entry.name);assert.ok(!text.includes(invalid),entry.name);
+  }
+ }
+ store.close();
+});

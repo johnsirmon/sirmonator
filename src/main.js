@@ -104,8 +104,10 @@ function beginSelection(){renderToken++;return ++selectionToken;}
 async function showRecording(job,{keepAudio=false,selection=beginSelection()}={}){
   // Cancel old reads before validation or metadata saving can yield to another selection.
   if(selection!==selectionToken)return;
-  try{await validateCheckpoint(store,job);if(selection!==selectionToken)return;
-    await flushPodcast();if(selection!==selectionToken)return;
+  try{await flushPodcast();if(selection!==selectionToken)return;
+    job=await store.job(job.id);if(selection!==selectionToken)return;
+    if(!job)throw Error('The selected recording is no longer available.');
+    await validateCheckpoint(store,job);if(selection!==selectionToken)return;
   }catch(error){if(selection===selectionToken)throw error;return;}
   renderToken++;selectedJob=job;restorePodcast(job);$('empty-player').hidden=true;$('result').hidden=false;displayProgress(job);
   if(!keepAudio&&job.next){const available=availableChapters(job),c=available.includes(job.position?.chapter)?job.position.chapter:available[0];$('play-chapter').value=String(c);await loadChapter(c,job.position?.chapter===c?job.position.time:0);}
@@ -269,7 +271,16 @@ $('pod-apple').onclick=()=>{try{window.open(appleValidationUrl(podcastFields().f
  for(const [key,id] of Object.entries({rightsConfirmed:'pod-rights',spokenDisclosureConfirmed:'pod-spoken',artworkConfirmed:'pod-artwork'}))$(id).checked=fields[key]===true;
  podcastHandoff();
 }
-let podcastSaveTimer,podcastPending=null;
-async function flushPodcast(){clearTimeout(podcastSaveTimer);const pending=podcastPending;if(!pending||!store)return;podcastPending=null;await store.savePodcast(pending.id,pending.fields);}
+let podcastSaveTimer,podcastPending=null,podcastSaveChain=Promise.resolve();
+async function flushPodcast(){
+ clearTimeout(podcastSaveTimer);
+ podcastSaveChain=podcastSaveChain.catch(()=>{}).then(async()=>{
+  while(podcastPending&&store){
+   const pending=podcastPending;await store.savePodcast(pending.id,pending.fields);
+   if(podcastPending===pending)podcastPending=null;
+  }
+ });
+ await podcastSaveChain;
+}
 $('podcast-prep').addEventListener('input',()=>{if(!selectedJob||!store)return;podcastPending={id:selectedJob.id,fields:podcastFields()};clearTimeout(podcastSaveTimer);podcastSaveTimer=setTimeout(()=>flushPodcast().catch(error=>{$('pod-status').textContent=warn(error);}),300);podcastHandoff();});
 window.addEventListener('pagehide',()=>flushPodcast().catch(()=>{}));
