@@ -1,0 +1,3 @@
+
+# Preserve the replaceable third-party encoder byte-for-byte on Windows.
+public/vendor/lamejs.js -text

@@ -1,0 +1,12 @@
+import {createSynthesisClient} from '../src/synthesis-client.js';
+import {createNodeWorkerFactory} from '../scripts/worker-node.mjs';
+import {writeFile} from 'node:fs/promises';
+import os from 'node:os';
+const factory=await createNodeWorkerFactory(),terminations=[];
+const client=createSynthesisClient({idleMs:1000,createWorker:()=>{const worker=factory.createWorker(),terminate=worker.terminate;worker.terminate=()=>{const pending=terminate();terminations.push(pending);return pending;};return worker;}});
+const texts=['This is the first part of a synthetic reading. Every supplied word remains in order.\n\n','The second passage changes the wording. Numbers one, two, and three belong in this text.\n\n','A final paragraph completes the reading. Nothing should be added, summarized, or removed.'];
+const memory=()=>({rssMB:process.memoryUsage().rss/1048576,heapUsedMB:process.memoryUsage().heapUsed/1048576,externalMB:process.memoryUsage().external/1048576});
+const report={kind:'Bounded six-inference production-worker Node CPU soak; existing weights; not browser memory or long-book verification',cpu:os.cpus()[0].model,backend:'Node CPU q8',voice:'af_sarah',iterations:6,idleMs:1000,baseline:memory(),samples:[]};const start=performance.now();
+try{for(let i=0;i<6;i++){const request=performance.now(),result=await client.generate({text:texts[i%3],settings:{voice:'af_sarah',edition:'refined',delivery:'natural',speed:1},last:i%3===2},'kokoro');const row={iteration:i+1,characters:texts[i%3].length,elapsedMs:performance.now()-request,audioSeconds:result.seconds,modelLoads:result.metrics.modelLoads,...memory()};report.samples.push(row);console.log(JSON.stringify(row));}
+ report.beforeRelease=memory();await new Promise(resolve=>setTimeout(resolve,1200));await Promise.all(terminations);report.afterWorkerExit=memory();global.gc?.();await new Promise(resolve=>setTimeout(resolve,300));global.gc?.();report.afterExplicitGC=memory();report.workerCreations=factory.creations;report.workerTerminations=terminations.length;report.elapsedMs=performance.now()-start;report.note='Explicit GC is a diagnostic only, not a production/browser guarantee. Parent-process heap excludes worker isolate heap; RSS includes native worker memory.';await writeFile('.cache/memory-soak.json',JSON.stringify(report,null,2));console.log(JSON.stringify({elapsedMs:report.elapsedMs,beforeRelease:report.beforeRelease,afterWorkerExit:report.afterWorkerExit,afterExplicitGC:report.afterExplicitGC}));
+}finally{client.cancel();await Promise.all(terminations);}

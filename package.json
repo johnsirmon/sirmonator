@@ -13,6 +13,7 @@
   "license": "MIT",
   "type": "module",
   "dependencies": {
+    "@breezystack/lamejs": "1.2.7",
     "@huggingface/transformers": "3.8.1",
     "kokoro-js": "1.2.1",
     "mammoth": "1.13.0",
@@ -22,6 +23,8 @@
     "soundtouchjs": "0.3.0"
   },
   "devDependencies": {
+    "fake-indexeddb": "6.2.6",
+    "jszip": "3.10.1",
     "vite": "8.3.5"
   },
   "overrides": {

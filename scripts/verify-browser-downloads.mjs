@@ -1,0 +1,14 @@
+import {readFile,writeFile,mkdir} from 'node:fs/promises';
+import {spawnSync} from 'node:child_process';
+import JSZip from 'jszip';
+import {mp3Duration} from '../src/mp3.js';
+const [audioPath,zipPath,tonePath]=process.argv.slice(2);
+if(!audioPath||!zipPath||!tonePath)throw Error('Usage: node scripts/verify-browser-downloads.mjs <synthetic.mp3> <preparation.zip> <tone.json>');
+const audio=await readFile(audioPath),fixture=JSON.parse(await readFile(tonePath,'utf8')),tone=Buffer.from(fixture.base64,'base64');
+const expected=Buffer.concat(Array.from({length:100},()=>tone));if(!audio.equals(expected))throw Error('Downloaded passage bytes changed');
+const zipBytes=await readFile(zipPath),zip=await JSZip.loadAsync(zipBytes,{checkCRC32:true}),names=Object.keys(zip.files),mp3=names.find(n=>n.endsWith('.mp3'));
+if(!Buffer.from(await zip.file(mp3).async('uint8array')).equals(audio))throw Error('ZIP audio changed');
+const metadata=JSON.parse(await zip.file('metadata.json').async('string'));const feed=await zip.file('feed-draft.xml').async('string');
+const decoded=spawnSync('ffmpeg',['-v','error','-f','mp3','-i',audioPath,'-f','null','-'],{windowsHide:true});if(decoded.status!==0)throw Error(decoded.stderr.toString());
+const report={kind:'Actual Edge browser downloads; 100 synthetic 440 Hz passages, not TTS',mp3Bytes:audio.length,mp3DurationSeconds:mp3Duration(audio),exactPassageBytes:true,ffmpegDecodeExit:decoded.status,zipCRCVerified:true,zipAudioIdentical:true,zipEntries:names,guid:metadata.guid,rightsConfirmed:metadata.rightsConfirmed,spokenDisclosureConfirmed:metadata.spokenDisclosureConfirmed,feedEscapesAmpersand:feed.includes('Synthetic show &amp; hope'),browserUiState:'Not measured by this decoder script'};
+console.log(JSON.stringify(report,null,2));await mkdir('.cache',{recursive:true});await writeFile('.cache/browser-download-report.json',JSON.stringify(report,null,2));
