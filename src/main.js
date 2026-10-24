@@ -16,7 +16,7 @@ let creating=false,auditionBusy=false,importing=false,quick=false,quickPaused=fa
 let audioURL=null,previewURL=null,wake=null,owner=crypto.randomUUID(),draftTimer,saveChain=Promise.resolve(),dirty=false,undo=null;
 let renderToken=0,selectionToken=0,loadedChapter=0,loadedThrough=0,loadedJobId=null,positionSaved=0,exporting=false;
 let exportController=null,playbackController=null;
-const chapterCache=createChapterCache({prepare:(job,chapter,options)=>recordingBlob(store,job,chapter,undefined,options)});
+const chapterCache=createChapterCache({prepare:(job,chapter,options)=>recordingBlob(store,job,chapter,undefined,options),onChange:()=>controls()});
 function cancelPreparations(){exportController?.abort();playbackController?.abort();chapterCache.clear();}
 const status=message=>$('status').textContent=message;
 const warn=error=>error?.name==='QuotaExceededError'?'This device is low on storage. Saved passages are safe. Download them, delete an older recording, then resume.':(error?.message||'Could not save on this device.');
@@ -25,7 +25,8 @@ function controls(){
   for(const id of ['text','title','file','sample','clear','undo-clear','engine','voice','voice-edition','delivery','speed','review','start','preview','custom-preview','range-from','range-to','remember','open-recording','saved-recordings'])$(id).disabled=busy();
   document.querySelectorAll('[data-voice]').forEach(b=>b.disabled=busy());
   $('pause').disabled=!(creating||quick)||pauseRequested;$('pause').textContent=quick?(quickPaused?'Resume listening':'Pause listening'):(pauseRequested?'Saving current passage…':'Pause creation');
-  $('stop').disabled=!(creating||quick||auditionBusy||exporting||playbackController);$('resume-recording').disabled=busy();
+  $('stop').disabled=!(creating||quick||auditionBusy||exporting||playbackController||chapterCache.preparing);$('resume-recording').disabled=busy();
+  $('stop').textContent=exporting||playbackController||chapterCache.preparing?'Cancel audio preparation':'Cancel creation';
   $('delete-recording').disabled=busy()||!$('saved-recordings').value;
   if(!busy())$('open-recording').disabled=!$('saved-recordings').value;
   for(const id of ['download','download-chapter','share'])$(id).disabled=exporting||!selectedJob?.next;
