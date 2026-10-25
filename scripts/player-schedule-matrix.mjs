@@ -10,6 +10,7 @@ const historical=process.env.SIRMONATOR_UI_SCHEDULE_BASELINE;if(historical)asser
 const main=historical?execFileSync('git',['show',historical+':src/main.js'],{encoding:'utf8',windowsHide:true}):await readFile(new URL('../src/main.js',import.meta.url),'utf8');
 const section=(start,end)=>{const a=main.indexOf(start),b=main.indexOf(end,a+start.length);assert.ok(a>=0&&b>a);return main.slice(a,b);};
 const deferred=()=>{let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no;});return {promise,resolve,reject};};
+export function playerHarness(){return harness();}
 function harness(){
  const remote=new Map(['A','B'].map(id=>[id,{id,title:'Recording '+id,source:'Original '+id+' café 🌍\r\n',next:3,seconds:3,passages:[{chapter:0},{chapter:1},{chapter:2}],position:{chapter:0,time:0},settings:{voice:'af_sarah',edition:'refined'},takeSelection:{revision:0}}]));
  const plans=[],trace=[],elements=new Map(),live=new Map(),downloads=[];let sequence=0,generation=null,failURL=false;

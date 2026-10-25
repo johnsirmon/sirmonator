@@ -150,6 +150,16 @@ function displayProgress(job){
   $('share').hidden=typeof navigator.share!=='function';controls();
 }
 function beginSelection(){if(typeof storageUsageEditor!=='undefined')storageUsageEditor?.cancel();if(typeof speechReview!=='undefined')speechReview?.cancel();if(typeof referenceEditor!=='undefined')referenceEditor?.cancel();cancelPreparations();renderToken++;return ++selectionToken;}
+function playbackFailure(id,channels,message){
+  const notices=playbackFailure.notices??=new Map(),notice={id,message};
+  for(const channel of channels){$(channel).textContent=message;notices.set(channel,notice);}
+}
+function playbackRetry(id){
+  const notices=playbackFailure.notices??=new Map(),prior=[...notices].filter(([,notice])=>notice.id===id);
+  // A retry may clear only the errors it inherited, and only while their
+  // displayed text still belongs to them. Preserve later/unrelated warnings.
+  return ()=>{for(const [channel,notice] of prior)if(notices.get(channel)===notice&&$(channel).textContent===notice.message){$(channel).textContent='';notices.delete(channel);}};
+}
 async function showRecording(job,{keepAudio=false,selection=beginSelection()}={}){
   // Cancel old reads before validation or metadata saving can yield to another selection.
   if(selection!==selectionToken)return;
@@ -168,7 +178,7 @@ async function showRecording(job,{keepAudio=false,selection=beginSelection()}={}
   if(!job.next){$('audio').pause();$('audio').onloadedmetadata=null;$('audio').removeAttribute('src');if(audioURL)URL.revokeObjectURL(audioURL);audioURL=null;loadedJobId=null;}
 }
 async function loadChapter(chapter,time=0,preparation=null,selectRecording=false){
-  const target=preparation?.job??selectedJob;if(!target?.next)return;const token=++renderToken,id=target.id,priorId=selectedJob?.id,selection=selectionToken;
+  const target=preparation?.job??selectedJob;if(!target?.next)return;const token=++renderToken,id=target.id,priorId=selectedJob?.id,selection=selectionToken,clearRetryErrors=playbackRetry(id);
   $('preparation-meter').hidden=true;$('preparation-status').textContent='Preparing chapter '+(chapter+1)+' audio.';
   playbackController?.abort();const controller=new AbortController();playbackController=controller;controls();
   const current=()=>token===renderToken&&selection===selectionToken&&(selectedJob?.id===priorId||selectedJob?.id===id);
@@ -183,21 +193,22 @@ async function loadChapter(chapter,time=0,preparation=null,selectRecording=false
     $('audio').onloadedmetadata=()=>{if(current()&&loadedJobId===id&&Number.isFinite($('audio').duration))$('audio').currentTime=Math.max(0,Math.min(time,$('audio').duration-.05));};
     $('audio').src=audioURL;$('audio').playbackRate=Number($('playback-speed').value);mediaControls(job);
     $('preparation-status').textContent='Chapter '+(chapter+1)+' audio ready.';
+    clearRetryErrors();
     return true;
-  }catch(error){if(current())$('export-status').textContent=warn(error);}
+  }catch(error){if(current()&&!controller.signal.aborted)playbackFailure(id,['preparation-status','export-status'],warn(error));}
   finally{if(current())$('preparation-meter').hidden=true;if(!handedOff)preparation?.dispose();if(playbackController===controller){if(selectedJob?.id===loadedJobId)$('play-chapter').value=String(loadedChapter);playbackController=null;}controls();}
 }
 async function openRecording(){
   if(busy())return;const id=$('saved-recordings').value;if(!id)return;
-  const selection=beginSelection(),token=renderToken;
+  const selection=beginSelection(),token=renderToken,clearRetryErrors=playbackRetry(id);
   playbackController?.abort();const controller=new AbortController();playbackController=controller;
   let handedOff=false,handoffController;const ownsIntent=()=>selection===selectionToken&&token===renderToken;
   const current=()=>ownsIntent()&&!controller.signal.aborted;
   $('preparation-meter').hidden=true;$('preparation-status').textContent='Preparing selected recording.';controls();
-  try{await abortable(savePosition(),controller.signal);if(!current())return;const job=await abortable(store.job(id),controller.signal);if(!current())return;if(!job)throw Error('The selected recording is no longer available.');handedOff=true;const opening=showRecording(job,{selection});handoffController=playbackController;await opening;}
+  try{await abortable(savePosition(),controller.signal);if(!current())return;const job=await abortable(store.job(id),controller.signal);if(!current())return;if(!job)throw Error('The selected recording is no longer available.');handedOff=true;const opening=showRecording(job,{selection});handoffController=playbackController;const opened=await opening;if(selection===selectionToken&&(opened===true||!job.next))clearRetryErrors();}
   // showRecording deliberately replaces/aborts this controller. The intent
   // still owns its validation errors until Stop or newer navigation changes it.
-  catch(error){if(handedOff?ownsIntent()&&!handoffController?.signal.aborted:current()){const message=warn(error);$('preparation-status').textContent=message;status(message);}}
+  catch(error){if(handedOff?ownsIntent()&&!handoffController?.signal.aborted:current())playbackFailure(id,['preparation-status','status'],warn(error));}
   finally{if(playbackController===controller){playbackController=null;controls();}}
 }
 async function changeChapter(){
