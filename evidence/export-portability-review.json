@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "baseline": "a6a2defe7aba43f8325d3ebd475898370b6cea9b",
+  "sourceHashesLfNormalized": {
+    "src/main.js": "7ba59067e0e9f4dc8b2236aa6c0ff532fd4f4dc3e1b35a5806fcfa937cdf3e7c",
+    "src/podcast.js": "051f224fa534f46db8b70fd93fc89f82f062419515c983c9075371c20baf26b1",
+    "src/export-safety.js": "010616de1778d67cd8d6aca293b774abe20057b9e1361e06b3938c305bc4cee3",
+    "tests/export-portability.test.js": "ac58ff3e35aab3be369f17fbeb40fc8dd3e9bf358e2879b84d5e01d45a18db29"
+  },
+  "demonstratedPriorBehavior": {
+    "reservedWindowsName": "CON.mp3",
+    "zipHelperAcceptedTraversal": true,
+    "savedGuidInsertedXmlControl": true,
+    "incompleteMetadataUnicodeInsertedIntoXml": true
+  },
+  "fixedBehavior": {
+    "portableWindowsFilename": "sirmonator-CON.mp3",
+    "zipEntryNames": "single portable leaf names, bounded UTF-8 length, duplicate protection and ZIP entry-count bound",
+    "metadata": "reject XML control characters and incomplete Unicode in fields and saved identity/title before audio reads"
+  },
+  "scope": "Export boundaries only; frozen narration inputs/source/audio/dependencies/reference assets unchanged.",
+  "checks": [
+    "8 focused tests cover hostile titles, long Unicode, Windows device names, CRC/UTF-8 archives, parsed escaped RSS, URL exclusion/encoded handoff, original TXT bytes and render-report projection.",
+    "Exact historical podcast source used for negative controls; current fixes reject with expected reasons.",
+    "Main and podcast imports use the export wrapper; legacy recording helper remains unchanged to preserve frozen source fingerprints.",
+    "Traversal was reachable through the exported ZIP helper; generated user-title entries were already slash-free. This is helper-boundary hardening, not a demonstrated public filesystem exploit."
+  ],
+  "validation": {
+    "fullTests": 355,
+    "pass": 355,
+    "fail": 0,
+    "productionBuild": true
+  },
+  "privacyLimits": [
+    "Manuscript is intentionally present in source TXT; author-entered metadata is intentionally present in podcast exports.",
+    "Valid supplied HTTPS URL paths/queries/fragments are preserved; no claim of arbitrary secret detection or redaction. Do not include private tokens in URLs or prose intended for publication.",
+    "URL checks are syntactic; DNS, fetchability, redirects, platform acceptance and hosting rights are unverified.",
+    "No actual OS file save/extraction, browser/media/model execution, remote publication or legal clearance."
+  ],
+  "releaseReadiness": "Character reference redistribution remains unresolved as recorded in shipped-notices-review.json. No reference assets changed.",
+  "relatedCorrection": "Separate notice-evidence commit distinguishes canonical Git blobs from Windows checkout/dist hashes; no license wording or line-ending settings changed."
+}

@@ -1,5 +1,5 @@
 import {inspectMp3} from './mp3.js';
-import {safeFilename} from './recording.js';
+import {portableFilename as safeFilename,assertArchiveName} from './export-safety.js';
 export const DISCLOSURE='This episode uses AI-generated narration from supplied text. Speech synthesis may mispronounce, omit, or repeat words.';
 const xml=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
 export function publicUrl(value){
@@ -27,7 +27,7 @@ export async function episodePackage(job,audio,fields,artifact=null){
   if(url?.username||url?.password)throw Error('Remove embedded credentials from hosting URLs before exporting.');
   if(!publicUrl(fields[key]))fields[key]='';
  }
- for(const value of Object.values(fields))if(typeof value==='string'&&/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffe\uffff]/u.test(value))throw Error('Remove unsupported control characters from episode metadata.');
+ for(const value of [...Object.values(fields),job.title,job.episodeGuid])if(typeof value==='string'&&(!value.isWellFormed()||/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffe\uffff]/u.test(value)))throw Error('Remove unsupported control characters or incomplete Unicode from episode metadata.');
  if(job.next!==job.passages.length||!job.next)throw Error('Finish this recording before preparing a podcast episode. Partial recordings cannot be exported as episodes.');
  if(!job.episodeGuid)throw Error('Save this episode identity before exporting.');
  if(audio.type!=='audio/mpeg')throw Error('Podcast export requires actual MP3 audio.');
@@ -47,6 +47,8 @@ export async function episodePackage(job,audio,fields,artifact=null){
 // Stored ZIP entries avoid another full copy of the compressed audio in memory.
 function crc32(bytes){let crc=0xffffffff;for(const byte of bytes){crc^=byte;for(let bit=0;bit<8;bit++)crc=(crc>>>1)^((crc&1)?0xedb88320:0);}return (crc^0xffffffff)>>>0;}
 export function packageZip(files){
+ if(!Array.isArray(files)||files.length>65535)throw Error('Too many entries for this ZIP format.');
+ const names=new Set();for(const file of files){assertArchiveName(file.name);const key=file.name.normalize('NFKC').toLowerCase();if(names.has(key))throw Error('Archive entry names must be unique.');names.add(key);}
  const encode=new TextEncoder(),local=[],central=[];let offset=0,centralSize=0;
  for(const file of files){const name=encode.encode(file.name),data=typeof file.data==='string'?encode.encode(file.data):file.data,crc=crc32(data);
  const header=new Uint8Array(30+name.length),h=new DataView(header.buffer);h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x800,true);h.setUint32(14,crc,true);h.setUint32(18,data.length,true);h.setUint32(22,data.length,true);h.setUint16(26,name.length,true);header.set(name,30);local.push(header,data);
