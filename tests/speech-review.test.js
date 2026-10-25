@@ -109,3 +109,10 @@ test('actual main controls expose Stop for a pending manual review with synthesi
  vm.runInContext(`let creating=false,auditionBusy=false,importing=false,quick=false,exporting=false,pauseRequested=false,quickPaused=false,playbackController=null,renderToken=0,selectedJob={next:1,passages:[{}]};${controls}\n${stop}\ncontrols();`,context);
  assert.equal($('stop').disabled,false);assert.equal($('stop').textContent,'Cancel review operation');assert.equal($('download').disabled,true);$('stop').onclick();assert.equal(cancelled,1);
 });
+test('declining dirty passage navigation restores selector and preserves anchored input/save target',async()=>{
+ const {store,job}=await fixture(),reviews=await openReviewStorage(indexedDB,'review-decline-'+crypto.randomUUID()),$=elements();
+ const editor=createSpeechReviewEditor({$,getStore:()=>store,getJob:()=>job,getSelection:()=>0,isBusy:()=>false,onBusy:()=>{},onListen:()=>{},onRepair:()=>{},onExport:()=>{},repository:reviews,confirmDiscard:()=>false});await editor.update(job);
+ $('review-transcript').value='First words.';$('review-transcript').listeners.input();$('review-notes').value='Unsaved first-passage note.';$('review-notes').listeners.input();$('review-passage').value='1';await $('review-passage').onchange();
+ assert.equal($('review-passage').value,'0');assert.equal($('review-source').textContent,'First exact words.\n\n');assert.equal($('review-transcript').value,'First words.');assert.equal($('review-notes').value,'Unsaved first-passage note.');assert.match($('review-anchor').textContent,/passage 1/);
+ await $('review-save').onclick();const archive=await reviews.archive(job.id);assert.equal(archive.reviews.length,1);assert.equal(archive.reviews[0].snapshot.anchor.passage,0);assert.equal(archive.reviews[0].notes,'Unsaved first-passage note.');reviews.close();store.close();
+});

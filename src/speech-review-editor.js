@@ -33,7 +33,7 @@ export function createSpeechReviewEditor({$,getStore,getJob,getSelection,isBusy,
  }
  async function load(discard=false){
   const job=getJob();if(!job?.next||isBusy())return;
-  if(discard&&dirty&&!confirmDiscard('Load the current selected take? Unsaved review input will be cleared; saved reviews remain tied to their original selection.'))return;
+  if(discard&&dirty&&!confirmDiscard('Load the current selected take? Unsaved review input will be cleared; saved reviews remain tied to their original selection.')){$('review-passage').value=snapshot?.anchor.recordingId===job.id&&snapshot.anchor.passage<job.next?String(snapshot.anchor.passage):'';return;}
   pendingLoad=false;controller?.abort();const active=new AbortController(),selection=getSelection(),token=++generation;controller=active;onBusy();controls();
   try{const next=await captureReview(getStore(),job.id,Number($('review-passage').value)||0,{signal:active.signal});
    assertActive({signal:active.signal,isCurrent:()=>token===generation&&selection===getSelection()});
