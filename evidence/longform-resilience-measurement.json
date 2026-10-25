@@ -1,0 +1,99 @@
+{
+  "schema": 1,
+  "kind": "Real codec/storage APIs on Node, fake-indexeddb, procedural CC0 PCM; no synthesis",
+  "sourceBuildSha256": "92a85931b89c963754f12884237bff75934f01ceaf8d68570abccff2100577a3",
+  "fixture": {
+    "passages": 120,
+    "chapters": 3,
+    "seconds": 240,
+    "pcmBytes": 11520000,
+    "sourceCharacters": 13318,
+    "checksumPolicy": "original-pcm-sha256-v1"
+  },
+  "fullArtifact": {
+    "elapsedMs": 5041.221600000001,
+    "bytes": 1920384,
+    "frameParsedSeconds": 240.0480000000082,
+    "sha256": "45ea23917eaa3b5394d33181214165971b368cd0668867e749c5ab07615df9d7",
+    "oracleSha256": "45ea23917eaa3b5394d33181214165971b368cd0668867e749c5ab07615df9d7",
+    "identical": true,
+    "ffmpegDecode": "passed",
+    "reads": {
+      "bulkReads": 1,
+      "rows": 120,
+      "blobReads": 240,
+      "blobBytes": 23040000
+    }
+  },
+  "chapterPairAndEviction": {
+    "requests": [
+      0,
+      2,
+      0
+    ],
+    "encodes": [
+      0,
+      1,
+      2,
+      0,
+      1
+    ],
+    "reads": {
+      "bulkReads": 3,
+      "rows": 360,
+      "blobReads": 588,
+      "blobBytes": 56448000
+    },
+    "maxEntries": 2,
+    "maxCompressedBytes": 25165824
+  },
+  "memory": {
+    "samples": [
+      {
+        "phase": "baseline",
+        "rss": 59924480,
+        "heapTotal": 16818176,
+        "heapUsed": 6585320,
+        "external": 2484075,
+        "arrayBuffers": 137471
+      },
+      {
+        "phase": "120-committed-parts",
+        "rss": 105660416,
+        "heapTotal": 46178304,
+        "heapUsed": 7947208,
+        "external": 5882266,
+        "arrayBuffers": 13776291
+      },
+      {
+        "phase": "independent-oracle-encoded",
+        "rss": 352251904,
+        "heapTotal": 148676608,
+        "heapUsed": 7942584,
+        "external": 36426476,
+        "arrayBuffers": 45035399
+      },
+      {
+        "phase": "full-artifact-finished",
+        "rss": 415092736,
+        "heapTotal": 144744448,
+        "heapUsed": 8158592,
+        "external": 6456415,
+        "arrayBuffers": 15504383
+      },
+      {
+        "phase": "chapter-cache-cleared",
+        "rss": 492101632,
+        "heapTotal": 15507456,
+        "heapUsed": 8619048,
+        "external": 6264767,
+        "arrayBuffers": 16368767
+      }
+    ],
+    "observedPeakRss": 518324224,
+    "samplingMs": 20,
+    "forcedGcAtPhaseBoundaries": true
+  },
+  "elapsedMs": 21137.4101,
+  "limits": "RSS covers this Node process and workers, excluding the separate FFmpeg process; heap/external values cover the reporting thread. Sampled peak is not an exact instantaneous peak. This measures synthetic encoding and checksum IO, not model synthesis, browser disk IO, phone limits or acoustic quality."
+}
