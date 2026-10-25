@@ -8,6 +8,7 @@ import recoveryContract from './render-contract-cbb8bd1.json' with {type:'json'}
 import preparationRecoveryContract from './render-contract-6dd6049.json' with {type:'json'};
 import browserTimerContract from './render-contract-584b0cd.json' with {type:'json'};
 import quotaContract from './render-contract-4b09441.json' with {type:'json'};
+import resilienceContract from './render-contract-23d62a8.json' with {type:'json'};
 import compatibility from './pronunciation-compatibility.json' with {type:'json'};
 import {normalizePronunciation} from './pronunciation.js';
 import {getVoice} from './voices.js';
@@ -20,7 +21,8 @@ export function currentManifest(settings){
   :voice.engine==='supertonic'?{repository:'supertone-oss-archive/supertonic-3',revision:SUPERTONIC_REVISION,voiceFile:`voice_styles/${voice.base}.json`,steps:8}
   :{repository:'vlapky/pocket-tts-onnx',revision:POCKET_REVISION,language:'english_2026-04',quantized:true,reference:assets.references[reference],sampling:characterSettings(reference)};
  const pronunciation=normalizePronunciation(settings.pronunciation);
- return JSON.parse(JSON.stringify({schema:1,pipeline:FOUNDATION_PIPELINE,source:assets.source,packages:assets.packages,engine:voice.engine,voice:{id:voice.id,base:voice.base,edition:settings.edition,revision:voice.revision??1},model,...(pronunciation?{pronunciation}:{}),chunker:{revision:'exact-offsets-240-v1',maxCharacters:240},output:{format:'pcm-s16le',channels:1,encoder:'lamejs-64kbps-single-artifact'},determinism:'Pinned inputs do not guarantee bit-identical inference across devices or repeated stochastic sampling.'}));
+ const integrity=settings.renderManifest&&!Object.hasOwn(settings.renderManifest,'checkpointIntegrity')?{}:{checkpointIntegrity:'original-pcm-sha256-v1'};
+ return JSON.parse(JSON.stringify({schema:1,pipeline:FOUNDATION_PIPELINE,source:assets.source,packages:assets.packages,engine:voice.engine,voice:{id:voice.id,base:voice.base,edition:settings.edition,revision:voice.revision??1},model,...(pronunciation?{pronunciation}:{}),...integrity,chunker:{revision:'exact-offsets-240-v1',maxCharacters:240},output:{format:'pcm-s16le',channels:1,encoder:'lamejs-64kbps-single-artifact'},determinism:'Pinned inputs do not guarantee bit-identical inference across devices or repeated stochastic sampling.'}));
 }
 export function validateManifest(manifest,settings){
  // Historical manifests may be viewed/exported even when this build cannot
@@ -28,6 +30,7 @@ export function validateManifest(manifest,settings){
  const voice=getVoice(settings.voice);let bytes;
  try{bytes=JSON.stringify(manifest);}catch{throw Error('Invalid frozen render manifest.');}
  if(!bytes||bytes.length>40000||manifest.schema!==1||manifest.pipeline!==FOUNDATION_PIPELINE||manifest.engine!==voice.engine||
+    (Object.hasOwn(manifest,'checkpointIntegrity')&&manifest.checkpointIntegrity!=='original-pcm-sha256-v1')||
     manifest.voice?.id!==voice.id||manifest.voice?.base!==voice.base||manifest.voice?.edition!==settings.edition||
     !Number.isInteger(manifest.voice?.revision)||manifest.voice.revision<1||
     !/^[a-f0-9]{64}$/.test(manifest.source?.sha256??'')||!/^[a-f0-9]{40}$/.test(manifest.model?.revision??''))throw Error('Invalid frozen render manifest.');
@@ -50,9 +53,10 @@ export function assertSupportedManifest(settings){
  orchestration.add('src/render-contract-6dd6049.json');
  orchestration.add('src/render-contract-584b0cd.json');
  orchestration.add('src/render-contract-4b09441.json');
- for(const archived of [previous,takesContract,pronunciationContract,preparationContract,storageContract,recoveryContract,preparationRecoveryContract,browserTimerContract,quotaContract]){
+ orchestration.add('src/render-contract-23d62a8.json');
+ for(const archived of [previous,takesContract,pronunciationContract,preparationContract,storageContract,recoveryContract,preparationRecoveryContract,browserTimerContract,quotaContract,resilienceContract]){
   const sameAudio=Object.entries(archived.source.files).every(([name,hash])=>orchestration.has(name)||assets.source.files[name]===hash||(pinned&&name in compatibility.noRulesOverrides))&&Object.keys(assets.source.files).every(name=>orchestration.has(name)||name in archived.source.files||(pinned&&name in compatibility.noRulesOverrides));
-  const supportedDictionary=!saved?.pronunciation||(archived===pronunciationContract&&saved.pronunciation.matcher==='literal-unicode-token-longest-v1')||([preparationContract,storageContract,recoveryContract,preparationRecoveryContract,browserTimerContract,quotaContract].includes(archived)&&['literal-unicode-token-longest-v1','literal-unicode-token-longest-v2'].includes(saved.pronunciation.matcher));
+  const supportedDictionary=!saved?.pronunciation||(archived===pronunciationContract&&saved.pronunciation.matcher==='literal-unicode-token-longest-v1')||([preparationContract,storageContract,recoveryContract,preparationRecoveryContract,browserTimerContract,quotaContract,resilienceContract].includes(archived)&&['literal-unicode-token-longest-v1','literal-unicode-token-longest-v2'].includes(saved.pronunciation.matcher));
   if(supportedDictionary&&pinned&&sameAudio&&JSON.stringify(saved?.source)===JSON.stringify(archived.source)&&JSON.stringify({...saved,source:current.source})===JSON.stringify(current))return;
  }
  throw Error('These saved render inputs are not supported by this build. Saved audio can still be played and exported. Start a new recording to use updated inputs.');

@@ -2,6 +2,7 @@
   "schema": 1,
   "source": {
     "files": {
+      "src/render-contract-23d62a8.json": "d865869b37f6e74692d972afae400121c6819255c5941098a28e6a2e0aca8e66",
       "src/render-contract-4b09441.json": "052d8c5e9b7e01546b5605c21030fc1000b44c2d7b84413aa04a660fda0a3556",
       "src/render-contract-584b0cd.json": "1175a0976f72047308affbf59d900c36fe579a56bf4ee88e0893e765fd045e09",
       "src/render-contract-6dd6049.json": "51932267a901a1013555c0f5a18e6e9bfe2336b97bd8f912200fd054b35ccc97",
@@ -14,12 +15,12 @@
       "src/pinned-kokoro.js": "100b5eca066a536f621b46c9d92b8574f53297d35c4c7a24221a6bbb0db643cb",
       "src/tts-worker.js": "72acbdeec465445921cb13252d51cb45504bb85ba4167e75d6f6473f69057c6c",
       "src/speech-runner.js": "37f045c9b4572cfc6d5e715748b1d32b975743fa096e39dce4d4ba34e90fcebc",
-      "src/render-provenance.js": "248a31acd3e5e52763f34462e9c487573e0b8b80f643bbeb8686262fb913e215",
+      "src/render-provenance.js": "60b2cce7ce1a4f1b1d6d91189d71dc2d2d22d0a956771c7189145be67c5fc28c",
       "src/render-metrics.js": "e8caacfd6ee8a56db8e828d5f02d3826695ee2af4ff6e28ba35f4230b5c216e2",
       "src/core.js": "969b136d6e19fe0116f2c0cb8391257b123095d6068b1456f1d9b68a1b501a34",
       "src/recording.js": "bc05056098ea12fbee3b6e5a6bc6c1f877e6cd16639eeba28052a2a77002c8b8",
-      "src/job-runner.js": "041eda6b57563dfa9a51d69349b172d91c235e8149f7608d9668be34fa5e2d18",
-      "src/storage.js": "1709d7f160fdd74a6b052bd477e9e6220c4e6689b49e4f6fd1b5ed7d8ef98b8a",
+      "src/job-runner.js": "b6deb1d07d1cdc635bac329a28ccf113750a2002fa6d2e5d601a2806754af2b9",
+      "src/storage.js": "bece362c1422961f3b046a2f58996a553adb2fba7b9a089a410c005ef030b298",
       "src/take-selection.js": "9ccbbb6f37794cf7ada5a5b0937e5494685611e4b65383501be64fa4c3df6812",
       "src/passage-takes.js": "f361003d1c655ba6abf68cf996f712c663a80ff0a0fd165b3d9eb5e0963f4dfb",
       "src/render-contract-944aa8e.json": "c2c9217ab7bbd41243059cdd40b24bae46744ab743befaddff7d2e80d1e54208",
@@ -45,7 +46,7 @@
       "src/continuity.js": "9da1bb60e87124150764e9dd4c3228aab6795afd3d9aabd2eed9d40301e0b8fe",
       "package-lock.json": "dc85b64b6a8d659211cf05af19e4d9bd396ecbe8f23a5294c377f39fe541424f"
     },
-    "sha256": "798f60843781b34c67bdaf9e3ccfdc671edd7846599984e9f8dce28939dfbf67"
+    "sha256": "92a85931b89c963754f12884237bff75934f01ceaf8d68570abccff2100577a3"
   },
   "packages": {
     "kokoro-js": {

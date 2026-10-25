@@ -59,7 +59,9 @@ export async function openStorage(factory=globalThis.indexedDB,name=DATABASE,opt
     },
     async release(owner){const tx=db.transaction('locks','readwrite'),done=complete(tx),s=tx.objectStore('locks');const lock=await value(s.get('generation'));if(lock?.owner===owner)s.delete('generation');await done;},
     async commit(jobId,index,audio,owner,now){
+      audio={...audio,bytes:audio.bytes?.slice(0)};
       const spokenTextHash=typeof audio.spokenText==='string'?await sha256Bytes(new TextEncoder().encode(audio.spokenText)):undefined;
+      const audioHash=audio.format==='pcm-s16le'?await sha256Bytes(audio.bytes):undefined;
       now??=Date.now();
       const tx=db.transaction(['jobs','parts','locks'],'readwrite'),done=complete(tx);
       // Attach rejection handling immediately: intentional transaction aborts must not leak promises.
@@ -81,7 +83,7 @@ export async function openStorage(factory=globalThis.indexedDB,name=DATABASE,opt
       else if(audio.format==='pcm-s16le')return fail('Cannot mix PCM and legacy MP3 checkpoints.');
       if(frozen&&(JSON.stringify(audio.renderManifest)!==JSON.stringify(job.settings.renderManifest)||!validFrozenMetrics(audio.metrics,job.settings.renderManifest.engine,!text.trim())||Math.abs(audio.metrics.outputAudioSeconds-audio.seconds)>1e-9))return fail('The passage is missing matching render provenance or performance measurements.');
       const blob=new Blob([audio.bytes],{type:pcm?'application/octet-stream':'audio/mpeg'});
-      tx.objectStore('parts').add({jobId,index,blob,seconds:audio.seconds,chapter:job.passages[index].chapter,...(job.settings.pronunciation?{spokenTextHash}:{}),...(validMetrics(audio.metrics)?{metrics:audio.metrics}:{}),...(frozen?{renderManifestHash:job.renderManifestHash}:{}),...(pcm?{format:audio.format,sampleCount:audio.sampleCount,sampleRate:audio.sampleRate,channels:audio.channels}:{})});
+      tx.objectStore('parts').add({jobId,index,blob,seconds:audio.seconds,chapter:job.passages[index].chapter,...(job.settings.pronunciation?{spokenTextHash}:{}),...(validMetrics(audio.metrics)?{metrics:audio.metrics}:{}),...(frozen?{renderManifestHash:job.renderManifestHash}:{}),...(pcm?{format:audio.format,sampleCount:audio.sampleCount,sampleRate:audio.sampleRate,channels:audio.channels,audioHash}:{})});
       if(validMetrics(audio.metrics)){
         const summary=job.performance??{measured:0,renderMs:0,loadMs:0,inferenceMs:0,modelLoadAttempts:0,providers:[]};
         summary.measured++;for(const key of ['renderMs','loadMs','inferenceMs','modelLoadAttempts'])summary[key]+=audio.metrics[key]??0;
@@ -94,7 +96,7 @@ export async function openStorage(factory=globalThis.indexedDB,name=DATABASE,opt
     async savePreparation(id,preparation,{signal}={}){
       assertActive({signal});const tx=db.transaction('jobs','readwrite'),done=complete(tx),s=tx.objectStore('jobs'),abort=()=>{try{tx.abort();}catch{}};signal?.addEventListener('abort',abort,{once:true});
       try{const job=await value(s.get(id));assertActive({signal});if(job){job.preparations=[...(job.preparations??[]),preparation].slice(-4);s.put(job);}await done;}
-      catch(error){abort();await done.catch(()=>{});throw error;}finally{signal?.removeEventListener('abort',abort);}
+      catch(error){abort();await done.catch(()=>{});assertActive({signal});throw error;}finally{signal?.removeEventListener('abort',abort);}
     },
     async savePodcast(id,fields){const tx=db.transaction('jobs','readwrite'),done=complete(tx),s=tx.objectStore('jobs');const job=await value(s.get(id));if(job){job.podcast=fields;s.put(job);}await done;},
     async podcastGuid(id){const tx=db.transaction('jobs','readwrite'),done=complete(tx),s=tx.objectStore('jobs');const job=await value(s.get(id));if(!job){await done;throw Error('Recording not found.');}if(!job.episodeGuid){job.episodeGuid=crypto.randomUUID();s.put(job);}await done;return job.episodeGuid;},

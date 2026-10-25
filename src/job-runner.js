@@ -4,6 +4,7 @@ import {isPcmPipeline,validatePcm,encodePcmParts,assertActive,abortable} from '.
 import {FOUNDATION_PIPELINE,assertSupportedManifest} from './render-provenance.js';
 import {validFrozenMetrics,metricsSummary} from './render-metrics.js';
 import {resolveTakes,takeRevision,selectedTake} from './take-selection.js';
+import {sha256Bytes} from './asset-integrity.js';
 
 // Never trust persisted routing metadata to choose which manuscript words to skip.
 export async function validateCheckpoint(store,job,options={}){
@@ -29,6 +30,9 @@ export async function validateCheckpoint(store,job,options={}){
     if(isPcmPipeline(job.settings.pipeline)){
       try{validatePcm(part,part.blob.size);}catch{fail();}
       if((part.sampleCount&&part.sampleRate!==job.sampleRate)||Math.abs(part.seconds-part.sampleCount/part.sampleRate)>1e-9)fail();
+      const required=job.settings.renderManifest?.checkpointIntegrity==='original-pcm-sha256-v1';
+      if(required&&!/^[a-f0-9]{64}$/.test(part.audioHash??''))fail();
+      if(part.audioHash!==undefined){if(!/^[a-f0-9]{64}$/.test(part.audioHash))fail();const bytes=await abortable(part.blob.arrayBuffer(),options.signal);assertActive(options);if(await abortable(sha256Bytes(bytes),options.signal)!==part.audioHash)fail();}
     }else if(part.format==='pcm-s16le')fail();
     if(job.settings.pipeline===FOUNDATION_PIPELINE&&(!validFrozenMetrics(part.metrics,job.settings.renderManifest.engine,!job.source.slice(job.passages[index].start,job.passages[index].end).trim())||part.renderManifestHash!==job.renderManifestHash||part.metrics.format!==part.format||Math.abs(part.metrics.outputAudioSeconds-part.seconds)>1e-9))fail();
     if(job.settings.pronunciation&&part.spokenTextHash!==await abortable(digest(spokenPassage(job.source.slice(job.passages[index].start,job.passages[index].end),job.settings.pronunciation).text),options.signal))fail();
@@ -101,6 +105,7 @@ export async function recordingBlob(store,job,chapter=null,maxBytes=96*1024*1024
 export async function renderReport(store,job){
  const parts=await validateCheckpoint(store,job);
  return {schema:1,recordingId:job.id,sourceHash:job.sourceHash,sourceCharacters:job.source.length,settings:job.settings,
+  checkpointIntegrity:job.settings.renderManifest?.checkpointIntegrity??'legacy-original-checksums-unrecorded',
   provenance:job.settings.renderManifest?'frozen-render-inputs':'legacy-historical-model-and-voice-revision-unrecorded',
   renderManifestHash:job.renderManifestHash??null,takeSelection:job.takeSelection??null,performance:metricsSummary(parts),preparations:job.preparations??[],
   passages:parts.map(part=>({index:part.index,takeId:selectedTake(job,part.index),spokenTextHash:part.spokenTextHash??null,audioHash:part.audioHash??null,sourceSliceHash:part.sourceSliceHash??null,executedBuildSourceSha:part.executedBuildSourceSha??null,start:job.passages[part.index].start,end:job.passages[part.index].end,seconds:part.seconds,format:part.format??'mp3',sampleRate:part.sampleRate??job.sampleRate,sampleCount:part.sampleCount??null,renderManifestHash:part.renderManifestHash??null,metrics:part.metrics??null})),
