@@ -8,6 +8,7 @@ import {createPronunciationEditor} from './pronunciation-editor.js';
 import {chunkText} from './core.js';
 import {createTakeEditor} from './take-editor.js';
 import {createChapterCache} from './chapter-cache.js';
+import {showPreparationProgress} from './preparation-progress.js';
 import {episodePackage,packageZip,appleValidationUrl,publicUrl} from './podcast.js';
 import './style.css';
 import {voices as catalog,getVoice,voiceCapabilities} from './voices.js';
@@ -25,8 +26,8 @@ let audioURL=null,previewURL=null,wake=null,owner=crypto.randomUUID(),draftTimer
 let renderToken=0,selectionToken=0,loadedChapter=0,loadedThrough=0,loadedJobId=null,positionSaved=0,exporting=false;
 let exportController=null,playbackController=null;
 var takeEditor,pronunciationEditor,speechReview,referenceEditor;
-const chapterCache=createChapterCache({prepare:(job,chapter,options)=>recordingBlob(store,job,chapter,undefined,options),onChange:()=>controls()});
-function cancelPreparations(){exportController?.abort();playbackController?.abort();chapterCache.clear();}
+const chapterCache=createChapterCache({prepare:(job,chapter,options)=>{const token=renderToken,selection=selectionToken;return recordingBlob(store,job,chapter,undefined,{...options,onProgress:value=>{if(token===renderToken&&selection===selectionToken&&selectedJob?.id===job.id&&!exporting)showPreparationProgress($,value,'Chapter '+(chapter+1));}});},onChange:()=>controls()});
+function cancelPreparations(){const active=exportController||playbackController||chapterCache.preparing;exportController?.abort();playbackController?.abort();chapterCache.clear();if(active){$('preparation-meter').hidden=true;$('preparation-status').textContent='Audio preparation interrupted. Saved audio remains available.';}}
 const status=message=>$('status').textContent=message;
 const warn=error=>error?.name==='QuotaExceededError'?'This device is low on storage. Saved passages are safe. Download them, delete an older recording, then resume.':(error?.message||'Could not save on this device.');
 const busy=()=>creating||auditionBusy||importing||quick||exporting||(typeof takeEditor!=='undefined'&&takeEditor?.busy)||(typeof speechReview!=='undefined'&&speechReview?.busy)||(typeof referenceEditor!=='undefined'&&referenceEditor?.busy);
@@ -244,9 +245,9 @@ function quickListen(text){
     const u=new SpeechSynthesisUtterance(passages[index]);u.voice=deviceVoices[Number($('voice').value)];u.rate=Number($('speed').value);u.onend=()=>{index++;next();};u.onerror=()=>{if(quick){quick=false;controls();status('Device reading interrupted. Choose Studio for resumable recordings.');}};window.speechSynthesis.speak(u);};next();status('Quick listening. No MP3 is being saved.');
 }
 async function exportAudio({chapter=null,share=false}={}){
-  if(busy()||!selectedJob)return;exporting=true;controls();$('export-status').textContent='Preparing saved MP3 passages…';
+  if(busy()||!selectedJob)return;$('preparation-meter').hidden=true;exporting=true;controls();$('export-status').textContent='Preparing saved MP3 passages…';
   const id=selectedJob.id,selection=selectionToken,controller=new AbortController();exportController=controller;
-  const options={signal:controller.signal,isCurrent:()=>selectedJob?.id===id&&selectionToken===selection},check=()=>assertActive(options);
+  const options={signal:controller.signal,isCurrent:()=>selectedJob?.id===id&&selectionToken===selection,onProgress:value=>{if(selectedJob?.id===id&&selectionToken===selection)showPreparationProgress($,value,'MP3','export-status');}},check=()=>assertActive(options);
   try{const job=await abortable(store.job(id),controller.signal);check();if((job.takeSelection?.revision??0)!==(selectedJob.takeSelection?.revision??0))throw Error('Passage selection changed in another window. Load latest saved audio before export.');const {blob,metrics,metricsPersisted}=await recordingBlob(store,job,chapter,undefined,options);check();renderDetails(job,metrics,metricsPersisted);
     const partial=job.next<job.passages.length;const filename=safeFilename(job.title)+(chapter!==null?'-chapter-'+(chapter+1):'')+(partial?'-partial':'')+(job.takeSelection?.revision?'-takes-r'+job.takeSelection.revision:'')+'.mp3';
     const file=new File([blob],filename,{type:'audio/mpeg'});
@@ -312,9 +313,9 @@ referenceEditor=createReferenceEditor({$,isBusy:()=>creating||auditionBusy||impo
 function podcastFields(){return {showTitle:$('pod-show-title').value,showDescription:$('pod-show-description').value,author:$('pod-author').value,episodeTitle:$('pod-episode-title').value,episodeDescription:$('pod-episode-description').value,language:$('pod-language').value,category:$('pod-category').value,explicit:$('pod-explicit').value,audioUrl:$('pod-audio-url').value,artworkUrl:$('pod-artwork-url').value,feedUrl:$('pod-feed-url').value,websiteUrl:$('pod-website-url').value,rightsConfirmed:$('pod-rights').checked,spokenDisclosureConfirmed:$('pod-spoken').checked,artworkConfirmed:$('pod-artwork').checked};}
 $('pod-export').onclick=async()=>{
  if(busy()||!selectedJob||!store){$('pod-status').textContent='Select a saved complete recording first.';return;}
- const id=selectedJob.id,fields=podcastFields();exporting=true;controls();
+ const id=selectedJob.id,fields=podcastFields();$('preparation-meter').hidden=true;exporting=true;controls();
  const selection=selectionToken,controller=new AbortController();exportController=controller;
- const options={signal:controller.signal,isCurrent:()=>selectedJob?.id===id&&selectionToken===selection},check=()=>assertActive(options);
+ const options={signal:controller.signal,isCurrent:()=>selectedJob?.id===id&&selectionToken===selection,onProgress:value=>{if(selectedJob?.id===id&&selectionToken===selection)showPreparationProgress($,value,'MP3','pod-status');}},check=()=>assertActive(options);
  try{await abortable(flushPodcast(),controller.signal);check();let job=await abortable(store.job(id),controller.signal);check();if((job.takeSelection?.revision??0)!==(selectedJob.takeSelection?.revision??0))throw Error('Passage selection changed in another window. Load latest saved audio before export.');if(job.next!==job.passages.length)throw Error('Finish this recording first. Partial audio is not an episode.');
  await abortable(store.podcastGuid(job.id),controller.signal);check();job=await abortable(store.job(job.id),controller.signal);check();if((job.takeSelection?.revision??0)!==(selectedJob.takeSelection?.revision??0))throw Error('Passage selection changed. Load latest saved audio before export.');const artifact=await recordingBlob(store,job,null,undefined,options);check();const result=await abortable(episodePackage(job,artifact.blob,fields,{seconds:artifact.seconds,takeRevision:artifact.takeRevision}),controller.signal);check();
  saveFile(packageZip(result.files),safeFilename(job.title)+'-podcast-preparation.zip');$('pod-status').textContent='Preparation ZIP download started. Nothing was uploaded. '+result.metadata.warnings.join(' ');

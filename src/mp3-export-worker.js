@@ -25,8 +25,8 @@ self.onmessage=async({data})=>{
     }else if(data.type==='finish'){
       if(!encoder)throw Error('Encoder not started.');const flushed=performance.now();keep(encoder.flush());encodingMs+=performance.now()-flushed;encoder=null;
       const metrics={schema:1,encodingMs,initializationMs,workerElapsedMs:performance.now()-started,inputSamples,sampleRate,passages,bytes:size,phase:'single-artifact-mp3'};
-      self.postMessage({parts,metrics},parts.map(p=>p.buffer));parts=[];return;
+      self.postMessage({id:data.id,type:data.type,parts,metrics},parts.map(p=>p.buffer));parts=[];return;
     }else throw Error('Unknown export request.');
-    self.postMessage({ok:true});
-  }catch(error){self.postMessage({error:error.message});}
+    self.postMessage({id:data.id,type:data.type,ok:true});
+  }catch(error){self.postMessage({id:data.id,type:data.type,error:error.message});}
 };

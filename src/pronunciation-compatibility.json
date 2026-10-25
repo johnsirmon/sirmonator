@@ -4,6 +4,8 @@
     "src/recording.js": "bc05056098ea12fbee3b6e5a6bc6c1f877e6cd16639eeba28052a2a77002c8b8",
     "src/tts-worker.js": "72acbdeec465445921cb13252d51cb45504bb85ba4167e75d6f6473f69057c6c",
     "src/pronunciation.js": "8ce3d506a9fe2137f1014b34fdf28a159ed6ae16fbca50a38a1330c11554daf9",
-    "src/engine-capabilities.js": "001af6355074be03e2b9c02b6e711fadc5a5de8cdb1a024dbeed862f9db65147"
+    "src/engine-capabilities.js": "001af6355074be03e2b9c02b6e711fadc5a5de8cdb1a024dbeed862f9db65147",
+    "src/continuity.js": "2881ca471aa40b38b56cbe334564bab4501400d8559b9a16bd9947e69928bbdd",
+    "src/mp3-export-worker.js": "baad3353f7370ea1239d1f9e5a9fa098699bfb64934896e30714cfa9d30e2737"
   }
 }

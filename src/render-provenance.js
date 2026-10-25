@@ -5,6 +5,7 @@ import pronunciationContract from './render-contract-8e3e830.json' with {type:'j
 import preparationContract from './render-contract-0bd2d4a.json' with {type:'json'};
 import storageContract from './render-contract-40459e2.json' with {type:'json'};
 import recoveryContract from './render-contract-cbb8bd1.json' with {type:'json'};
+import preparationRecoveryContract from './render-contract-6dd6049.json' with {type:'json'};
 import compatibility from './pronunciation-compatibility.json' with {type:'json'};
 import {normalizePronunciation} from './pronunciation.js';
 import {getVoice} from './voices.js';
@@ -44,9 +45,10 @@ export function assertSupportedManifest(settings){
  const pinned=Object.entries(compatibility.noRulesOverrides).every(([name,hash])=>assets.source.files[name]===hash);
  orchestration.add('src/idb-lifecycle.js');orchestration.add('src/render-contract-40459e2.json');
  orchestration.add('src/render-contract-cbb8bd1.json');orchestration.add('src/chapter-cache.js');
- for(const archived of [previous,takesContract,pronunciationContract,preparationContract,storageContract,recoveryContract]){
+ orchestration.add('src/render-contract-6dd6049.json');
+ for(const archived of [previous,takesContract,pronunciationContract,preparationContract,storageContract,recoveryContract,preparationRecoveryContract]){
   const sameAudio=Object.entries(archived.source.files).every(([name,hash])=>orchestration.has(name)||assets.source.files[name]===hash||(pinned&&name in compatibility.noRulesOverrides))&&Object.keys(assets.source.files).every(name=>orchestration.has(name)||name in archived.source.files||(pinned&&name in compatibility.noRulesOverrides));
-  const supportedDictionary=!saved?.pronunciation||(archived===pronunciationContract&&saved.pronunciation.matcher==='literal-unicode-token-longest-v1')||([preparationContract,storageContract,recoveryContract].includes(archived)&&['literal-unicode-token-longest-v1','literal-unicode-token-longest-v2'].includes(saved.pronunciation.matcher));
+  const supportedDictionary=!saved?.pronunciation||(archived===pronunciationContract&&saved.pronunciation.matcher==='literal-unicode-token-longest-v1')||([preparationContract,storageContract,recoveryContract,preparationRecoveryContract].includes(archived)&&['literal-unicode-token-longest-v1','literal-unicode-token-longest-v2'].includes(saved.pronunciation.matcher));
   if(supportedDictionary&&pinned&&sameAudio&&JSON.stringify(saved?.source)===JSON.stringify(archived.source)&&JSON.stringify({...saved,source:current.source})===JSON.stringify(current))return;
  }
  throw Error('These saved render inputs are not supported by this build. Saved audio can still be played and exported. Start a new recording to use updated inputs.');

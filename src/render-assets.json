@@ -2,6 +2,7 @@
   "schema": 1,
   "source": {
     "files": {
+      "src/render-contract-6dd6049.json": "51932267a901a1013555c0f5a18e6e9bfe2336b97bd8f912200fd054b35ccc97",
       "src/chapter-cache.js": "a4496df7f8b9adec6fdca15929bcaa5fee52163387ac89b57a875dba9ddaa547",
       "src/render-contract-cbb8bd1.json": "5ffe8a9270a626f9d868b8fba47242b44e0d30bc746e0e36be248c0e33ac4c31",
       "src/idb-lifecycle.js": "92fdea0a61f9decf22f62415aa2396856125a45e15168dee034e9ec98a24bdf2",
@@ -11,7 +12,7 @@
       "src/pinned-kokoro.js": "100b5eca066a536f621b46c9d92b8574f53297d35c4c7a24221a6bbb0db643cb",
       "src/tts-worker.js": "72acbdeec465445921cb13252d51cb45504bb85ba4167e75d6f6473f69057c6c",
       "src/speech-runner.js": "37f045c9b4572cfc6d5e715748b1d32b975743fa096e39dce4d4ba34e90fcebc",
-      "src/render-provenance.js": "41f8541eacc51c9f91224dd85697a52662960aa9f5a6b18c423d4d192e7ee81c",
+      "src/render-provenance.js": "10683f1d9d50144125a169fedb99e895705cea253f30604aa285e1ae34ecd3d9",
       "src/render-metrics.js": "e8caacfd6ee8a56db8e828d5f02d3826695ee2af4ff6e28ba35f4230b5c216e2",
       "src/core.js": "969b136d6e19fe0116f2c0cb8391257b123095d6068b1456f1d9b68a1b501a34",
       "src/recording.js": "bc05056098ea12fbee3b6e5a6bc6c1f877e6cd16639eeba28052a2a77002c8b8",
@@ -21,12 +22,12 @@
       "src/passage-takes.js": "f361003d1c655ba6abf68cf996f712c663a80ff0a0fd165b3d9eb5e0963f4dfb",
       "src/render-contract-944aa8e.json": "c2c9217ab7bbd41243059cdd40b24bae46744ab743befaddff7d2e80d1e54208",
       "src/pronunciation.js": "8ce3d506a9fe2137f1014b34fdf28a159ed6ae16fbca50a38a1330c11554daf9",
-      "src/pronunciation-compatibility.json": "804fe84d6fc551b9d6278e46f22c37a64ad546001663fea3482527747f869ff8",
+      "src/pronunciation-compatibility.json": "470883bbf7c84db68218ca8cd6b8605b3c3553e0312a90cfd08c85fccbb4d1ce",
       "src/render-contract-1458c2e.json": "30c64253f1c62c6dcd1c42821edbf62bf3002104727e96f473bc2aaa668ea7f4",
       "src/render-contract-8e3e830.json": "15647f3c4a2bedc4f34e849bc52b84bdb588e67eb62486c75b0604af01d27c38",
       "src/render-contract-0bd2d4a.json": "45e144ef88c251e5ee763aef8d43abe37ea0b67c92e773ce6bf3f70d0b905b7a",
       "src/engine-capabilities.js": "001af6355074be03e2b9c02b6e711fadc5a5de8cdb1a024dbeed862f9db65147",
-      "src/mp3-export-worker.js": "250e7d1fc79c2b89c46bbeabc03d82661162e606d79fbd3223acd09ae93797db",
+      "src/mp3-export-worker.js": "baad3353f7370ea1239d1f9e5a9fa098699bfb64934896e30714cfa9d30e2737",
       "src/audio-effects.js": "618ac26b9c977c3b9c6dcca05f0ecb68742c70c939fbb988c6181a1a964d2d77",
       "src/character-settings.js": "fade27a9f2f99e47fe7e7f237788786d9732ebdbc386fe8969d8cb007dedd5b2",
       "src/voices.js": "ddbbf77b7b63781e70cb91839dfad0e2c0e6815eafbabfcf979f441e7ceedf57",
@@ -39,10 +40,10 @@
       "src/vendor/pocket/tokenizer.js": "70788cc36841a7be1c08f9e56b280552826a753a854b354a44fb399c6df49651",
       "src/vendor/pocket/binary.js": "f6b38f71380ce450861f6710df42c7d80e9f751df888f1cafbd18beb071b016a",
       "src/mp3.js": "eb09e9d0b0d3971182efd4e6946b7e45b127a8cac4ecbe4bdf3bd553e412314b",
-      "src/continuity.js": "7d9699b5a1ed38a1a6eef8c5ba1eea5945623cd2cedb5a34c26ee4b9ac02b6a3",
+      "src/continuity.js": "2881ca471aa40b38b56cbe334564bab4501400d8559b9a16bd9947e69928bbdd",
       "package-lock.json": "dc85b64b6a8d659211cf05af19e4d9bd396ecbe8f23a5294c377f39fe541424f"
     },
-    "sha256": "8d6d8f563a7d2d41e8a8215969027de248d0aa6061a71fd0b4103b13a83acd67"
+    "sha256": "caf000df525b055de3c71f0e3febaadba45ef4d0f9355920e3087e45ea198d63"
   },
   "packages": {
     "kokoro-js": {
