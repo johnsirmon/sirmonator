@@ -86,3 +86,12 @@ test('recovery changes preserve PCM helpers and worker codec source except respo
  assert.equal(hash(continuity.slice(0,continuity.indexOf('export const MP3_REQUEST_TIMEOUT_MS'))),'7ab599978bd3f10533a66a2ce8a1d1dd43e70150f40f87ec19e28e5408877563');
  assert.equal(hash(worker.replaceAll('{id:data.id,type:data.type,','{')),'250e7d1fc79c2b89c46bbeabc03d82661162e606d79fbd3223acd09ae93797db');
 });
+test('default browser timers keep their global receiver through the watchdog wrapper',async()=>{
+ const source=(await readFile('src/continuity.js','utf8')).replaceAll('export ','').replaceAll('import.meta.url',JSON.stringify('file:///fixture/continuity.js')),tasks=new Map();let id=0,globalObject,terminated=0;
+ const context=vm.createContext({Blob,ArrayBuffer,Uint8Array,DOMException,performance,Promise,Error,
+  setTimeout:function(fn,ms){assert.equal(this,globalObject,'browser timer receiver');tasks.set(++id,{fn,ms});return id;},
+  clearTimeout:function(key){assert.equal(this,globalObject,'browser timer receiver');tasks.delete(key);}});
+ globalObject=vm.runInContext('globalThis',context);vm.runInContext(source+'\nglobalThis.encode=encodePcmParts;',context);
+ const worker={terminate(){terminated++;},postMessage(data){queueMicrotask(()=>reply(this,data));}};
+ assert.equal((await context.encode([part()],24000,{createWorker:()=>worker})).size,3);assert.equal(tasks.size,0);assert.equal(terminated,1);
+});

@@ -27,7 +27,7 @@ export function abortable(promise,signal){
   });
 }
 export const MP3_REQUEST_TIMEOUT_MS=180000;
-export async function encodePcmParts(parts,sampleRate,{createWorker=()=>new Worker(new URL('./mp3-export-worker.js',import.meta.url),{type:'module'}),isCurrent=()=>true,signal,onMetrics=()=>{},onProgress=()=>{},maxBytes=96*1024*1024,requestTimeoutMs=MP3_REQUEST_TIMEOUT_MS,timers={setTimeout,clearTimeout},now=()=>performance.now()}={}){
+export async function encodePcmParts(parts,sampleRate,{createWorker=()=>new Worker(new URL('./mp3-export-worker.js',import.meta.url),{type:'module'}),isCurrent=()=>true,signal,onMetrics=()=>{},onProgress=()=>{},maxBytes=96*1024*1024,requestTimeoutMs=MP3_REQUEST_TIMEOUT_MS,timers={setTimeout:(fn,ms)=>globalThis.setTimeout(fn,ms),clearTimeout:id=>globalThis.clearTimeout(id)},now=()=>performance.now()}={}){
   const started=performance.now();
   const check=()=>assertActive({signal,isCurrent});check();
   if(!Number.isFinite(requestTimeoutMs)||requestTimeoutMs<=0||!Number.isSafeInteger(maxBytes)||maxBytes<=0)throw Error('Invalid MP3 preparation limit.');

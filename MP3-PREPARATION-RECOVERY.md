@@ -68,3 +68,6 @@ spoken accuracy or acoustic quality. Watchdog expiration uses fake time, not a
 real three-minute wait. No new browser/phone integration test or download was
 performed, and no model, codec or dependency was installed. No merge/deployment.
 Final checkpoint: 191 tests and the production build pass.
+Combined browser integration subsequently found that native browser timers reject
+the wrapper object as their receiver. Default watchdog functions now call through
+globalThis; a receiver-sensitive regression covers the actual exported function.
