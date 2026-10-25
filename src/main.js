@@ -187,6 +187,27 @@ async function loadChapter(chapter,time=0,preparation=null,selectRecording=false
   }catch(error){if(current())$('export-status').textContent=warn(error);}
   finally{if(current())$('preparation-meter').hidden=true;if(!handedOff)preparation?.dispose();if(playbackController===controller){if(selectedJob?.id===loadedJobId)$('play-chapter').value=String(loadedChapter);playbackController=null;}controls();}
 }
+async function openRecording(){
+  if(busy())return;const id=$('saved-recordings').value;if(!id)return;
+  const selection=beginSelection(),token=renderToken;
+  playbackController?.abort();const controller=new AbortController();playbackController=controller;
+  const current=()=>selection===selectionToken&&token===renderToken&&!controller.signal.aborted;
+  $('preparation-meter').hidden=true;$('preparation-status').textContent='Preparing selected recording.';controls();
+  try{await abortable(savePosition(),controller.signal);if(!current())return;const job=await abortable(store.job(id),controller.signal);if(!current())return;if(!job)throw Error('The selected recording is no longer available.');await showRecording(job,{selection});}
+  catch(error){if(current()){const message=warn(error);$('preparation-status').textContent=message;status(message);}}
+  finally{if(playbackController===controller){playbackController=null;controls();}}
+}
+async function changeChapter(){
+  if(busy()||!selectedJob?.next)return;
+  const chapter=Number($('play-chapter').value),id=selectedJob.id,selection=selectionToken,token=++renderToken;
+  playbackController?.abort();const controller=new AbortController();playbackController=controller;
+  const current=()=>selection===selectionToken&&token===renderToken&&selectedJob?.id===id&&!controller.signal.aborted;
+  if(loadedJobId===id)$('play-chapter').value=String(loadedChapter);
+  $('preparation-status').textContent='Preparing chapter '+(chapter+1)+' audio.';controls();
+  try{await abortable(savePosition().catch(()=>{}),controller.signal);if(current())await loadChapter(chapter);}
+  catch(error){if(current())$('export-status').textContent=warn(error);}
+  finally{if(playbackController===controller){playbackController=null;if(selectedJob?.id===loadedJobId)$('play-chapter').value=String(loadedChapter);controls();}}
+}
 function renderDetails(job,preparation,persisted){
  if(typeof storageUsageEditor!=='undefined')storageUsageEditor?.update(job);
  if(typeof takeEditor!=='undefined')takeEditor?.update(job);
@@ -298,9 +319,9 @@ document.querySelectorAll('[data-voice]').forEach(b=>b.onclick=()=>{$('review').
 sourceImporter=createSourceImporter({read:importDocument,getRevision:()=>draftRevision,onIntent:()=>{dirty=true;draftRevision++;},onReading:value=>{importing=value;controls();},apply:(result,file)=>{$('text').value=result.text;$('title').value=file.name.replace(/\.[^.]+$/,'');$('source').textContent=file.name;$('review').checked=false;$('import-note').hidden=false;$('import-note').textContent=result.note;updateText();},persist:flushDraft,notify:status,formatError:warn});
 $('file').onchange=()=>{const file=$('file').files[0];$('file').value='';if(file)return sourceImporter.start(file);};
 const upload=$('file').previousElementSibling;upload.tabIndex=0;upload.setAttribute('role','button');upload.onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&!busy()){e.preventDefault();$('file').click();}};
-$('saved-recordings').onchange=controls;$('open-recording').onclick=async()=>{const id=$('saved-recordings').value,selection=beginSelection();try{await savePosition();const job=await store.job(id);if(job)await showRecording(job,{selection});}catch(error){if(selection===selectionToken)status(warn(error));}};
+$('saved-recordings').onchange=controls;$('open-recording').onclick=openRecording;
 $('delete-recording').onclick=async()=>{const id=$('saved-recordings').value;if(!id||!confirm('Delete this saved recording, its audio and saved manual reviews from this browser? Download a copy first.'))return;beginSelection();try{if(typeof speechReview!=='undefined')await speechReview?.deleteJob(id);await store.deleteJob(id);if(selectedJob?.id===id){renderToken++;selectedJob=null;$('audio').pause();$('audio').removeAttribute('src');if(audioURL)URL.revokeObjectURL(audioURL);audioURL=null;$('result').hidden=true;$('empty-player').hidden=false;}await refreshLibrary();status('Recording deleted from this browser. Your draft was kept.');}catch(error){status(warn(error));}};
-$('play-chapter').onchange=async()=>{await savePosition().catch(()=>{});await loadChapter(Number($('play-chapter').value));};$('refresh-audio').onclick=()=>loadChapter(loadedChapter,$('audio').currentTime);
+$('play-chapter').onchange=changeChapter;$('refresh-audio').onclick=()=>loadChapter(loadedChapter,$('audio').currentTime);
 $('back').onclick=()=>skip(-15);$('forward').onclick=()=>skip(15);$('playback-speed').onchange=()=>{$('audio').playbackRate=Number($('playback-speed').value);};
 $('audio').ontimeupdate=()=>{if(Date.now()-positionSaved>1000){positionSaved=Date.now();savePosition().catch(()=>{});}};$('audio').onpause=()=>savePosition().catch(()=>{});
 $('audio').onended=async()=>{if((typeof playbackController!=='undefined'&&playbackController)||!selectedJob||selectedJob.id!==loadedJobId)return;const id=loadedJobId,selection=selectionToken,render=renderToken;const job=await store.job(id).catch(error=>{if(selection===selectionToken)status(warn(error));return null;});if(render!==renderToken||selection!==selectionToken||selectedJob?.id!==id||loadedJobId!==id||!job)return;if((job.takeSelection?.revision??0)!==(selectedJob.takeSelection?.revision??0)){$('export-status').textContent='Passage selection changed in another window. Load latest saved audio before continuing or exporting.';return;}selectedJob=job;
