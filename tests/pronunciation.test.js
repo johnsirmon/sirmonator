@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 import {indexedDB,IDBKeyRange} from 'fake-indexeddb';
-import {normalizePronunciation,parsePronunciation,spokenPassage,PRONUNCIATION_MATCHER} from '../src/pronunciation.js';
+import {normalizePronunciation,parsePronunciation,spokenPassage,PRONUNCIATION_MATCHER,LEGACY_PRONUNCIATION_MATCHER} from '../src/pronunciation.js';
 import {createPronunciationEditor} from '../src/pronunciation-editor.js';
 import {makeRecording,digest} from '../src/recording.js';
 import {FOUNDATION_PIPELINE,assertSupportedManifest,currentManifest} from '../src/render-provenance.js';
@@ -20,6 +20,7 @@ import {chunkText} from '../src/core.js';
 import {sourceSnapshot} from '../scripts/update-render-catalog.mjs';
 import baseline from '../src/render-contract-1458c2e.json' with {type:'json'};
 import compatibility from '../src/pronunciation-compatibility.json' with {type:'json'};
+import pronunciationBaseline from '../src/render-contract-8e3e830.json' with {type:'json'};
 globalThis.IDBKeyRange=IDBKeyRange;
 const rules=lines=>parsePronunciation(lines),settings={voice:'af_sarah',edition:'refined',delivery:'natural',speed:1,pipeline:FOUNDATION_PIPELINE};
 function output(job,text,level=.1){const samples=new Float32Array(2400).fill(level);return {bytes:quantizePcm(samples),sampleCount:2400,sampleRate:24000,format:'pcm-s16le',channels:1,seconds:.1,renderManifest:job.settings.renderManifest,...(job.settings.pronunciation?{spokenText:spokenPassage(text,job.settings.pronunciation).text}:{}),metrics:renderMetrics({started:0,synthesized:10,finished:11,audio:{samples,sampleRate:24000,runtime:{provider:'cpu',dtype:'q8',loadMs:2,inferenceMs:7,modelLoadAttempts:1,retries:0}},outputSeconds:.1,format:'pcm-s16le',engine:'kokoro'})};}
@@ -38,6 +39,16 @@ test('overlap uses longest at earliest position; replacement is literal and neve
  assert.equal(spokenPassage('a b c',rules('a b => first\nb c => second')).text,'first c');
  assert.equal(spokenPassage('John\n\nMark',dictionary).text,'jahn\n\nmark-alias');
  assert.equal(spokenPassage('C\\D',rules('C\\D => slash')).text,'slash');
+});
+test('v2 considers overlapping starts after rejected boundaries, while frozen v1 behavior remains unchanged',async()=>{
+ for(const [source,spelling,expected] of [['xa-a-a','a-a','xa-X'],['xJohn John John','John John','xJohn X'],['𐐀a-a-a','a-a','𐐀a-X'],['x𐐀-𐐀-𐐀','𐐀-𐐀','x𐐀-X']]){
+  const dictionary=rules(spelling+' => X');assert.equal(spokenPassage(source,dictionary).text,expected);
+  const legacy={...dictionary,matcher:LEGACY_PRONUNCIATION_MATCHER};assert.equal(spokenPassage(source,legacy).text,source);
+ }
+ const dictionary=rules('a-a => X\nx-a => earlier');assert.equal(spokenPassage('x-a-a-a',dictionary).text,'earlier-X');
+ const old={...rules('a-a => X'),matcher:LEGACY_PRONUNCIATION_MATCHER},manifest=currentManifest({...settings,pronunciation:old});manifest.source=pronunciationBaseline.source;
+ const job=await makeRecording('xa-a-a',{...settings,pronunciation:old,renderManifest:manifest});assertSupportedManifest(job.settings);assert.equal(spokenPassage(job.source,job.settings.pronunciation).text,'xa-a-a');
+ const report=JSON.parse(await readFile('evidence/pronunciation-real-node.json','utf8'));if(report.after.settings.pronunciation.matcher===LEGACY_PRONUNCIATION_MATCHER)assertSupportedManifest(report.after.settings);
 });
 test('phrase matching stays within original chunk boundaries and never skips or repeats split words',()=>{
  const source='X '.repeat(116)+'John Mark.',dictionary=rules('John Mark => full-name'),parts=chunkText(source);
@@ -93,4 +104,10 @@ test('draft editor previews safely, preserves invalid edits on reload and bounds
 test('pronunciation controls occur once and page IDs stay unique',async()=>{
  const html=await readFile('index.html','utf8'),ids=[...html.matchAll(/\bid="([^"]+)"/gu)].map(m=>m[1]);assert.equal(new Set(ids).size,ids.length);
  for(const id of ['pronunciation-controls','pronunciation-rules','pronunciation-case','pronunciation-source','pronunciation-spoken','take-spoken'])assert.equal(ids.filter(value=>value===id).length,1);
+});
+test('restoring an unedited v1 draft keeps v1 matching until a rule edit opts into v2',()=>{
+ const map=new Map(),$=id=>{if(!map.has(id))map.set(id,{value:'',checked:false,textContent:'',listeners:{},setAttribute(){},addEventListener(type,fn){this.listeners[type]=fn;}});return map.get(id);};let changes=0;
+ const editor=createPronunciationEditor({$,source:()=> 'xa-a-a',onChange:()=>changes++}),old={...rules('a-a => X'),matcher:LEGACY_PRONUNCIATION_MATCHER};
+ editor.restoreDraft({lines:'a-a => X',caseSensitive:false,revision:1},old);assert.equal(editor.config().matcher,LEGACY_PRONUNCIATION_MATCHER);assert.equal($('pronunciation-spoken').textContent,'xa-a-a');assert.equal(changes,0);
+ $('pronunciation-rules').listeners.input();assert.equal(editor.config().matcher,PRONUNCIATION_MATCHER);assert.equal($('pronunciation-spoken').textContent,'xa-X');assert.equal(changes,1);assert.equal(editor.snapshot().matcher,PRONUNCIATION_MATCHER);
 });

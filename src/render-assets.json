@@ -7,7 +7,7 @@
       "src/pinned-kokoro.js": "100b5eca066a536f621b46c9d92b8574f53297d35c4c7a24221a6bbb0db643cb",
       "src/tts-worker.js": "e53a80321e716ec92116aee32e13a1952aef6045adb02219d91b7c481e6d9072",
       "src/speech-runner.js": "37f045c9b4572cfc6d5e715748b1d32b975743fa096e39dce4d4ba34e90fcebc",
-      "src/render-provenance.js": "40120361c7de5a99cd2b282dd9b2bdf0afde88f723e6256a85b7bf28de322c31",
+      "src/render-provenance.js": "90e94a101c673b0dea50ad66385141d9ee2e6df506e328d55ed2f12bee879d21",
       "src/render-metrics.js": "e8caacfd6ee8a56db8e828d5f02d3826695ee2af4ff6e28ba35f4230b5c216e2",
       "src/core.js": "969b136d6e19fe0116f2c0cb8391257b123095d6068b1456f1d9b68a1b501a34",
       "src/recording.js": "0afe47c4c54c86320ade5e38bded3f3736f878086343ea2ee8e1168b7c42de44",
@@ -16,9 +16,10 @@
       "src/take-selection.js": "278c9afdebcd43dba267cc189c1660a4fb0c0f9b698ff571a84dec7c49358ab1",
       "src/passage-takes.js": "f361003d1c655ba6abf68cf996f712c663a80ff0a0fd165b3d9eb5e0963f4dfb",
       "src/render-contract-944aa8e.json": "c2c9217ab7bbd41243059cdd40b24bae46744ab743befaddff7d2e80d1e54208",
-      "src/pronunciation.js": "2c0573c3e3a8bf1912f35ad85139acd8451f62e5589905605754eb933d87e31f",
-      "src/pronunciation-compatibility.json": "142fdb60cdf1387725cd77714ab7c4d5a5491efda8d88d8be963a6e048475ab4",
+      "src/pronunciation.js": "8ce3d506a9fe2137f1014b34fdf28a159ed6ae16fbca50a38a1330c11554daf9",
+      "src/pronunciation-compatibility.json": "9054cedbd2aa8a5dcdbfa5cba5edd57e34039a4691486de773faba3b1f827f57",
       "src/render-contract-1458c2e.json": "30c64253f1c62c6dcd1c42821edbf62bf3002104727e96f473bc2aaa668ea7f4",
+      "src/render-contract-8e3e830.json": "15647f3c4a2bedc4f34e849bc52b84bdb588e67eb62486c75b0604af01d27c38",
       "src/mp3-export-worker.js": "250e7d1fc79c2b89c46bbeabc03d82661162e606d79fbd3223acd09ae93797db",
       "src/audio-effects.js": "618ac26b9c977c3b9c6dcca05f0ecb68742c70c939fbb988c6181a1a964d2d77",
       "src/character-settings.js": "fade27a9f2f99e47fe7e7f237788786d9732ebdbc386fe8969d8cb007dedd5b2",
@@ -35,7 +36,7 @@
       "src/continuity.js": "7d9699b5a1ed38a1a6eef8c5ba1eea5945623cd2cedb5a34c26ee4b9ac02b6a3",
       "package-lock.json": "dc85b64b6a8d659211cf05af19e4d9bd396ecbe8f23a5294c377f39fe541424f"
     },
-    "sha256": "a439ca42783f7dc211a1abdbc03155e882ad06c96da5d4d7a0ab9c1d700e3e9d"
+    "sha256": "2a100202c37415c836db0d54f328fa1b718edb405b748776ebc26b217397a4ed"
   },
   "packages": {
     "kokoro-js": {
