@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "baseline": "5f784c162015f0f0d3f99d34441234995081a019",
+  "sourceHashesLf": {
+    "src/main.js": "495839d34784c48f6926976255af9481f5543d7ba29df3bf39536575921d6a1a",
+    "tests/player-selection.test.js": "67bb401b02eae238c388d7224d82a1abd5feb3fa61de7f8e9b57506a65f112d4"
+  },
+  "problem": "showRecording published B identity before B audio was prepared. A preparation/allocation failure retained A audio beneath B title/actions.",
+  "change": "Defer positive-audio recording UI/selection commit until validated preparation and replacement URL allocation succeed. Preserve old coherent player while pending or failed; restore loaded chapter selector when the owning request settles. Ignore old ended events during foreground preparation. Keep progress tied to current tokens rather than prematurely changing selectedJob.",
+  "tests": {
+    "before": {
+      "tests": 12,
+      "pass": 9,
+      "expectedRegressionFailures": 3
+    },
+    "focused": {
+      "tests": 29,
+      "pass": 29
+    },
+    "full": {
+      "tests": 371,
+      "pass": 371,
+      "fail": 0
+    },
+    "build": true,
+    "catalogExact": true
+  },
+  "cases": [
+    "A to B preparation failure retains A selected/loaded ID, title, source action and URL; retry commits B.",
+    "A to B URL allocation failure has the same coherent retention and retry.",
+    "Pending B keeps A identity; newer same-ID revision wins over late B completion.",
+    "Preparation and allocation failures changing chapter restore the old chapter selector and retry correctly.",
+    "Actual Stop handler cancels pending B publication; A remains coherent and fresh B retry works.",
+    "An old audio ended event during B preparation cannot supersede explicit B selection.",
+    "Existing empty-recording, storage/validation races, background prefetch/progress and long-session counter tests still pass."
+  ],
+  "limits": "Actual handlers run with deterministic storage/audio/URL/preparation stubs. No native browser/media or reference-model inference has run for this correction. Source/audio/dependencies/reference assets and renderer fingerprints unchanged. Reference redistribution remains unresolved."
+}
