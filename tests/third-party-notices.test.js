@@ -3,8 +3,28 @@ import assert from 'node:assert/strict';
 import {readFile,mkdtemp} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
+import {execFileSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
 import {build} from 'vite';
 import {noticeAssets,thirdPartyNotices} from '../scripts/third-party-notices.mjs';
+
+test('notice evidence distinguishes canonical Git blobs from platform artifact bytes',async()=>{
+ const evidence=JSON.parse(await readFile('evidence/shipped-notices-review.json','utf8')),hash=bytes=>createHash('sha256').update(bytes).digest('hex');
+ assert.equal(evidence.schema,2);assert.equal(evidence.buildContext.platform,'win32');assert.match(evidence.buildContext.byteConvention,/No cross-platform artifact identity/);
+ assert.equal(evidence.notices.length,noticeAssets.length);
+ for(const record of evidence.notices){
+  // HEAD also works in a shallow checkout; compare its bytes to the recorded
+  // canonical digest rather than requiring the historical build commit locally.
+  const canonical=execFileSync('git',['show','HEAD:'+record.source],{windowsHide:true}),checkout=await readFile(record.source);
+  assert.equal(hash(canonical),record.canonicalGit.sha256);assert.equal(canonical.length,record.canonicalGit.bytes);
+  assert.equal(checkout.toString('utf8').replaceAll('\r\n','\n'),canonical.toString('utf8'),'notice text changed beyond checkout line endings');
+  assert.deepEqual(record.checkout,record.dist,'recorded build retained its own checkout bytes');
+  // Evidence describes a Windows build. Verify its recorded CRLF hash without
+  // assuming this test runner uses the same checkout line-ending policy.
+  const windows=Buffer.from(canonical.toString('utf8').replaceAll('\n','\r\n'));
+  assert.equal(hash(windows),record.checkout.sha256);assert.equal(windows.length,record.checkout.bytes);
+ }
+});
 
 test('development notice links serve the same canonical bytes without a catch-all route',async()=>{
  let handle;thirdPartyNotices().configureServer({middlewares:{use:handler=>handle=handler}});
