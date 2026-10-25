@@ -269,7 +269,7 @@ $('preview').onclick=()=>{if($('engine').value==='studio')audition.play(audition
 $('custom-preview').onclick=async()=>{if(busy())return;if(boundaryError){status(boundaryError);$('text').focus();return;}let first;try{first=chunkSource(rangeText(),draftBoundaryPolicy())[0]??'';}catch(error){status(error.message);return;}if(!first.trim()){status('Add text first.');return;}if($('engine').value==='device'){quickListen(first);return;}
   creating=true;cancelled=false;controls();try{const audio=await generate(first,settings(),true,true);if(previewURL)URL.revokeObjectURL(previewURL);previewURL=URL.createObjectURL(new Blob([audio.bytes],{type:'audio/mpeg'}));$('audition-audio').src=previewURL;$('audition-audio').hidden=false;$('audition-audio').play().catch(()=>{});status('Your passage preview is ready. Press Play in the sample player.');}catch(error){status(warn(error));}finally{creating=false;synthesisClient.idle();controls();}
 };
-$('engine').onchange=()=>{fillVoices();narratorNote();updateText({resetRange:false});};$('voice').onchange=()=>{$('voice-edition').value='refined';narratorNote();scheduleSave();};
+$('engine').onchange=()=>{$('review').checked=false;fillVoices();narratorNote();updateText({resetRange:false});};$('voice').onchange=()=>{$('voice-edition').value='refined';narratorNote();scheduleSave();};
 for(const id of ['voice-edition','delivery','speed'])$(id).onchange=()=>{narratorNote();scheduleSave();};$('speed').oninput=()=>{$('speed-value').textContent=Number($('speed').value)+'×';preflight();};
 $('title').oninput=scheduleSave;$('review').onchange=scheduleSave;
 $('text-boundaries').onchange=()=>{$('review').checked=false;updateText();};
