@@ -17,7 +17,7 @@ function metadataBytes(value,budget,check){
   if(item instanceof Blob)throw Error('Nested binary metadata is not measured');
   if(typeof item!=='object'||item instanceof ArrayBuffer||ArrayBuffer.isView(item)||active.has(item))throw Error('Unsupported metadata representation');
   active.add(item);let bytes=2,count=0;
-  if(Array.isArray(item)){for(let i=0;i<item.length;i++){bytes+=(count++?1:0)+(item[i]===undefined?4:visit(item[i],depth+1));}}
+  if(Array.isArray(item)){for(let i=0;i<item.length;i++){const child=item[i];bytes+=(count++?1:0)+visit(child===undefined?null:child,depth+1);}}
   else{if(Object.getPrototypeOf(item)!==Object.prototype&&Object.getPrototypeOf(item)!==null)throw Error('Unsupported metadata representation');for(const key in item){if(!Object.hasOwn(item,key)||item[key]===undefined||item[key] instanceof Blob)continue;bytes+=(count++?1:0)+visit(key,depth+1)+1+visit(item[key],depth+1);}}
   active.delete(item);return bytes;
  };
