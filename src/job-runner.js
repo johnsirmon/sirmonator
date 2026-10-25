@@ -90,8 +90,11 @@ export async function recordingBlob(store,job,chapter=null,maxBytes=96*1024*1024
   assertActive(options);
   let metricsPersisted=false;
   if(metrics&&store.savePreparation){
-    try{await abortable(store.savePreparation(job.id,{chapter,through:job.next,takeRevision:takeRevision(job),metrics}),options.signal);metricsPersisted=true;}
-    catch(error){assertActive(options);options.onMetricPersistenceError?.(error);}
+    const controller=new AbortController(),abort=()=>controller.abort(),limit=Number.isFinite(options.metricTimeoutMs)&&options.metricTimeoutMs>0?options.metricTimeoutMs:2000;
+    const timer=globalThis.setTimeout(abort,limit);options.signal?.addEventListener('abort',abort,{once:true});if(options.signal?.aborted)abort();
+    try{await abortable(store.savePreparation(job.id,{chapter,through:job.next,takeRevision:takeRevision(job),metrics},{signal:controller.signal}),controller.signal);metricsPersisted=true;}
+    catch(error){assertActive(options);try{options.onMetricPersistenceError?.(error);}catch{}}
+    finally{globalThis.clearTimeout(timer);options.signal?.removeEventListener('abort',abort);}
   }
   assertActive(options);return {blob,seconds,metrics,metricsPersisted,takeRevision:takeRevision(job)};
 }

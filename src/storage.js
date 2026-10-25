@@ -1,4 +1,4 @@
-import {isPcmPipeline,validatePcm} from './continuity.js';
+import {isPcmPipeline,validatePcm,assertActive} from './continuity.js';
 import {FOUNDATION_PIPELINE} from './engine-specs.js';
 import {validMetrics,validFrozenMetrics} from './render-metrics.js';
 import {requireTakeJob,selectionState,changeSelection,takeRevision,validateTake,TAKE_BYTES,TAKE_COUNT,TAKES_PER_PASSAGE} from './take-selection.js';
@@ -64,6 +64,7 @@ export async function openStorage(factory=globalThis.indexedDB,name=DATABASE,opt
       const tx=db.transaction(['jobs','parts','locks'],'readwrite'),done=complete(tx);
       // Attach rejection handling immediately: intentional transaction aborts must not leak promises.
       done.catch(()=>{});
+      try{
       const job=await value(tx.objectStore('jobs').get(jobId)),lock=await value(tx.objectStore('locks').get('generation'));
       const fail=message=>{tx.abort();throw Error(message);};
       if(!lock||lock.owner!==owner||lock.until<=now)return fail('Another window owns audio creation. Saved passages are safe.');
@@ -88,8 +89,13 @@ export async function openStorage(factory=globalThis.indexedDB,name=DATABASE,opt
       }
       job.next++;job.bytes+=blob.size;job.seconds+=audio.seconds;if(blob.size)job.sampleRate=audio.sampleRate||job.sampleRate;job.updatedAt=now;job.state=job.next===job.passages.length?'ready':'paused';
       tx.objectStore('jobs').put(job);await done;return job;
+      }catch(error){try{tx.abort();}catch{}await done.catch(()=>{});throw error;}
     },
-    async savePreparation(id,preparation){const tx=db.transaction('jobs','readwrite'),done=complete(tx),s=tx.objectStore('jobs');const job=await value(s.get(id));if(job){job.preparations=[...(job.preparations??[]),preparation].slice(-4);s.put(job);}await done;},
+    async savePreparation(id,preparation,{signal}={}){
+      assertActive({signal});const tx=db.transaction('jobs','readwrite'),done=complete(tx),s=tx.objectStore('jobs'),abort=()=>{try{tx.abort();}catch{}};signal?.addEventListener('abort',abort,{once:true});
+      try{const job=await value(s.get(id));assertActive({signal});if(job){job.preparations=[...(job.preparations??[]),preparation].slice(-4);s.put(job);}await done;}
+      catch(error){abort();await done.catch(()=>{});throw error;}finally{signal?.removeEventListener('abort',abort);}
+    },
     async savePodcast(id,fields){const tx=db.transaction('jobs','readwrite'),done=complete(tx),s=tx.objectStore('jobs');const job=await value(s.get(id));if(job){job.podcast=fields;s.put(job);}await done;},
     async podcastGuid(id){const tx=db.transaction('jobs','readwrite'),done=complete(tx),s=tx.objectStore('jobs');const job=await value(s.get(id));if(!job){await done;throw Error('Recording not found.');}if(!job.episodeGuid){job.episodeGuid=crypto.randomUUID();s.put(job);}await done;return job.episodeGuid;},
     async position(id,position){const tx=db.transaction('jobs','readwrite'),done=complete(tx),s=tx.objectStore('jobs');const job=await value(s.get(id));if(job){job.position=position;s.put(job);}await done;},

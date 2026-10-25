@@ -72,7 +72,7 @@ export async function encodePcmParts(parts,sampleRate,{createWorker=()=>new Work
     check();progress('finalizing',true);const result=await send({type:'finish'});check();
     if(!Array.isArray(result.parts)||!result.parts.length||result.parts.some(p=>!(p instanceof Uint8Array))||!result.parts.reduce((n,p)=>n+p.byteLength,0)||result.parts.reduce((n,p)=>n+p.byteLength,0)>maxBytes)throw failure('Invalid or excessive MP3 worker output.');
     const blob=new Blob(result.parts,{type:'audio/mpeg'});progress('complete',true);
-    if(result.metrics)onMetrics({...result.metrics,preparationMs:performance.now()-started,preparedAt:Date.now()});return blob;
+    if(result.metrics)try{onMetrics({...result.metrics,preparationMs:performance.now()-started,preparedAt:Date.now()});}catch{}check();return blob;
   }catch(error){if(isCurrent())try{onProgress({phase:error.name==='AbortError'?'cancelled':'failed',completedParts,totalParts,completedSamples,totalSamples,error:error.message});}catch{}throw error;}
   finally{signal?.removeEventListener('abort',abort);if(pending)timers.clearTimeout(pending.timer);pending=null;worker.onmessage=()=>{};worker.onerror=()=>{};worker.onmessageerror=()=>{};await terminate();}
 }

@@ -175,7 +175,7 @@ function renderDetails(job,preparation,persisted){
  $('render-provenance').textContent=note+(job.settings?.pronunciation?' Pronunciation dictionary revision '+job.settings.pronunciation.revision+' is frozen for this recording. Draft rule edits do not affect it.':' No pronunciation substitutions are stored for this recording.');
  const p=job.performance;
  $('render-performance').textContent=p?`Measured ${p.measured} of ${job.next} saved passages: ${(p.renderMs/1000).toFixed(2)} s render including ${(p.loadMs/1000).toFixed(2)} s loading; ${(p.inferenceMs/1000).toFixed(2)} s engine calls; ${p.providers.join(', ')}. Cancelled attempts are not included.`:'No durable render timing was recorded for these passages.';
- if(preparation)$('artifact-performance').textContent=`This artifact: ${(preparation.preparationMs/1000).toFixed(2)} s preparation, ${(preparation.encodingMs/1000).toFixed(2)} s MP3 encoding (separate from synthesis). Timing does not measure speech accuracy.${persisted===false?' Preparation timing could not be retained on this device.':''}`;
+ if(preparation)$('artifact-performance').textContent=`This artifact: ${(preparation.preparationMs/1000).toFixed(2)} s preparation, ${(preparation.encodingMs/1000).toFixed(2)} s MP3 encoding (separate from synthesis). Timing does not measure speech accuracy.${persisted===false?' Preparation timing save was not confirmed on this device.':''}`;
  else $('artifact-performance').textContent='MP3 preparation timing appears when an artifact is prepared.';
  $('render-report').disabled=busy()||!job.next;
 }
