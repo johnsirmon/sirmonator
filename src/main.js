@@ -1,3 +1,4 @@
+import {createQuickListener} from './quick-listener.js';
 import {createSourceImporter} from './source-importer.js';
 import {createStorageUsageEditor} from './storage-usage-editor.js';
 import {browserStorageEstimate,storageEstimateText} from './storage-usage.js';
@@ -66,13 +67,15 @@ function storageStateChanged({state,message}){
   }
 }
 const audition=createAuditionPlayer({audio:$('audition-audio'),setBusy:value=>{auditionBusy=value;controls();},notify:status});
+const quickListener=createQuickListener({getSpeech:()=>window.speechSynthesis,createUtterance:text=>new SpeechSynthesisUtterance(text),split:text=>chaptersFor(text,240).map(p=>text.slice(p.start,p.end)),onState:state=>{quick=state.active;quickPaused=state.paused;controls();},notify:status});
 function settings(allowInvalid=false){const config={voice:$('voice').value,edition:$('voice-edition').value,speed:Number($('speed').value),delivery:$('delivery').value,pipeline:FOUNDATION_PIPELINE};try{const pronunciation=pronunciationEditor?.config();if(pronunciation)config.pronunciation=pronunciation;}catch(error){if(!allowInvalid)throw error;}return config;}
 function fillVoices(){
-  const prior=$('voice').value;deviceVoices=window.speechSynthesis?.getVoices()??[];$('voice').replaceChildren();
+  const prior=$('voice').value,device=$('engine').value==='device',selected=device?deviceVoices[Number(prior)]:null;deviceVoices=window.speechSynthesis?.getVoices()??[];$('voice').replaceChildren();
   const entries=$('engine').value==='studio'?catalog.map(v=>[v.id,`${v.name} · ${v.detail}`]):deviceVoices.map((v,i)=>[String(i),`${v.name} · ${v.lang}`]);
   for(const [value,label] of entries){const option=new Option(label,value);$('voice').add(option);}
-  if(entries.some(([id])=>id===prior))$('voice').value=prior;
-  else if($('engine').value==='studio')$('voice').value='st-m1';
+  const selectedIndex=selected?deviceVoices.findIndex(v=>v===selected||(v.voiceURI===selected.voiceURI&&v.name===selected.name&&v.lang===selected.lang)):-1;
+  if(device&&selectedIndex>=0)$('voice').value=String(selectedIndex);
+  else if(!device)$('voice').value=entries.some(([id])=>id===prior)?prior:'st-m1';
   else {const en=deviceVoices.findIndex(v=>v.lang.startsWith('en'));if(en>=0)$('voice').value=String(en);}
 }
 function narratorNote(){
@@ -113,7 +116,7 @@ function preflight(){
   $('preflight').textContent=`About ${Math.ceil(minutes/Number($('speed').value))} min listening · estimated MP3 ${(minutes/Number($('speed').value)*.48).toFixed(1)} MB. Smooth recordings keep uncompressed local checkpoints (about 3–6 MB/min); MP3 preparation takes additional time. First voice use may download about ${mb} MB; pinned model URLs may need a fresh cache even after earlier versions. Creation time depends on your device.`;
 }
 function draft(){return {text:$('text').value,title:$('title').value,settings:settings(true),pronunciationDraft:pronunciationEditor?.snapshot(),boundaryPolicy:$('text-boundaries').value,engine:$('engine').value,review:$('review').checked,from:Number($('range-from').value),to:Number($('range-to').value),updatedAt:Date.now()};}
-function scheduleSave(){dirty=true;draftRevision++;clearTimeout(draftTimer);if(!$('remember').checked){$('save-status').textContent='Draft autosave is off. Created recordings are saved separately.';return;}$('save-status').textContent='Saving draft…';draftTimer=setTimeout(()=>queueSave(),350);}
+function scheduleSave(){quickListener.stop();audition.stop();dirty=true;draftRevision++;clearTimeout(draftTimer);if(!$('remember').checked){$('save-status').textContent='Draft autosave is off. Created recordings are saved separately.';return;}$('save-status').textContent='Saving draft…';draftTimer=setTimeout(()=>queueSave(),350);}
 async function flushDraft(){
   clearTimeout(draftTimer);if(!$('remember').checked)return;if(!store||!storageReady){$('save-status').textContent='Draft is not saved while local storage is unavailable. Download a text backup.';return;}
   const snapshot=draft();if(snapshot.text.length>MAX_DOCUMENT){$('save-status').textContent='Draft exceeds 2 million characters. Download a text backup and reduce its size.';return;}
@@ -251,10 +254,7 @@ async function createAudio(id){
   }
 }
 function quickListen(text){
-  if(!text.trim()){status('Add some text first.');return;}if(!window.speechSynthesis||!deviceVoices.length){status('No device voices available. Choose Studio mode.');return;}
-  const passages=chaptersFor(text,240).map(p=>text.slice(p.start,p.end));let index=0;quick=true;quickPaused=false;controls();
-  const next=()=>{if(!quick)return;if(index===passages.length){quick=false;controls();status('Quick listening finished. No recording was created.');return;}
-    const u=new SpeechSynthesisUtterance(passages[index]);u.voice=deviceVoices[Number($('voice').value)];u.rate=Number($('speed').value);u.onend=()=>{index++;next();};u.onerror=()=>{if(quick){quick=false;controls();status('Device reading interrupted. Choose Studio for resumable recordings.');}};window.speechSynthesis.speak(u);};next();status('Quick listening. No MP3 is being saved.');
+  quickListener.start({text,voice:deviceVoices[Number($('voice').value)],speed:Number($('speed').value)});
 }
 async function exportAudio({chapter=null,share=false}={}){
   if(busy()||!selectedJob)return;$('preparation-meter').hidden=true;exporting=true;controls();$('export-status').textContent='Preparing saved MP3 passages…';
@@ -268,8 +268,8 @@ async function exportAudio({chapter=null,share=false}={}){
   }catch(error){$('export-status').textContent=error.name==='AbortError'?'Audio preparation cancelled. Your audio is still saved.':warn(error);}finally{if(exportController===controller)exportController=null;exporting=false;controls();}
 }
 $('start').onclick=()=>createAudio();$('resume-recording').onclick=()=>createAudio(selectedJob?.id);
-$('pause').onclick=()=>{if(quick){quickPaused=!quickPaused;quickPaused?window.speechSynthesis.pause():window.speechSynthesis.resume();}else{pauseRequested=true;status('Pausing after the current passage is saved…');}controls();};
-$('stop').onclick=()=>{if(importing){sourceImporter?.cancel();return;}killWorker();if(typeof takeEditor!=='undefined')takeEditor?.cancel();if(typeof speechReview!=='undefined')speechReview?.cancel();if(typeof referenceEditor!=='undefined')referenceEditor?.cancel();cancelPreparations();renderToken++;if(creating){cancelled=true;status('Cancelled the current passage. Completed passages are saved.');}else if(quick){quick=false;window.speechSynthesis.cancel();controls();status('Quick listening stopped.');}else{audition.stop();status('Audio preparation cancelled. Saved passages were kept.');}};
+$('pause').onclick=()=>{if(quick){quickListener.togglePause();}else{pauseRequested=true;status('Pausing after the current passage is saved…');}controls();};
+$('stop').onclick=()=>{if(importing){sourceImporter?.cancel();return;}killWorker();if(typeof takeEditor!=='undefined')takeEditor?.cancel();if(typeof speechReview!=='undefined')speechReview?.cancel();if(typeof referenceEditor!=='undefined')referenceEditor?.cancel();cancelPreparations();renderToken++;if(creating){cancelled=true;status('Cancelled the current passage. Completed passages are saved.');}else if(quick){quickListener.stop();}else{audition.stop();status('Audio preparation cancelled. Saved passages were kept.');}};
 $('preview').onclick=()=>{if($('engine').value==='studio')audition.play(auditionUrl($('voice').value,base,$('voice-edition').value));else quickListen('Good morning, church. Let us begin.');};
 $('custom-preview').onclick=async()=>{if(busy())return;if(boundaryError){status(boundaryError);$('text').focus();return;}let first;try{first=chunkSource(rangeText(),draftBoundaryPolicy())[0]??'';}catch(error){status(error.message);return;}if(!first.trim()){status('Add text first.');return;}if($('engine').value==='device'){quickListen(first);return;}
   creating=true;cancelled=false;controls();try{const audio=await generate(first,settings(),true,true);if(previewURL)URL.revokeObjectURL(previewURL);previewURL=URL.createObjectURL(new Blob([audio.bytes],{type:'audio/mpeg'}));$('audition-audio').src=previewURL;$('audition-audio').hidden=false;$('audition-audio').play().catch(()=>{});status('Your passage preview is ready. Press Play in the sample player.');}catch(error){status(warn(error));}finally{creating=false;synthesisClient.idle();controls();}
@@ -302,7 +302,7 @@ $('audio').onended=async()=>{if(!selectedJob||selectedJob.id!==loadedJobId)retur
 };
 $('download').onclick=()=>exportAudio();$('download-chapter').onclick=()=>exportAudio({chapter:loadedChapter});$('share').onclick=()=>exportAudio({share:true});
 $('transcript').onclick=()=>{if(selectedJob)saveFile(new Blob([selectedJob.source],{type:'text/plain;charset=utf-8'}),safeFilename(selectedJob.title)+'-reviewed-source.txt');};
-window.addEventListener('pagehide',()=>{sourceImporter?.cancel({silent:true});referenceEditor?.cancel();speechReview?.cancel();takeEditor?.cancel();cancelPreparations();queueSave();savePosition().catch(()=>{});cancelled=true;killWorker();store?.release(owner).catch(()=>{});window.speechSynthesis?.cancel();});
+window.addEventListener('pagehide',()=>{sourceImporter?.cancel({silent:true});referenceEditor?.cancel();speechReview?.cancel();takeEditor?.cancel();cancelPreparations();queueSave();savePosition().catch(()=>{});cancelled=true;killWorker();store?.release(owner).catch(()=>{});quickListener.stop({silent:true});});
 window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();queueSave();}});
 fillVoices();window.speechSynthesis?.addEventListener('voiceschanged',()=>{if(!busy()){fillVoices();narratorNote();}});narratorNote();controls();
 async function initialize(){
