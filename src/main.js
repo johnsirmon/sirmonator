@@ -124,7 +124,7 @@ function scheduleSave(){quickListener.stop();audition.stop();dirty=true;draftRev
 async function flushDraft(){
   clearTimeout(draftTimer);if(!$('remember').checked)return;if(!store||!storageReady){$('save-status').textContent='Draft is not saved while local storage is unavailable. Download a text backup.';return;}
   const snapshot=draft();if(snapshot.text.length>MAX_DOCUMENT){$('save-status').textContent='Draft exceeds 2 million characters. Download a text backup and reduce its size.';return;}
-  const target=store,revision=draftRevision,current=()=>storageReady&&store===target&&draftRevision===revision;saveChain=saveChain.catch(()=>{}).then(()=>target.saveDraft(snapshot));
+  const target=store,revision=draftRevision,current=()=>storageReady&&store===target&&draftRevision===revision&&$('remember').checked;saveChain=saveChain.catch(()=>{}).then(()=>target.saveDraft(snapshot));
   try{await saveChain;if(current())$('save-status').textContent='Draft saved on this device. Private browsing or clearing site data can remove it.';}
   catch(error){if(current())$('save-status').textContent='Draft not saved: '+warn(error);throw error;}
 }
@@ -324,7 +324,9 @@ $('title').oninput=scheduleSave;$('review').onchange=scheduleSave;
 $('text-boundaries').onchange=()=>{$('review').checked=false;updateText();};
 $('text').oninput=()=>{$('source').textContent='Edited / pasted text';$('import-note').hidden=true;$('review').checked=false;updateText();};
 for(const id of ['range-from','range-to'])$(id).onchange=()=>updateRange();
-$('remember').onchange=async()=>{try{if($('remember').checked)await flushDraft();else{clearTimeout(draftTimer);await saveChain.catch(()=>{});await store?.deleteDraft();$('save-status').textContent='Draft autosave off. Created recordings remain saved separately.';}}catch(error){$('save-status').textContent=warn(error);}};
+// Draft removal shares the write queue: a later enable/save must follow it.
+// Capture the connection and intent before yielding; old work owns no new status.
+$('remember').onchange=async()=>{const target=store,revision=++draftRevision,enabled=$('remember').checked,current=()=>storageReady&&store===target&&draftRevision===revision&&$('remember').checked===enabled;clearTimeout(draftTimer);try{if(enabled)await flushDraft();else{if(!target||!storageReady){$('save-status').textContent='Draft autosave off. The previous saved draft could not be removed while local storage is unavailable. Download a text backup and retry local storage.';return;}saveChain=saveChain.catch(()=>{}).then(()=>target.deleteDraft());await saveChain;if(current())$('save-status').textContent='Draft autosave off. Created recordings remain saved separately.';}}catch(error){if(current())$('save-status').textContent=warn(error);}};
 $('backup-draft').onclick=()=>saveFile(new Blob([$('text').value],{type:'text/plain;charset=utf-8'}),safeFilename($('title').value)+'-source.txt');
 $('clear').onclick=()=>{undo=draft();$('source').textContent='Paste or upload text';$('import-note').hidden=true;$('text').value='';$('review').checked=false;$('undo-clear').hidden=false;updateText();};
 $('undo-clear').onclick=()=>{if(!undo)return;$('review').checked=false;$('source').textContent='Restored text — review before creating';$('import-note').hidden=true;$('text').value=undo.text;$('title').value=undo.title;$('text-boundaries').value=undo.boundaryPolicy??LEGACY_BOUNDARIES;$('undo-clear').hidden=true;updateText();};
