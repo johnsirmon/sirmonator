@@ -28,6 +28,7 @@ test('all download kinds use bounded portable stems including Windows reserved t
 test('ZIP rejects traversal, absolute, reserved, duplicate and malformed entry names',()=>{
  for(const name of ['../outside.mp3','/absolute.mp3','C:\\outside.mp3','folder/file.mp3','folder\\file.mp3','..','.','NUL.mp3','COM¹.mp3','bad\u0000.mp3','bad\ud800.mp3','trailing.','trailing ','a'.repeat(256)])assert.throws(()=>packageZip([{name,data:new Uint8Array([1])}]),/portable single-file names/);
  assert.throws(()=>packageZip([{name:'Audio.mp3',data:''},{name:'audio.mp3',data:''}]),/unique/);
+ for(const [first,second] of [['Σ.txt','ς.txt'],['straße.txt','STRASSE.txt']])assert.throws(()=>packageZip([{name:first,data:''},{name:second,data:''}]),/unique/);
  assert.throws(()=>packageZip(new Array(65536)),/Too many/);
 });
 

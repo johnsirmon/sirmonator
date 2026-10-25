@@ -1,0 +1,119 @@
+{
+  "schema": 1,
+  "baseline": "e44c16d4f338a7326878316b21baf25612093f0b",
+  "historicalMainSourceSha256Lf": "7ba59067e0e9f4dc8b2236aa6c0ff532fd4f4dc3e1b35a5806fcfa937cdf3e7c",
+  "currentSourceHashesLf": {
+    "src/main.js": "e94c05286338df3844496acb93d20f31d4afac954a891d36965a874a57daf116",
+    "src/podcast.js": "cb68faa378ae138a1ade198d3b837119a32bef400c38fc36c7ef144103e3c29d",
+    "tests/long-session-resources.test.js": "ff22347aac72fd4ffd048dfb3a6befe2de724dd284bda814ebc45615ebce3279",
+    "tests/export-portability.test.js": "28376341956d558ef121ac71583aaedd39a210a7264ea714aace58f620c9e0ad"
+  },
+  "validation": {
+    "historicalMain": {
+      "tests": 8,
+      "pass": 5,
+      "expectedFailures": 3,
+      "command": "SIRMONATOR_RESOURCE_BASELINE=e44c16d4f338a7326878316b21baf25612093f0b node --test --test-timeout=30000 tests/long-session-resources.test.js"
+    },
+    "currentFocused": {
+      "tests": 16,
+      "pass": 16
+    },
+    "fullSuite": {
+      "tests": 363,
+      "pass": 363,
+      "fail": 0
+    },
+    "productionBuild": true,
+    "renderCatalogExact": true
+  },
+  "fixed": [
+    {
+      "location": "src/main.js saveFile",
+      "failure": "After creating an object URL, synchronous anchor creation/click exceptions skipped the release timer and left the URL unowned.",
+      "change": "Release immediately on synchronous failure; retain successful downloads for the existing 10-second grace period."
+    },
+    {
+      "location": "src/main.js loadChapter",
+      "failure": "Old chapter URL was revoked before a replacement URL was allocated; allocation failure left the player pointing to revoked audio.",
+      "change": "Allocate replacement first, then release the old URL."
+    },
+    {
+      "location": "src/main.js custom-preview handler",
+      "failure": "Old preview URL was revoked before replacement allocation; allocation failure invalidated the current sample.",
+      "change": "Allocate replacement first; failure retains the current owned preview."
+    }
+  ],
+  "counters": [
+    {
+      "scope": "Actual download handler with injected anchor/URL/timer APIs",
+      "cycles": 100,
+      "expected": "Failure leaves zero live URLs/timers; success retains one URL until its grace timer fires."
+    },
+    {
+      "scope": "Actual loadChapter with stubbed preparation, URL and audio APIs",
+      "cycles": 100,
+      "expected": "Exactly one loaded URL across preparation/allocation failures and successful replacements; explicit harness teardown releases final URL."
+    },
+    {
+      "scope": "Actual custom-preview handler with generation/audio stubs",
+      "cycles": 100,
+      "expected": "Exactly one URL across generation/allocation failures and replacement; explicit harness teardown releases final URL."
+    },
+    {
+      "scope": "Actual abortable wrapper with counted native AbortSignal registration",
+      "cycles": 100,
+      "expected": "Zero registered abort callbacks after success, rejection or abort including a late read resolution."
+    },
+    {
+      "scope": "Actual Studio synthesis client with injected workers/timers",
+      "cycles": 100,
+      "expected": "Two successful warm requests per cycle then cancellation, worker failure or idle expiry; zero live mock workers/timers before retry."
+    },
+    {
+      "scope": "Actual audition/Quick listener modules with native API stubs",
+      "cycles": 100,
+      "expected": "Terminal/Stop detaches owned callbacks; captured stale events remain harmless. No real speech service call."
+    },
+    {
+      "scope": "Actual chapter cache, 2 entries / 16 synthetic bytes",
+      "cycles": 100,
+      "expected": "Warm hit avoids preparation; expected LRU eviction after third entry, failed entry is retryable, clear removes retained snapshots."
+    },
+    {
+      "scope": "Actual encodePcmParts with stub protocol worker and tiny PCM Blobs",
+      "cycles": 100,
+      "requestsPerCycle": "One failure/cancellation followed by two successes",
+      "expected": "Exactly one termination per request; zero tracked request timers/abort callbacks/live mock workers."
+    }
+  ],
+  "unicodeZipFollowup": {
+    "policy": "NFKC then uppercase is a conservative collision key, not a universal filesystem guarantee.",
+    "fixtures": [
+      [
+        "Σ.txt",
+        "ς.txt"
+      ],
+      [
+        "straße.txt",
+        "STRASSE.txt"
+      ]
+    ],
+    "generatedAsciiExportsUnaffected": true,
+    "nativeExtractionFailureClaimed": false
+  },
+  "ownershipLimits": [
+    "Counters measure application references/handle calls, not native heaps, OS threads, browser decoding memory, actual file saves or audio quality.",
+    "Object URL/audio APIs and workers are injected. No browser, audible playback, speech service, model download or inference was used.",
+    "Chapter/previews intentionally retain one URL while loaded; successful downloads retain URLs until their release timers. Harness teardown releases loaded URLs; no claim of a new application-wide destroy API.",
+    "Panels install DOM listeners once at application setup. Cancelling an operation is not panel destruction; no per-cycle listener installation was observed in the audited paths.",
+    "Pagehide/BFCache behavior and browser-managed document URL release remain unverified. Existing pagehide handlers cancel operations and speech; this change does not promise complete native teardown.",
+    "Existing browser-timer/watchdog and failed worker-send tests also run in the full suite; no native cleanup guarantee is inferred."
+  ],
+  "unchanged": [
+    "Frozen narration/render source hashes",
+    "Original source text, PCM/MP3 encoding and dependency pins",
+    "Bundled reference and audition audio; redistribution evidence remains unresolved",
+    "Original editor checkout/browser/processes; no merge or deployment"
+  ]
+}

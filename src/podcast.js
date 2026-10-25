@@ -48,7 +48,9 @@ export async function episodePackage(job,audio,fields,artifact=null){
 function crc32(bytes){let crc=0xffffffff;for(const byte of bytes){crc^=byte;for(let bit=0;bit<8;bit++)crc=(crc>>>1)^((crc&1)?0xedb88320:0);}return (crc^0xffffffff)>>>0;}
 export function packageZip(files){
  if(!Array.isArray(files)||files.length>65535)throw Error('Too many entries for this ZIP format.');
- const names=new Set();for(const file of files){assertArchiveName(file.name);const key=file.name.normalize('NFKC').toLowerCase();if(names.has(key))throw Error('Archive entry names must be unique.');names.add(key);}
+ // Conservatively collapse Unicode uppercase expansions/final sigma as well
+ // as ASCII case. This is not a universal filesystem-equivalence guarantee.
+ const names=new Set();for(const file of files){assertArchiveName(file.name);const key=file.name.normalize('NFKC').toUpperCase();if(names.has(key))throw Error('Archive entry names must be unique.');names.add(key);}
  const encode=new TextEncoder(),local=[],central=[];let offset=0,centralSize=0;
  for(const file of files){const name=encode.encode(file.name),data=typeof file.data==='string'?encode.encode(file.data):file.data,crc=crc32(data);
  const header=new Uint8Array(30+name.length),h=new DataView(header.buffer);h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x800,true);h.setUint32(14,crc,true);h.setUint32(18,data.length,true);h.setUint32(22,data.length,true);h.setUint16(26,name.length,true);header.set(name,30);local.push(header,data);
