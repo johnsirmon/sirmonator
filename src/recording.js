@@ -1,8 +1,9 @@
 import {chunkText} from './core.js';
 import {getVoice} from './voices.js';
 import {LEGACY_PIPELINE,CONTINUITY_PIPELINE} from './continuity.js';
+import {FOUNDATION_PIPELINE,currentManifest,validateManifest} from './render-provenance.js';
 export const MAX_DOCUMENT=2_000_000, MAX_READING=150_000, CHAPTER_SIZE=6000;
-export const PIPELINE=CONTINUITY_PIPELINE;
+export const PIPELINE=FOUNDATION_PIPELINE;
 export function chaptersFor(text,target=CHAPTER_SIZE){
   const passages=chunkText(text),chapters=[];let start=0,end=0;
   for(const passage of passages){
@@ -25,8 +26,10 @@ export function normalizeSettings(settings){
   if(!['natural','reflective','continuous'].includes(settings.delivery))throw Error('Unknown delivery.');
   const speed=Number(settings.speed);if(!Number.isFinite(speed)||speed<.7||speed>1.3)throw Error('Invalid narration speed.');
   const pipeline=settings.pipeline??LEGACY_PIPELINE;
-  if(![LEGACY_PIPELINE,PIPELINE].includes(pipeline))throw Error('Unknown audio pipeline.');
-  return {voice:profile.id,edition:settings.edition,delivery:settings.delivery,speed,voiceRevision:profile.revision??1,pipeline};
+  if(![LEGACY_PIPELINE,CONTINUITY_PIPELINE,PIPELINE].includes(pipeline))throw Error('Unknown audio pipeline.');
+  const normalized={voice:profile.id,edition:settings.edition,delivery:settings.delivery,speed,voiceRevision:profile.revision??1,pipeline};
+  if(pipeline===FOUNDATION_PIPELINE){normalized.renderManifest=validateManifest(settings.renderManifest??currentManifest(settings),settings);normalized.voiceRevision=normalized.renderManifest.voice.revision;}
+  return normalized;
 }
 export async function makeRecording(text,settings,title='My sermon'){
   if(!text.trim())throw Error('Add some text first.');
@@ -39,7 +42,7 @@ export async function makeRecording(text,settings,title='My sermon'){
     while(chapter<chapters.length-1&&start>=chapters[chapter].end)chapter++;
     passages.push({start,end:start+part.length,chapter});start+=part.length;
   }
-  return {id,sourceHash,source:text,title:title.trim().slice(0,120)||'My sermon',settings:normalized,chapters,passages,next:0,bytes:0,seconds:0,state:'paused',createdAt:Date.now(),updatedAt:Date.now(),position:{chapter:0,time:0}};
+  return {id,sourceHash,...(normalized.renderManifest?{renderManifestHash:await digest(JSON.stringify(normalized.renderManifest))}:{}),source:text,title:title.trim().slice(0,120)||'My sermon',settings:normalized,chapters,passages,next:0,bytes:0,seconds:0,state:'paused',createdAt:Date.now(),updatedAt:Date.now(),position:{chapter:0,time:0}};
 }
 export function decodeText(buffer){
   const bytes=new Uint8Array(buffer);let encoding='utf-8';
