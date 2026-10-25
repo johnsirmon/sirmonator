@@ -16,7 +16,8 @@ export function createAuditionPlayer({audio,setBusy,notify}){
     try{await audio.play();}
     catch(error){
       if(current!==sequence)return;
-      finish(error.name==='NotAllowedError'?'Audition ready. Press Play in the sample player below.':'The audition audio could not load. Please try again. Your manuscript is unchanged.');
+      if(error.name==='NotAllowedError'){setBusy(false);notify('Audition ready. Press Play in the sample player below.');}
+      else finish('The audition audio could not load. Please try again. Your manuscript is unchanged.');
     }
   };
   return {play,stop};

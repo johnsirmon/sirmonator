@@ -28,7 +28,6 @@ test('autoplay block offers native play control; missing audio and stop unlock c
  const states=[],messages=[],audio={pause(){},async play(){throw Object.assign(Error('blocked'),{name:'NotAllowedError'});}};
  const player=createAuditionPlayer({audio,setBusy:v=>states.push(v),notify:m=>messages.push(m)});
  await player.play(auditionUrl('fenix'));assert.equal(states.at(-1),false);assert.match(messages.at(-1),/Press Play/);
- assert.equal(audio.onerror,null);audio.play=async()=>{};await player.play(auditionUrl('fenix'));
  audio.onerror();assert.equal(states.at(-1),false);assert.match(messages.at(-1),/could not load/);
  player.stop();assert.equal(audio.onended,null);assert.equal(audio.onerror,null);assert.equal(states.at(-1),false);
  assert.throws(()=>auditionUrl('../arbitrary'));
