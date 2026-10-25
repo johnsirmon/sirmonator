@@ -15,7 +15,7 @@ import {auditionUrl,createAuditionPlayer} from './audition-player.js';
 import {characterVoice} from './character-settings.js';
 import {chaptersFor,selectedText,makeRecording,normalizeSettings,MAX_DOCUMENT,MAX_READING,safeFilename} from './recording.js';
 import {openStorage} from './storage.js';
-import {runRecording,recordingBlob,validateCheckpoint,renderReport} from './job-runner.js';
+import {runRecording,recordingBlob,validateCheckpoint,renderReport,createPlaybackPreparation} from './job-runner.js';
 import {importDocument} from './import-document.js';
 const $=id=>document.getElementById(id),base=import.meta.env.BASE_URL;
 let store,chapters=[],deviceVoices=[],selectedJob=null;
@@ -137,31 +137,33 @@ function beginSelection(){if(typeof speechReview!=='undefined')speechReview?.can
 async function showRecording(job,{keepAudio=false,selection=beginSelection()}={}){
   // Cancel old reads before validation or metadata saving can yield to another selection.
   if(selection!==selectionToken)return;
-  try{await flushPodcast();if(selection!==selectionToken)return;
-    job=await store.job(job.id);if(selection!==selectionToken)return;
+  playbackController?.abort();const controller=new AbortController();playbackController=controller;controls();let preparation;
+  try{await abortable(flushPodcast(),controller.signal);if(selection!==selectionToken)return;
+    job=await abortable(store.job(job.id),controller.signal);if(selection!==selectionToken)return;
     if(!job)throw Error('The selected recording is no longer available.');
-    await validateCheckpoint(store,job);if(selection!==selectionToken)return;
-  }catch(error){if(selection===selectionToken)throw error;return;}
+    preparation=await createPlaybackPreparation(store,job,{signal:controller.signal,isCurrent:()=>selection===selectionToken});job=preparation.job;if(selection!==selectionToken){preparation.dispose();return;}
+  }catch(error){preparation?.dispose();if(selection===selectionToken)throw error;return;}
+  finally{if(playbackController===controller)playbackController=null;controls();}
   renderToken++;selectedJob=job;restorePodcast(job);$('empty-player').hidden=true;$('result').hidden=false;displayProgress(job);
-  if(!keepAudio&&job.next){const available=availableChapters(job),c=available.includes(job.position?.chapter)?job.position.chapter:available[0];$('play-chapter').value=String(c);await loadChapter(c,job.position?.chapter===c?job.position.time:0);}
+  if(!keepAudio&&job.next){const available=availableChapters(job),c=available.includes(job.position?.chapter)?job.position.chapter:available[0];$('play-chapter').value=String(c);await loadChapter(c,job.position?.chapter===c?job.position.time:0,preparation);}else preparation.dispose();
   if(!job.next){$('audio').pause();$('audio').onloadedmetadata=null;$('audio').removeAttribute('src');if(audioURL)URL.revokeObjectURL(audioURL);audioURL=null;loadedJobId=null;}
 }
-async function loadChapter(chapter,time=0){
+async function loadChapter(chapter,time=0,preparation=null){
   if(!selectedJob?.next)return;const token=++renderToken,id=selectedJob.id,selection=selectionToken;
   playbackController?.abort();const controller=new AbortController();playbackController=controller;controls();
   const current=()=>token===renderToken&&selection===selectionToken&&selectedJob?.id===id;
-  try{const job=await abortable(store.job(id),controller.signal);if(!current())return;
+  let handedOff=false;
+  try{let job=preparation?.job??await abortable(store.job(id),controller.signal);if(!current())return;
     if(job?.id!==id)throw Error('The selected recording is no longer available.');
-    await abortable(validateCheckpoint(store,job),controller.signal);if(!current())return;
-    const {blob,metrics,metricsPersisted}=await abortable(chapterCache.get(job,chapter),controller.signal);if(!current()||controller.signal.aborted)return;
+    preparation??=await createPlaybackPreparation(store,job,{signal:controller.signal,isCurrent:current});job=preparation.job;if(!current())return;
+    handedOff=true;const {blob,metrics,metricsPersisted}=await preparation.prepare(chapterCache,chapter,{signal:controller.signal,isCurrent:current});if(!current()||controller.signal.aborted)return;
     renderDetails(job,metrics,metricsPersisted);
     $('audio').pause();if(audioURL)URL.revokeObjectURL(audioURL);audioURL=URL.createObjectURL(blob);loadedChapter=chapter;loadedThrough=job.next;loadedJobId=job.id;selectedJob=job;$('play-chapter').value=String(chapter);
     $('audio').onloadedmetadata=()=>{if(current()&&loadedJobId===id&&Number.isFinite($('audio').duration))$('audio').currentTime=Math.max(0,Math.min(time,$('audio').duration-.05));};
     $('audio').src=audioURL;$('audio').playbackRate=Number($('playback-speed').value);mediaControls(job);
-    if(availableChapters(job).includes(chapter+1))chapterCache.prefetch(job,chapter+1);
     return true;
   }catch(error){if(current())$('export-status').textContent=warn(error);}
-  finally{if(playbackController===controller)playbackController=null;controls();}
+  finally{if(!handedOff)preparation?.dispose();if(playbackController===controller)playbackController=null;controls();}
 }
 function renderDetails(job,preparation,persisted){
  if(typeof takeEditor!=='undefined')takeEditor?.update(job);

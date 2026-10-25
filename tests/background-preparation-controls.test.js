@@ -17,7 +17,7 @@ test('actual controls keep Stop enabled after current load while next chapter pr
  const context=vm.createContext({storageReady:true,storageOpening:false,storageStateChanged(){},$,createChapterCache,abortable,AbortController,
   document:{querySelectorAll:()=>[]},store:{job:async()=>job},
   recordingBlob:async(_store,_job,chapter,_max,{signal})=>{preparedCalls++;if(chapter===1){nextSignal=signal;started.resolve();return gate.promise;}return {blob:new Blob(['current'])};},
-  validateCheckpoint:async()=>{},availableChapters:()=>[0,1],URL:{createObjectURL:()=> 'blob:current',revokeObjectURL:()=>{}},mediaControls:()=>{},podcastHandoff:()=>{},warn:e=>e.message,status:()=>{},killWorker:()=>{},audition:{stop(){}},window:{}});
+  createPlaybackPreparation:async(_store,job)=>({job,dispose(){},prepare:async(cache,chapter)=>{const result=await cache.get(job,chapter);if(job.passages.slice(0,job.next).some(p=>p.chapter===chapter+1))cache.prefetch(job,chapter+1);return result;}}),validateCheckpoint:async()=>{},availableChapters:()=>[0,1],URL:{createObjectURL:()=> 'blob:current',revokeObjectURL:()=>{}},mediaControls:()=>{},podcastHandoff:()=>{},warn:e=>e.message,status:()=>{},killWorker:()=>{},audition:{stop(){}},window:{}});
  vm.runInContext(`let selectedJob=${JSON.stringify(job)},creating=false,quick=false,auditionBusy=false,importing=false,exporting=false,pauseRequested=false,quickPaused=false,exportController=null,playbackController=null,renderToken=0,selectionToken=0,audioURL=null,loadedChapter=0,loadedThrough=0,loadedJobId=null;
  ${preparation}\n${controls}\n${player}\n${stop}\nglobalThis.api={loadChapter,cache:chapterCache,foreground:()=>playbackController};`,context);
  await context.api.loadChapter(0);await started.promise;

@@ -34,12 +34,12 @@ export async function validateTake(job,take,{signal}={}){
  if(textHash!==take.sourceSliceHash||await abortable(sha256Bytes(bytes),signal)!==take.audioHash)throw Error('Saved passage take failed its audio/text integrity check.');
  assertActive({signal});return take;
 }
-export async function resolveTakes(store,job,parts){
+export async function resolveTakes(store,job,parts,options={}){
  const s=selectionState(job);if(!Object.keys(s.selected).length)return parts;
  requireTakeJob(job);const resolved=parts.slice();
  for(const [index,id] of Object.entries(s.selected)){
-  const take=await store.take(job.id,Number(index),id);if(!take)throw Error('A selected passage take is missing. Original audio has been preserved.');
-  resolved[index]=await validateTake(job,take);
+  assertActive(options);const take=await abortable(store.take(job.id,Number(index),id),options.signal);assertActive(options);if(!take)throw Error('A selected passage take is missing. Original audio has been preserved.');
+  resolved[index]=await validateTake(job,take,options);assertActive(options);
  }
  return resolved;
 }
