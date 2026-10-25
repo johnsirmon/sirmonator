@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "kind": "Offline re-encode of previously rendered authored synthetic Kokoro PCM; no new inference or audio playback",
+  "fixtureWavSha256": "e072c398dd38f3358e6882f3f5c0a4f87b16aab06347408ac4e129a29eb2cd36",
+  "sourceTextSha256": "e7d9e3b70ec6de3b85f85481e86effed0bb6a7db00d8b48ce25b433d7641bdb4",
+  "passages": 3,
+  "intentionalPauseSeconds": 0.96,
+  "inputSamples": 428640,
+  "byteIdentical": true,
+  "mp3Sha256": "8ca43fe2e21f492eba146c7d43827244970ec64471b58186272c60f34fa9f6e5",
+  "mp3": {
+    "seconds": 17.92799999999979,
+    "sampleRates": [
+      24000
+    ],
+    "channels": [
+      1
+    ]
+  },
+  "decoderExit": 0,
+  "diagnostics": {
+    "schema": 1,
+    "method": "pcm-review-v1",
+    "status": "measured",
+    "domain": "pcm-s16le",
+    "sampleRate": 24000,
+    "sampleCount": 428640,
+    "seconds": 17.86,
+    "finiteSamples": 428640,
+    "nonFiniteSamples": 0,
+    "peak": 0.90887451171875,
+    "rms": 0.0777207298945088,
+    "quietSamples": 163219,
+    "longestQuietSamples": 39330,
+    "longestQuietSeconds": 1.63875,
+    "nearFullScaleSamples": 0,
+    "outOfRangeSamples": 0,
+    "allNearSilence": false,
+    "longQuietSpan": false,
+    "thresholds": {
+      "quietAmplitude": 0.001,
+      "nearFullScaleAmplitude": 0.999,
+      "longQuietSeconds": 3
+    },
+    "rawFloatNonFiniteSamples": null,
+    "includesIntentionalPauses": true,
+    "reviewHints": [],
+    "note": "Review hints only, not proof of omitted words, clipping or poor sound. Quiet spans include deliberate and engine pauses. PCM16 measurements cannot detect non-finite or over-range values before quantization. No audio is corrected or rejected by these diagnostics.",
+    "analysisMs": 21.624300000000062
+  },
+  "limits": "Stats describe quantized checkpoint PCM including intentional pauses, not speech transcription, prequantization nonfinite values, or listening quality."
+}

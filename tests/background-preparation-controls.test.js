@@ -1,3 +1,4 @@
+import {pcmReviewSummary} from '../src/pcm-review.js';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
@@ -15,7 +16,7 @@ test('actual controls keep Stop enabled after current load while next chapter pr
  const gate=deferred(),started=deferred(),elements=new Map();let nextSignal,preparedCalls=0;
  const job={id:'A',next:2,passages:[{chapter:0},{chapter:1}],settings:{pipeline:'pcm-v2'}};
  const $=id=>{if(!elements.has(id))elements.set(id,{value:'0',disabled:false,currentTime:0,duration:1,pause(){}});return elements.get(id);};
- const context=vm.createContext({storageReady:true,storageOpening:false,storageStateChanged(){},$,createChapterCache,abortable,AbortController,
+ const context=vm.createContext({pcmReviewSummary,storageReady:true,storageOpening:false,storageStateChanged(){},$,createChapterCache,abortable,AbortController,
   document:{querySelectorAll:()=>[]},store:{job:async()=>job},
   recordingBlob:async(_store,_job,chapter,_max,{signal})=>{preparedCalls++;if(chapter===1){nextSignal=signal;started.resolve();return gate.promise;}return {blob:new Blob(['current'])};},
   createPlaybackPreparation:async(_store,job)=>({job,dispose(){},prepare:async(cache,chapter)=>{const result=await cache.get(job,chapter);if(job.passages.slice(0,job.next).some(p=>p.chapter===chapter+1))cache.prefetch(job,chapter+1);return result;}}),validateCheckpoint:async()=>{},availableChapters:()=>[0,1],URL:{createObjectURL:()=> 'blob:current',revokeObjectURL:()=>{}},mediaControls:()=>{},podcastHandoff:()=>{},warn:e=>e.message,status:()=>{},killWorker:()=>{},audition:{stop(){}},window:{}});
@@ -36,7 +37,7 @@ test('cache preparation notifications cover success, failure and clear',async()=
 test('foreground navigation joining a pending prefetch resets stale progress and hides the settled meter',async()=>{
  const gate=deferred(),entered=deferred(),elements=new Map(),job={id:'progress',next:2,passages:[{chapter:0},{chapter:1}],settings:{pipeline:'pcm-v2'}};let report;
  const $=id=>{if(!elements.has(id))elements.set(id,{value:'1',disabled:false,currentTime:0,duration:2,pause(){}});return elements.get(id);};
- const context=vm.createContext({$,storageReady:true,storageOpening:false,createChapterCache,abortable,AbortController,showPreparationProgress,document:{querySelectorAll:()=>[]},store:{job:async()=>job},
+ const context=vm.createContext({pcmReviewSummary,$,storageReady:true,storageOpening:false,createChapterCache,abortable,AbortController,showPreparationProgress,document:{querySelectorAll:()=>[]},store:{job:async()=>job},
   recordingBlob:async(_store,_job,chapter,_limit,options)=>{if(chapter===1){report=options.onProgress;entered.resolve();return gate.promise;}return {blob:new Blob(['current'])};},
   createPlaybackPreparation:async(_store,job)=>({job,dispose(){},prepare:async(cache,chapter)=>{const result=await cache.get(job,chapter);if(chapter===0)cache.prefetch(job,1);return result;}}),
   availableChapters:()=>[0,1],URL:{createObjectURL:blob=>'blob:'+blob.size,revokeObjectURL(){}},mediaControls(){},podcastHandoff(){},warn:e=>e.message,status(){},killWorker(){},audition:{stop(){}},window:{}});

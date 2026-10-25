@@ -1,3 +1,4 @@
+import {pcmReviewSummary,withPcmReviewReport} from './pcm-review.js';
 import {createQuickListener} from './quick-listener.js';
 import {createSourceImporter} from './source-importer.js';
 import {createStorageUsageEditor} from './storage-usage-editor.js';
@@ -20,9 +21,11 @@ import {auditionUrl,createAuditionPlayer} from './audition-player.js';
 import {characterVoice} from './character-settings.js';
 import {chaptersFor,selectedText,makeRecording,normalizeSettings,MAX_DOCUMENT,MAX_READING,safeFilename} from './recording.js';
 import {openStorage} from './storage.js';
-import {runRecording,recordingBlob,validateCheckpoint,renderReport,createPlaybackPreparation} from './job-runner.js';
+import {runRecording,recordingBlob as encodeRecordingBlob,validateCheckpoint,renderReport,createPlaybackPreparation} from './job-runner.js';
 import {importDocument} from './import-document.js';
 const $=id=>document.getElementById(id),base=import.meta.env.BASE_URL;
+function recordingBlob(store,job,chapter=null,maxBytes,options={}){return encodeRecordingBlob(store,job,chapter,maxBytes,{createWorker:()=>new Worker(new URL('./mp3-review-worker.js',import.meta.url),{type:'module'}),...options});}
+
 let store,chapters=[],deviceVoices=[],selectedJob=null;
 let boundaryError='';
 let storageReady=false,storageOpening=false,draftRevision=0;
@@ -187,8 +190,9 @@ function renderDetails(job,preparation,persisted){
  $('render-provenance').textContent=note+(job.settings?.pronunciation?' Pronunciation dictionary revision '+job.settings.pronunciation.revision+' is frozen for this recording. Draft rule edits do not affect it.':' No pronunciation substitutions are stored for this recording.')+(job.settings?.renderManifest?.checkpointIntegrity==='original-pcm-sha256-v1'?' Original PCM uses SHA-256 checkpoint validation.':' Historical original-audio checksum policy was not recorded.');
  const p=job.performance;
  $('render-performance').textContent=p?`Measured ${p.measured} of ${job.next} saved passages: ${(p.renderMs/1000).toFixed(2)} s render including ${(p.loadMs/1000).toFixed(2)} s loading; ${(p.inferenceMs/1000).toFixed(2)} s engine calls; ${p.providers.join(', ')}. Cancelled attempts are not included.`:'No durable render timing was recorded for these passages.';
- if(preparation)$('artifact-performance').textContent=`This artifact: ${(preparation.preparationMs/1000).toFixed(2)} s preparation, ${(preparation.encodingMs/1000).toFixed(2)} s MP3 encoding (separate from synthesis). Timing does not measure speech accuracy.${persisted===false?' Preparation timing save was not confirmed on this device.':''}`;
+ if(preparation)$('artifact-performance').textContent=`This artifact: ${(preparation.preparationMs/1000).toFixed(2)} s preparation, ${(preparation.encodingMs/1000).toFixed(2)} s MP3 encoding (separate from synthesis). Timing does not measure speech accuracy.${persisted===false?' Preparation measurements (timing and PCM diagnostics) were not confirmed saved on this device.':''}`;
  else $('artifact-performance').textContent='MP3 preparation timing appears when an artifact is prepared.';
+ $('artifact-performance').textContent+=' '+pcmReviewSummary(preparation?.pcmReview);
  $('render-report').disabled=busy()||!job.next;
 }
 function mediaControls(job){
@@ -361,6 +365,6 @@ window.addEventListener('pagehide',()=>flushPodcast().catch(()=>{}));
 $('render-report').onclick=async()=>{
  if(busy()||!selectedJob||!store)return;const id=selectedJob.id,selection=selectionToken,controller=new AbortController();exportController=controller;exporting=true;controls();
  const check=()=>assertActive({signal:controller.signal,isCurrent:()=>selectedJob?.id===id&&selectionToken===selection});
- try{const job=await abortable(store.job(id),controller.signal);check();if((job.takeSelection?.revision??0)!==(selectedJob.takeSelection?.revision??0))throw Error('Passage selection changed in another window. Load latest saved audio before export.');const report=await abortable(renderReport(store,job),controller.signal);check();saveFile(new Blob([JSON.stringify(report,null,2)],{type:'application/json'}),safeFilename(job.title)+'-render-report.json');$('export-status').textContent='Render report download started. Historical unknowns remain labeled.';}
+ try{const job=await abortable(store.job(id),controller.signal);check();if((job.takeSelection?.revision??0)!==(selectedJob.takeSelection?.revision??0))throw Error('Passage selection changed in another window. Load latest saved audio before export.');const report=await abortable(renderReport(store,job),controller.signal);check();saveFile(new Blob([JSON.stringify(withPcmReviewReport(report),null,2)],{type:'application/json'}),safeFilename(job.title)+'-render-report.json');$('export-status').textContent='Render report download started. Historical unknowns remain labeled.';}
  catch(error){$('export-status').textContent=warn(error);}finally{if(exportController===controller)exportController=null;exporting=false;controls();}
 };
