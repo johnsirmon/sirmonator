@@ -50,7 +50,7 @@ test('all existing engines reject personal reference intent instead of silently 
  }
  assert.equal(engineCapabilities('pocket').referenceEncoderInCode,true);assert.throws(()=>engineCapabilities('unknown'));assert.equal(normalizeSettings(settings).voice,'af_sarah');
  const source=await readFile('src/tts-worker.js','utf8'),handler=source.slice(source.indexOf('self.onmessage=async')).replaceAll('import.meta.url',JSON.stringify('file:///test/worker.js')),messages=[];
- const context=vm.createContext({self:{postMessage:m=>messages.push(m)},performance:{now:()=>0},getVoice,assertEngineRequest,LEGACY_PIPELINE:'mp3-passages-v1-2026-10-23',FOUNDATION_PIPELINE});vm.runInContext(handler,context);await context.self.onmessage({data:{requestId:1,text:'',settings:{...settings,referenceProfile:'not enabled'}}});assert.equal(messages[0].type,'error');assert.match(messages[0].message,/No|not enabled/);
+ const context=vm.createContext({storageReady:true,storageOpening:false,storageStateChanged(){},self:{postMessage:m=>messages.push(m)},performance:{now:()=>0},getVoice,assertEngineRequest,LEGACY_PIPELINE:'mp3-passages-v1-2026-10-23',FOUNDATION_PIPELINE});vm.runInContext(handler,context);await context.self.onmessage({data:{requestId:1,text:'',settings:{...settings,referenceProfile:'not enabled'}}});assert.equal(messages[0].type,'error');assert.match(messages[0].message,/No|not enabled/);
 });
 test('guard-only renderer changes preserve archived no-reference jobs and both pronunciation matcher versions',async()=>{
  const base={voice:'af_sarah',edition:'refined',delivery:'natural',speed:1,pipeline:FOUNDATION_PIPELINE};
@@ -62,7 +62,7 @@ test('actual main bootstrap restores reference metadata after initial selection 
  const $=elements(),main=await readFile('src/main.js','utf8'),bootstrap=main.slice(main.indexOf('async function initialize(){'),main.indexOf('\npronunciationEditor=createPronunciationEditor')),
   selection=main.split('\n').find(line=>line.startsWith('function beginSelection()')),
   calls=main.split('\n').filter(line=>line==='initialize();'||line.startsWith('referenceEditor=createReferenceEditor(')).join('\n');
- const context=vm.createContext({$,creating:false,auditionBusy:false,importing:false,quick:false,exporting:false,takeEditor:null,speechReview:null,referenceEditor:undefined,store:null,dirty:false,selectionToken:0,renderToken:0,cancelPreparations(){},controls(){},narratorNote(){},async openStorage(){return {async draft(){return null;}};},async refreshLibrary(){return [];},navigator:{storage:{}},status(){},warn:e=>e.message,
+ const context=vm.createContext({storageReady:true,storageOpening:false,storageStateChanged(){},$,creating:false,auditionBusy:false,importing:false,quick:false,exporting:false,takeEditor:null,speechReview:null,referenceEditor:undefined,store:null,dirty:false,selectionToken:0,renderToken:0,cancelPreparations(){},controls(){},narratorNote(){},async openStorage(){return {async draft(){return null;}};},async refreshLibrary(){return [];},navigator:{storage:{}},status(){},warn:e=>e.message,
   createReferenceEditor:options=>createReferenceEditor({...options,repository:store})});
  vm.runInContext(selection+'\n'+bootstrap+'\n'+calls,context);await context.referenceEditor.ready;
  assert.match($('reference-saved').textContent,/validated-local-only/);assert.equal($('reference-revoke').disabled,false);assert.equal($('reference-forget').disabled,false);

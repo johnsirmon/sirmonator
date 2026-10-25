@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "kind": "Actual Edge two-tab IndexedDB fixture and isolated app bootstrap",
+  "observedAtUtc": "2026-10-25T03:30:00Z",
+  "origin": "http://127.0.0.1:4192",
+  "fixture": "scripts/storage-browser-fixture.html?run=overnight-0325",
+  "syntheticDatabase": "synthetic-lifecycle-fixture-overnight-0325",
+  "observedVisibleResults": [
+    "StorageBlockedError: Another Sirmonator tab is blocking a database upgrade. Close other tabs, then retry local storage. Saved data was not reset.",
+    "PASS: fixture opened; preserved draft: Synthetic fixture text preserved.",
+    "PASS: version change guarded old connection: StorageClosedError",
+    "Local recordings connected. Saved data was not reset."
+  ],
+  "productionOriginTouched": false,
+  "modelsLoaded": false,
+  "newModelDownloads": false,
+  "screenshot": "Uncaptured: Page.captureScreenshot timed out after 5000 ms; not retried.",
+  "limitations": "Real browser idle lifecycle and two-tab blocking verified; recording interruption tested deterministically with synthetic deferred generation, not real model inference. No phone or acoustic test."
+}

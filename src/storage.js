@@ -4,15 +4,12 @@ import {validMetrics,validFrozenMetrics} from './render-metrics.js';
 import {requireTakeJob,selectionState,changeSelection,takeRevision,validateTake,TAKE_BYTES,TAKE_COUNT,TAKES_PER_PASSAGE} from './take-selection.js';
 import {spokenPassage} from './pronunciation.js';
 import {sha256Bytes} from './asset-integrity.js';
+import {openManagedDatabase} from './idb-lifecycle.js';
 const DATABASE='sirmonator-recordings-v1',LEASE_MS=20000;
 function complete(tx){const done=new Promise((resolve,reject)=>{tx.oncomplete=()=>resolve();tx.onabort=()=>reject(tx.error??Error('Could not save on this device.'));tx.onerror=()=>{};});done.catch(()=>{});return done;}
 const value=request=>new Promise((resolve,reject)=>{request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
-export async function openStorage(factory=globalThis.indexedDB,name=DATABASE){
-  if(!factory)throw Error('Local storage is unavailable. Use a regular browser window.');
-  const request=factory.open(name,2);
-  request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains('prefs')){db.createObjectStore('prefs');db.createObjectStore('jobs',{keyPath:'id'});db.createObjectStore('parts',{keyPath:['jobId','index']});db.createObjectStore('locks');}if(!db.objectStoreNames.contains('takes'))db.createObjectStore('takes',{keyPath:['jobId','index','takeId']});};
-  request.onblocked=()=>{};
-  const db=await value(request);db.onversionchange=()=>db.close();
+export async function openStorage(factory=globalThis.indexedDB,name=DATABASE,options={}){
+  const db=await openManagedDatabase({...options,factory,name,version:2,upgrade:db=>{if(!db.objectStoreNames.contains('prefs')){db.createObjectStore('prefs');db.createObjectStore('jobs',{keyPath:'id'});db.createObjectStore('parts',{keyPath:['jobId','index']});db.createObjectStore('locks');}if(!db.objectStoreNames.contains('takes'))db.createObjectStore('takes',{keyPath:['jobId','index','takeId']});}});
   const read=async(store,key)=>{const tx=db.transaction(store);const done=complete(tx);const result=await value(tx.objectStore(store).get(key));await done;return result;};
   const put=async(store,data,key)=>{const tx=db.transaction(store,'readwrite'),done=complete(tx);tx.objectStore(store).put(data,key);await done;};
   return {

@@ -96,7 +96,7 @@ test('review loads after another operation finishes and restores saved manual no
 });
 test('confirmed recording deletion removes review metadata first and preserves audio if that cleanup fails',async()=>{
  const main=await readFile('src/main.js','utf8'),handler=main.split('\n').find(line=>line.startsWith("$('delete-recording').onclick="));assert.ok(handler);
- for(const fail of [false,true]){const calls=[],context=vm.createContext({$:()=>({value:'recording'}),confirm:()=>true,beginSelection:()=>{},speechReview:{deleteJob:async id=>{calls.push('reviews:'+id);if(fail)throw Error('review cleanup failed');}},store:{deleteJob:async id=>calls.push('audio:'+id)},selectedJob:null,refreshLibrary:async()=>{},status:()=>{},warn:error=>error.message});
+ for(const fail of [false,true]){const calls=[],context=vm.createContext({storageReady:true,storageOpening:false,$:()=>({value:'recording'}),confirm:()=>true,beginSelection:()=>{},speechReview:{deleteJob:async id=>{calls.push('reviews:'+id);if(fail)throw Error('review cleanup failed');}},store:{deleteJob:async id=>calls.push('audio:'+id)},selectedJob:null,refreshLibrary:async()=>{},status:()=>{},warn:error=>error.message});
   vm.runInContext(handler+"\nglobalThis.remove=()=>$('delete-recording').onclick();",context);
   // Keep the assigned element stable, as the real document does.
   const element={value:'recording'};context.$=()=>element;vm.runInContext(handler,context);await context.remove();assert.deepEqual(calls,fail?['reviews:recording']:['reviews:recording','audio:recording']);
@@ -105,7 +105,7 @@ test('confirmed recording deletion removes review metadata first and preserves a
 test('actual main controls expose Stop for a pending manual review with synthesis/export idle',async()=>{
  const main=await readFile('src/main.js','utf8'),controls=main.slice(main.indexOf('const busy='),main.indexOf('const audition=')),stop=main.split('\n').find(line=>line.startsWith("$('stop').onclick=")),elements=new Map();let cancelled=0;
  const $=id=>{if(!elements.has(id))elements.set(id,{});return elements.get(id);};const review={busy:true,controls(){},cancel(){cancelled++;this.busy=false;}};
- const context=vm.createContext({$,speechReview:review,document:{querySelectorAll:()=>[]},podcastHandoff:()=>{},chapterCache:{preparing:false},killWorker:()=>{},cancelPreparations:()=>{},status:()=>{},audition:{stop(){}},window:{}});
+ const context=vm.createContext({storageReady:true,storageOpening:false,$,speechReview:review,document:{querySelectorAll:()=>[]},podcastHandoff:()=>{},chapterCache:{preparing:false},killWorker:()=>{},cancelPreparations:()=>{},status:()=>{},audition:{stop(){}},window:{}});
  vm.runInContext(`let creating=false,auditionBusy=false,importing=false,quick=false,exporting=false,pauseRequested=false,quickPaused=false,playbackController=null,renderToken=0,selectedJob={next:1,passages:[{}]};${controls}\n${stop}\ncontrols();`,context);
  assert.equal($('stop').disabled,false);assert.equal($('stop').textContent,'Cancel review operation');assert.equal($('download').disabled,true);$('stop').onclick();assert.equal(cancelled,1);
 });
