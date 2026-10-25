@@ -1,4 +1,5 @@
 import assets from './render-assets.json' with {type:'json'};
+import previous from './render-contract-944aa8e.json' with {type:'json'};
 import {getVoice} from './voices.js';
 import {characterVoice,characterSettings} from './character-settings.js';
 import {FOUNDATION_PIPELINE,KOKORO_REPO,KOKORO_REVISION,SUPERTONIC_REVISION,POCKET_REVISION} from './engine-specs.js';
@@ -23,5 +24,14 @@ export function validateManifest(manifest,settings){
 }
 export function assertSupportedManifest(settings){
  if(settings.pipeline!==FOUNDATION_PIPELINE)return;
- if(JSON.stringify(settings.renderManifest)!==JSON.stringify(currentManifest(settings)))throw Error('These saved render inputs are not supported by this build. Saved audio can still be played and exported. Start a new recording to use updated inputs.');
+ const current=currentManifest(settings),saved=settings.renderManifest;
+ if(JSON.stringify(saved)===JSON.stringify(current))return;
+ // Explicit bridge from the reviewed foundation release: only orchestration,
+ // storage and provenance code changed. Every synthesis/voice/DSP/dependency
+ // hash must still match, and all non-source manifest fields must be identical.
+ const orchestration=new Set(['src/render-provenance.js','src/job-runner.js','src/storage.js','src/take-selection.js','src/passage-takes.js','src/render-contract-944aa8e.json']);
+ const sameAudio=Object.entries(previous.source.files).every(([name,hash])=>orchestration.has(name)||assets.source.files[name]===hash)&&Object.keys(assets.source.files).every(name=>orchestration.has(name)||name in previous.source.files);
+ if(sameAudio&&JSON.stringify(saved?.source)===JSON.stringify(previous.source)&&JSON.stringify({...saved,source:current.source})===JSON.stringify(current))return;
+ throw Error('These saved render inputs are not supported by this build. Saved audio can still be played and exported. Start a new recording to use updated inputs.');
 }
+export const executedBuildSourceSha=()=>assets.source.sha256;

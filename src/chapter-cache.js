@@ -2,7 +2,7 @@
 // each in-flight encoder separately has a 96 MiB compressed-artifact cap.
 export function chapterKey(job,chapter){
   const end=job.passages.findIndex(p=>p.chapter>chapter);
-  return JSON.stringify([job.id,job.settings?.pipeline,chapter,Math.min(job.next,end<0?job.passages.length:end)]);
+  return JSON.stringify([job.id,job.settings?.pipeline,chapter,Math.min(job.next,end<0?job.passages.length:end),job.takeSelection?.revision??0]);
 }
 export function createChapterCache({prepare,maxBytes=24*1024*1024,maxEntries=2,onChange=()=>{}}){
   const entries=new Map();
