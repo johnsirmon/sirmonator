@@ -4,6 +4,8 @@
 
 The hosted demo may lag this feature branch. Run locally to test the MP3, resume and podcast preparation changes.
 
+The stacked pronunciation feature adds optional literal `spelling => spoken form` rules for new Studio recordings, with original-versus-spoken previews and frozen per-recording rules. Existing recordings/takes keep their own inputs. See [PRONUNCIATION-RULES.md](PRONUNCIATION-RULES.md) for matching limits, provenance and verified versus unrun checks. Alias spelling does not guarantee pronunciation accuracy.
+
 Paste a sermon or choose a TXT, DOCX, or text-based PDF. Review the imported text and check the confirmation, then listen. Choose **Studio voices** to create a downloadable MP3, or **Quick listen** for your device's voices. No account, API key, paid voice subscription, or server is needed.
 
 ## For Jay / iPhone

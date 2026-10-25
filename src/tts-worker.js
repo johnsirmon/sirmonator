@@ -6,6 +6,7 @@ import {FOUNDATION_PIPELINE,assertSupportedManifest} from './render-provenance.j
 import {renderMetrics} from './render-metrics.js';
 import {characterEffect,pauseAfter} from './audio-effects.js';
 import {createSpeechRunner} from './speech-runner.js';
+import {spokenPassage} from './pronunciation.js';
 let kokoroRunner,kokoroLoads=0,kokoroProvider=null,kokoroRuntime,family=null;
 async function kokoro(text,voice,speed,progress,frozen){
   if(!kokoroRunner){
@@ -33,6 +34,8 @@ self.onmessage=async({data})=>{
     const frozen=pipeline===FOUNDATION_PIPELINE,nextFamily=profile.engine+':'+(frozen?'frozen':'legacy');
     if(family&&family!==nextFamily)throw Error('Changing render families requires a fresh worker.');family=nextFamily;
     const provenance=frozen?{renderManifest:data.settings.renderManifest}:{};
+    const spoken=spokenPassage(data.text,data.settings.pronunciation).text;
+    if(data.settings.pronunciation)provenance.spokenText=spoken;
     if(!data.text.trim()){
       const sampleRate=profile.engine==='supertonic'?44100:24000,pcm=isPcmPipeline(pipeline)&&!data.preview;
       const audio={samples:new Float32Array(0),sampleRate,runtime:{provider:'none',dtype:'none',loadMs:0,inferenceMs:0,modelLoadAttempts:0,retries:0}};
@@ -41,10 +44,10 @@ self.onmessage=async({data})=>{
     }
     progress('Synthesizing this passage. First use may need to load the voice model.');
     const audio=profile.engine==='pocket'
-      ?await (await import('./pocket-engine.js')).pocket(data.text,characterVoice(profile.base,data.settings.edition),speed,progress,{reference:frozen?data.settings.renderManifest.model.reference:undefined})
+      ?await (await import('./pocket-engine.js')).pocket(spoken,characterVoice(profile.base,data.settings.edition),speed,progress,{reference:frozen?data.settings.renderManifest.model.reference:undefined})
       :profile.engine==='supertonic'
-      ?await (await import('./supertonic-engine.js')).supertonic(data.text,profile.base,speed,progress)
-      :await kokoro(data.text,profile.base,speed,progress,frozen);
+      ?await (await import('./supertonic-engine.js')).supertonic(spoken,profile.base,speed,progress)
+      :await kokoro(spoken,profile.base,speed,progress,frozen);
     if(!audio.samples?.length)throw Error('A passage produced no audio.');
     const synthesized=performance.now(),samples=characterEffect(audio.samples,audio.sampleRate,profile);
     const pause=data.last?0:pauseAfter(data.text,data.settings.delivery);

@@ -1,4 +1,5 @@
-import {makeRecording} from './recording.js';
+import {makeRecording,digest} from './recording.js';
+import {spokenPassage} from './pronunciation.js';
 import {isPcmPipeline,validatePcm,encodePcmParts,assertActive,abortable} from './continuity.js';
 import {FOUNDATION_PIPELINE,assertSupportedManifest} from './render-provenance.js';
 import {validFrozenMetrics,metricsSummary} from './render-metrics.js';
@@ -27,6 +28,7 @@ export async function validateCheckpoint(store,job){
       if((part.sampleCount&&part.sampleRate!==job.sampleRate)||Math.abs(part.seconds-part.sampleCount/part.sampleRate)>1e-9)fail();
     }else if(part.format==='pcm-s16le')fail();
     if(job.settings.pipeline===FOUNDATION_PIPELINE&&(!validFrozenMetrics(part.metrics,job.settings.renderManifest.engine,!job.source.slice(job.passages[index].start,job.passages[index].end).trim())||part.renderManifestHash!==job.renderManifestHash||part.metrics.format!==part.format||Math.abs(part.metrics.outputAudioSeconds-part.seconds)>1e-9))fail();
+    if(job.settings.pronunciation&&part.spokenTextHash!==await digest(spokenPassage(job.source.slice(job.passages[index].start,job.passages[index].end),job.settings.pronunciation).text))fail();
   }
   return resolveTakes(store,job,parts);
 }
@@ -69,6 +71,6 @@ export async function renderReport(store,job){
  return {schema:1,recordingId:job.id,sourceHash:job.sourceHash,sourceCharacters:job.source.length,settings:job.settings,
   provenance:job.settings.renderManifest?'frozen-render-inputs':'legacy-historical-model-and-voice-revision-unrecorded',
   renderManifestHash:job.renderManifestHash??null,takeSelection:job.takeSelection??null,performance:metricsSummary(parts),preparations:job.preparations??[],
-  passages:parts.map(part=>({index:part.index,takeId:selectedTake(job,part.index),audioHash:part.audioHash??null,sourceSliceHash:part.sourceSliceHash??null,executedBuildSourceSha:part.executedBuildSourceSha??null,start:job.passages[part.index].start,end:job.passages[part.index].end,seconds:part.seconds,format:part.format??'mp3',sampleRate:part.sampleRate??job.sampleRate,sampleCount:part.sampleCount??null,renderManifestHash:part.renderManifestHash??null,metrics:part.metrics??null})),
+  passages:parts.map(part=>({index:part.index,takeId:selectedTake(job,part.index),spokenTextHash:part.spokenTextHash??null,audioHash:part.audioHash??null,sourceSliceHash:part.sourceSliceHash??null,executedBuildSourceSha:part.executedBuildSourceSha??null,start:job.passages[part.index].start,end:job.passages[part.index].end,seconds:part.seconds,format:part.format??'mp3',sampleRate:part.sampleRate??job.sampleRate,sampleCount:part.sampleCount??null,renderManifestHash:part.renderManifestHash??null,metrics:part.metrics??null})),
   limitations:'Expected upstream asset hashes are source metadata, not proof of runtime model-file hashing. Pinned inputs and decoding do not establish deterministic inference, spoken accuracy or voice rights.'};
 }

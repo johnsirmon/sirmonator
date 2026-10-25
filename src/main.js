@@ -1,6 +1,8 @@
 import {createSynthesisClient} from './synthesis-client.js';
 import {abortable,assertActive} from './continuity.js';
 import {FOUNDATION_PIPELINE} from './engine-specs.js';
+import {createPronunciationEditor} from './pronunciation-editor.js';
+import {chunkText} from './core.js';
 import {createTakeEditor} from './take-editor.js';
 import {createChapterCache} from './chapter-cache.js';
 import {episodePackage,packageZip,appleValidationUrl,publicUrl} from './podcast.js';
@@ -18,14 +20,14 @@ let creating=false,auditionBusy=false,importing=false,quick=false,quickPaused=fa
 let audioURL=null,previewURL=null,wake=null,owner=crypto.randomUUID(),draftTimer,saveChain=Promise.resolve(),dirty=false,undo=null;
 let renderToken=0,selectionToken=0,loadedChapter=0,loadedThrough=0,loadedJobId=null,positionSaved=0,exporting=false;
 let exportController=null,playbackController=null;
-var takeEditor;
+var takeEditor,pronunciationEditor;
 const chapterCache=createChapterCache({prepare:(job,chapter,options)=>recordingBlob(store,job,chapter,undefined,options),onChange:()=>controls()});
 function cancelPreparations(){exportController?.abort();playbackController?.abort();chapterCache.clear();}
 const status=message=>$('status').textContent=message;
 const warn=error=>error?.name==='QuotaExceededError'?'This device is low on storage. Saved passages are safe. Download them, delete an older recording, then resume.':(error?.message||'Could not save on this device.');
 const busy=()=>creating||auditionBusy||importing||quick||exporting||(typeof takeEditor!=='undefined'&&takeEditor?.busy);
 function controls(){
-  for(const id of ['text','title','file','sample','clear','undo-clear','engine','voice','voice-edition','delivery','speed','review','start','preview','custom-preview','range-from','range-to','remember','open-recording','saved-recordings'])$(id).disabled=busy();
+  for(const id of ['text','title','file','sample','clear','undo-clear','engine','voice','voice-edition','delivery','speed','review','start','preview','custom-preview','range-from','range-to','remember','open-recording','saved-recordings','pronunciation-rules','pronunciation-case'])$(id).disabled=busy();
   document.querySelectorAll('[data-voice]').forEach(b=>b.disabled=busy());
   $('pause').disabled=!(creating||quick)||pauseRequested;$('pause').textContent=quick?(quickPaused?'Resume listening':'Pause listening'):(pauseRequested?'Saving current passage…':'Pause creation');
   $('stop').disabled=!(creating||quick||auditionBusy||exporting||playbackController||chapterCache.preparing||(typeof takeEditor!=='undefined'&&takeEditor?.busy));$('resume-recording').disabled=busy();
@@ -39,7 +41,7 @@ function controls(){
   if(typeof takeEditor!=='undefined')takeEditor?.controls();
 }
 const audition=createAuditionPlayer({audio:$('audition-audio'),setBusy:value=>{auditionBusy=value;controls();},notify:status});
-function settings(){return {voice:$('voice').value,edition:$('voice-edition').value,speed:Number($('speed').value),delivery:$('delivery').value,pipeline:FOUNDATION_PIPELINE};}
+function settings(allowInvalid=false){const config={voice:$('voice').value,edition:$('voice-edition').value,speed:Number($('speed').value),delivery:$('delivery').value,pipeline:FOUNDATION_PIPELINE};try{const pronunciation=pronunciationEditor?.config();if(pronunciation)config.pronunciation=pronunciation;}catch(error){if(!allowInvalid)throw error;}return config;}
 function fillVoices(){
   const prior=$('voice').value;deviceVoices=window.speechSynthesis?.getVoices()??[];$('voice').replaceChildren();
   const entries=$('engine').value==='studio'?catalog.map(v=>[v.id,`${v.name} · ${v.detail}`]):deviceVoices.map((v,i)=>[String(i),`${v.name} · ${v.lang}`]);
@@ -73,7 +75,7 @@ function updateRange(save=true){
   if(Number($('range-to').value)<Number($('range-from').value))$('range-to').value=$('range-from').value;
   const text=rangeText(),words=countWords(text);$('range-summary').textContent=`Selected: ${words.toLocaleString()} words · ${text.length.toLocaleString()} characters · about ${Math.ceil(words/150)||0} min listening${text.length>MAX_READING?' · choose fewer chapters for this recording':''}`;
   $('range-preview').textContent=text.length>12000?text.slice(0,12000)+'\n\n[Preview shortened. The full selected text will be read.]':text;
-  if(save){$('review').checked=false;scheduleSave();}preflight();
+  pronunciationEditor?.refresh();if(save){$('review').checked=false;scheduleSave();}preflight();
 }
 function preflight(){
   const text=rangeText();if(!text.trim()){$('preflight').textContent='Add text to see listening time and download details.';return;}
@@ -82,7 +84,7 @@ function preflight(){
   const mb=profile.engine==='pocket'?150:profile.engine==='supertonic'?400:'93–326';
   $('preflight').textContent=`About ${Math.ceil(minutes/Number($('speed').value))} min listening · estimated MP3 ${(minutes/Number($('speed').value)*.48).toFixed(1)} MB. Smooth recordings keep uncompressed local checkpoints (about 3–6 MB/min); MP3 preparation takes additional time. First voice use may download about ${mb} MB; pinned model URLs may need a fresh cache even after earlier versions. Creation time depends on your device.`;
 }
-function draft(){return {text:$('text').value,title:$('title').value,settings:settings(),engine:$('engine').value,review:$('review').checked,from:Number($('range-from').value),to:Number($('range-to').value),updatedAt:Date.now()};}
+function draft(){return {text:$('text').value,title:$('title').value,settings:settings(true),pronunciationDraft:pronunciationEditor?.snapshot(),engine:$('engine').value,review:$('review').checked,from:Number($('range-from').value),to:Number($('range-to').value),updatedAt:Date.now()};}
 function scheduleSave(){dirty=true;clearTimeout(draftTimer);if(!$('remember').checked){$('save-status').textContent='Draft autosave is off. Created recordings are saved separately.';return;}$('save-status').textContent='Saving draft…';draftTimer=setTimeout(()=>queueSave(),350);}
 async function flushDraft(){
   clearTimeout(draftTimer);if(!store||!$('remember').checked)return;
@@ -145,7 +147,7 @@ async function loadChapter(chapter,time=0){
 function renderDetails(job,preparation,persisted){
  if(typeof takeEditor!=='undefined')takeEditor?.update(job);
  const note=job.settings?.renderManifest?'Frozen render inputs saved. Pinned inputs do not guarantee identical speech across devices.':'Legacy recording: historical model/voice revision was not recorded. Playback and export are preserved; new recordings use pinned inputs.';
- $('render-provenance').textContent=note;
+ $('render-provenance').textContent=note+(job.settings?.pronunciation?' Pronunciation dictionary revision '+job.settings.pronunciation.revision+' is frozen for this recording. Draft rule edits do not affect it.':' No pronunciation substitutions are stored for this recording.');
  const p=job.performance;
  $('render-performance').textContent=p?`Measured ${p.measured} of ${job.next} saved passages: ${(p.renderMs/1000).toFixed(2)} s render including ${(p.loadMs/1000).toFixed(2)} s loading; ${(p.inferenceMs/1000).toFixed(2)} s engine calls; ${p.providers.join(', ')}. Cancelled attempts are not included.`:'No durable render timing was recorded for these passages.';
  if(preparation)$('artifact-performance').textContent=`This artifact: ${(preparation.preparationMs/1000).toFixed(2)} s preparation, ${(preparation.encodingMs/1000).toFixed(2)} s MP3 encoding (separate from synthesis). Timing does not measure speech accuracy.${persisted===false?' Preparation timing could not be retained on this device.':''}`;
@@ -233,7 +235,7 @@ $('start').onclick=()=>createAudio();$('resume-recording').onclick=()=>createAud
 $('pause').onclick=()=>{if(quick){quickPaused=!quickPaused;quickPaused?window.speechSynthesis.pause():window.speechSynthesis.resume();}else{pauseRequested=true;status('Pausing after the current passage is saved…');}controls();};
 $('stop').onclick=()=>{killWorker();if(typeof takeEditor!=='undefined')takeEditor?.cancel();cancelPreparations();renderToken++;if(creating){cancelled=true;status('Cancelled the current passage. Completed passages are saved.');}else if(quick){quick=false;window.speechSynthesis.cancel();controls();status('Quick listening stopped.');}else{audition.stop();status('Audio preparation cancelled. Saved passages were kept.');}};
 $('preview').onclick=()=>{if($('engine').value==='studio')audition.play(auditionUrl($('voice').value,base,$('voice-edition').value));else quickListen('Good morning, church. Let us begin.');};
-$('custom-preview').onclick=async()=>{if(busy())return;const first=rangeText().split(/\n\s*\n/)[0].slice(0,240);if(!first.trim()){status('Add text first.');return;}if($('engine').value==='device'){quickListen(first);return;}
+$('custom-preview').onclick=async()=>{if(busy())return;const first=chunkText(rangeText())[0]??'';if(!first.trim()){status('Add text first.');return;}if($('engine').value==='device'){quickListen(first);return;}
   creating=true;cancelled=false;controls();try{const audio=await generate(first,settings(),true,true);if(previewURL)URL.revokeObjectURL(previewURL);previewURL=URL.createObjectURL(new Blob([audio.bytes],{type:'audio/mpeg'}));$('audition-audio').src=previewURL;$('audition-audio').hidden=false;$('audition-audio').play().catch(()=>{});status('Your passage preview is ready. Press Play in the sample player.');}catch(error){status(warn(error));}finally{creating=false;synthesisClient.idle();controls();}
 };
 $('engine').onchange=()=>{fillVoices();narratorNote();scheduleSave();};$('voice').onchange=()=>{$('voice-edition').value='refined';narratorNote();scheduleSave();};
@@ -268,12 +270,13 @@ fillVoices();window.speechSynthesis?.addEventListener('voiceschanged',()=>{if(!b
 async function initialize(){
   const selection=beginSelection();
   try{store=await openStorage();const saved=await store.draft();
-    if(saved&&!dirty){$('text').value=saved.text;$('title').value=saved.title;$('engine').value=saved.engine??'studio';fillVoices();if([...$('voice').options].some(o=>o.value===saved.settings?.voice))$('voice').value=saved.settings.voice;for(const [key,id] of [['edition','voice-edition'],['delivery','delivery'],['speed','speed']])if(saved.settings?.[key]!==undefined)$(id).value=saved.settings[key];updateText({save:false});$('range-from').value=String(Math.min(saved.from??0,Math.max(0,chapters.length-1)));$('range-to').value=String(Math.min(saved.to??0,Math.max(0,chapters.length-1)));updateRange(false);$('review').checked=!!saved.review;document.body.classList.toggle('has-draft',!!saved.text);}
+    if(saved&&!dirty){pronunciationEditor.restoreDraft(saved.pronunciationDraft,saved.settings?.pronunciation);$('text').value=saved.text;$('title').value=saved.title;$('engine').value=saved.engine??'studio';fillVoices();if([...$('voice').options].some(o=>o.value===saved.settings?.voice))$('voice').value=saved.settings.voice;for(const [key,id] of [['edition','voice-edition'],['delivery','delivery'],['speed','speed']])if(saved.settings?.[key]!==undefined)$(id).value=saved.settings[key];updateText({save:false});$('range-from').value=String(Math.min(saved.from??0,Math.max(0,chapters.length-1)));$('range-to').value=String(Math.min(saved.to??0,Math.max(0,chapters.length-1)));updateRange(false);$('review').checked=!!saved.review;document.body.classList.toggle('has-draft',!!saved.text);}
     $('save-status').textContent=saved?'Draft restored from this device. Download a text backup for safekeeping.':'Autosave ready. Drafts and recordings stay on this browser and device.';
     narratorNote();const jobs=await refreshLibrary();if(jobs?.length&&selection===selectionToken){document.body.classList.add('has-draft');$('saved-recordings').value=jobs[0].id;await showRecording(jobs[0],{selection});}
     const estimate=await navigator.storage?.estimate?.();if(estimate?.quota)$('storage-info').textContent=`Browser estimates ${Math.round((estimate.quota-estimate.usage)/1048576)} MB of storage quota available. This is not a device memory measurement.`;
   }catch(error){if(store){$('save-status').textContent='Saved data could not be fully restored. Download a text backup and check My recordings.';status(warn(error));}else{$('save-status').textContent='Local saving unavailable: '+warn(error);status('Use a regular browser window for saved recordings. Text backup and Quick listen remain available.');}}
 }
+pronunciationEditor=createPronunciationEditor({$,source:rangeText,onChange:()=>{$('review').checked=false;scheduleSave();}});
 takeEditor=createTakeEditor({$,getStore:()=>store,getJob:()=>selectedJob,isBusy:()=>creating||auditionBusy||importing||quick||exporting,withLease,generate,owner,notify:status,onBusy:controls,onChanged:async job=>{const chapter=loadedChapter;beginSelection();$('audio').pause();$('audio').removeAttribute('src');$('audio').onloadedmetadata=null;if(audioURL)URL.revokeObjectURL(audioURL);audioURL=null;loadedJobId=null;selectedJob=job;displayProgress(job);await loadChapter(chapter);await refreshLibrary();}});
 initialize();
 

@@ -2,6 +2,7 @@ import {chunkText} from './core.js';
 import {getVoice} from './voices.js';
 import {LEGACY_PIPELINE,CONTINUITY_PIPELINE} from './continuity.js';
 import {FOUNDATION_PIPELINE,currentManifest,validateManifest} from './render-provenance.js';
+import {normalizePronunciation,spokenPassage} from './pronunciation.js';
 export const MAX_DOCUMENT=2_000_000, MAX_READING=150_000, CHAPTER_SIZE=6000;
 export const PIPELINE=FOUNDATION_PIPELINE;
 export function chaptersFor(text,target=CHAPTER_SIZE){
@@ -28,7 +29,9 @@ export function normalizeSettings(settings){
   const pipeline=settings.pipeline??LEGACY_PIPELINE;
   if(![LEGACY_PIPELINE,CONTINUITY_PIPELINE,PIPELINE].includes(pipeline))throw Error('Unknown audio pipeline.');
   const normalized={voice:profile.id,edition:settings.edition,delivery:settings.delivery,speed,voiceRevision:profile.revision??1,pipeline};
-  if(pipeline===FOUNDATION_PIPELINE){normalized.renderManifest=validateManifest(settings.renderManifest??currentManifest(settings),settings);normalized.voiceRevision=normalized.renderManifest.voice.revision;}
+  const pronunciation=normalizePronunciation(settings.pronunciation);
+  if(pronunciation){if(pipeline!==FOUNDATION_PIPELINE)throw Error('Pronunciation rules require a new recording with frozen render inputs.');normalized.pronunciation=pronunciation;}
+  if(pipeline===FOUNDATION_PIPELINE){normalized.renderManifest=validateManifest(settings.renderManifest??currentManifest(normalized),normalized);normalized.voiceRevision=normalized.renderManifest.voice.revision;}
   return normalized;
 }
 export async function makeRecording(text,settings,title='My sermon'){
@@ -39,6 +42,7 @@ export async function makeRecording(text,settings,title='My sermon'){
   const id=await digest(JSON.stringify({sourceHash,settings:normalized}));
   const chapters=chaptersFor(text),passages=[];let start=0,chapter=0;
   for(const part of chunkText(text)){
+    if(normalized.pronunciation)spokenPassage(part,normalized.pronunciation);
     while(chapter<chapters.length-1&&start>=chapters[chapter].end)chapter++;
     passages.push({start,end:start+part.length,chapter});start+=part.length;
   }

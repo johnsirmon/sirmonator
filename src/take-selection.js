@@ -2,6 +2,7 @@ import {validatePcm,assertActive,abortable} from './continuity.js';
 import {sha256Bytes} from './asset-integrity.js';
 import {validFrozenMetrics} from './render-metrics.js';
 import {FOUNDATION_PIPELINE} from './engine-specs.js';
+import {spokenPassage} from './pronunciation.js';
 export const TAKE_BYTES=32*1024*1024,TAKE_COUNT=256,TAKES_PER_PASSAGE=2;
 export const takeRevision=job=>job.takeSelection?.revision??0;
 export const selectedTake=(job,index)=>job.takeSelection?.selected?.[index]??'original';
@@ -28,6 +29,7 @@ export async function validateTake(job,take,{signal}={}){
  if((!take.blob.size&&job.source.slice(p.start,p.end).trim())||(take.sampleCount&&take.sampleRate!==job.sampleRate)||!Number.isFinite(take.seconds)||Math.abs(take.seconds-take.sampleCount/take.sampleRate)>1e-9||!validFrozenMetrics(take.metrics,job.settings.renderManifest.engine,!job.source.slice(p.start,p.end).trim())||take.metrics.format!==take.format||Math.abs(take.metrics.outputAudioSeconds-take.seconds)>1e-9)throw Error('Invalid passage take audio or metrics.');
  assertActive({signal});
  const textHash=await abortable(sha256Bytes(new TextEncoder().encode(job.source.slice(p.start,p.end))),signal);
+ if(job.settings.pronunciation&&take.spokenTextHash!==await abortable(sha256Bytes(new TextEncoder().encode(spokenPassage(job.source.slice(p.start,p.end),job.settings.pronunciation).text)),signal))throw Error('Saved take pronunciation integrity check failed.');
  const bytes=await abortable(take.blob.arrayBuffer(),signal);assertActive({signal});
  if(textHash!==take.sourceSliceHash||await abortable(sha256Bytes(bytes),signal)!==take.audioHash)throw Error('Saved passage take failed its audio/text integrity check.');
  assertActive({signal});return take;

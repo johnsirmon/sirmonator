@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "noRulesOverrides": {
+    "src/recording.js": "0afe47c4c54c86320ade5e38bded3f3736f878086343ea2ee8e1168b7c42de44",
+    "src/tts-worker.js": "e53a80321e716ec92116aee32e13a1952aef6045adb02219d91b7c481e6d9072",
+    "src/pronunciation.js": "2c0573c3e3a8bf1912f35ad85139acd8451f62e5589905605754eb933d87e31f"
+  }
+}

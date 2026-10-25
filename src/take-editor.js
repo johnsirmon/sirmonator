@@ -1,6 +1,7 @@
 import {changePassage} from './passage-takes.js';
 import {requireTakeJob,takeRevision,selectedTake,TAKES_PER_PASSAGE,TAKE_BYTES,TAKE_COUNT} from './take-selection.js';
 import {assertSupportedManifest} from './render-provenance.js';
+import {spokenPassage} from './pronunciation.js';
 // UI only: inference and atomic selection live in independently testable modules.
 export function createTakeEditor({$,getStore,getJob,isBusy,withLease,generate,owner,onChanged,notify,onBusy}){
  let job=null,takes=[],generation=0,controller=null,reason='',canRender=false;
@@ -14,6 +15,7 @@ export function createTakeEditor({$,getStore,getJob,isBusy,withLease,generate,ow
  function passage(){
   if(!job)return;const index=Number($('take-passage').value),p=job.passages[index];
   $('take-source').textContent=p?job.source.slice(p.start,p.end):'';
+  $('take-spoken').textContent=p?spokenPassage(job.source.slice(p.start,p.end),job.settings.pronunciation).text:'';
   const options=takes.filter(t=>t.index===index).sort((a,b)=>a.createdAt-b.createdAt||a.takeId.localeCompare(b.takeId));
   $('take-choice').replaceChildren(new Option('Original','original'));
   options.forEach((t,i)=>$('take-choice').add(new Option(`Take ${i+1} (${new Date(t.createdAt).toLocaleTimeString()})`,t.takeId)));
