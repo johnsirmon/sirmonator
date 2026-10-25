@@ -131,7 +131,6 @@ async function refreshLibrary(){
 }
 function availableChapters(job){return [...new Set(job.passages.slice(0,job.next).map(p=>p.chapter))];}
 function displayProgress(job){
-  if(typeof storageUsageEditor!=='undefined')storageUsageEditor?.update(job);
   renderDetails(job);
   $('recording-title').textContent=job.title;
   $('recording-status').textContent=`${getVoice(job.settings.voice).name} · ${job.settings.edition} · ${job.next} of ${job.passages.length} passages saved · ${job.next===job.passages.length?'Complete recording':'Incomplete — saved audio only'}. ${Math.round(job.seconds/60)} min saved.`;
@@ -177,6 +176,7 @@ async function loadChapter(chapter,time=0,preparation=null){
   finally{if(current())$('preparation-meter').hidden=true;if(!handedOff)preparation?.dispose();if(playbackController===controller)playbackController=null;controls();}
 }
 function renderDetails(job,preparation,persisted){
+ if(typeof storageUsageEditor!=='undefined')storageUsageEditor?.update(job);
  if(typeof takeEditor!=='undefined')takeEditor?.update(job);
  if(typeof speechReview!=='undefined')speechReview?.update(job);
  const note=job.settings?.renderManifest?'Frozen render inputs saved. Pinned inputs do not guarantee identical speech across devices.':'Legacy recording: historical model/voice revision was not recorded. Playback and export are preserved; new recordings use pinned inputs.';
