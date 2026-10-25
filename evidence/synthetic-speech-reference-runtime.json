@@ -1,0 +1,335 @@
+{
+  "schema": 1,
+  "kind": "Offline generated non-personal speech -> synthetic-only Pocket Node reference experiment",
+  "newModelBytesDownloaded": 0,
+  "externalFetchEnabled": false,
+  "personRecordingUsed": false,
+  "bundledCharacterAssetsRead": false,
+  "personalSynthesisEnabled": false,
+  "persistentProductionAudioOrEmbeddings": false,
+  "limits": {
+    "rssMiB": 1280,
+    "phaseMs": 90000,
+    "processes": "One child at a time; no higher-limit retry",
+    "rssMeasurement": "Child-process RSS sampled every 50 ms; abort guard, not an OS-enforced cap or true-peak measurement."
+  },
+  "licenseScope": {
+    "kokoro": "Pinned card Apache-2.0; package preset hash verified",
+    "pocket": "Existing pinned verified inventory cc-by-4.0; Kyutai/Pocket export attribution retained",
+    "clearance": "No personal voice, character-reference or legal-clearance claim"
+  },
+  "verifiedAssets": [
+    {
+      "provider": "kokoro",
+      "name": "config.json",
+      "sha256": "df34b4f930b23447cd4dc410fabfb42eb3f24e803e6c3f97d618fb359380a36f"
+    },
+    {
+      "provider": "kokoro",
+      "name": "tokenizer.json",
+      "sha256": "77a02c8e164413299b4b4c403b14f8e0e1c1b727db4d46a09d6327b861060a34"
+    },
+    {
+      "provider": "kokoro",
+      "name": "tokenizer_config.json",
+      "sha256": "be1cb066d6ef6b074b3f15e6a6dd21ac88ff3cdaedf325f0aaed686c70f75d20"
+    },
+    {
+      "provider": "kokoro",
+      "name": "onnx/model_quantized.onnx",
+      "sha256": "fbae9257e1e05ffc727e951ef9b9c98418e6d79f1c9b6b13bd59f5c9028a1478"
+    },
+    {
+      "provider": "kokoro",
+      "name": "voices/af_sarah.bin",
+      "sha256": "4409fbc125afabacc615d94db5398d847006a737b0247d6892b7a9a0007a2f0a"
+    },
+    {
+      "provider": "pocket",
+      "name": "bundle.json",
+      "sha256": "bab643150f437f37df080a710520ff39ed9ebd9a339f8ebdc739f7eddfc28b3f"
+    },
+    {
+      "provider": "pocket",
+      "name": "tokenizer.model",
+      "sha256": "d461765ae179566678c93091c5fa6f2984c31bbe990bf1aa62d92c64d91bc3f6"
+    },
+    {
+      "provider": "pocket",
+      "name": "bos_before_voice.npy",
+      "sha256": "f46edf4f7007b7ba4ea58831f49d003e59e167b4641c44bb3addfe9231a780b1"
+    },
+    {
+      "provider": "pocket",
+      "name": "mimi_encoder_int8.onnx",
+      "sha256": "abb46f1ad0b83c3840fe38c3652ab0eda7d1d97a63f1953bbbff5d04d8f4c855"
+    },
+    {
+      "provider": "pocket",
+      "name": "text_conditioner_int8.onnx",
+      "sha256": "24c0642bff11a4e1435c004d0c2aa6c68e093fadfa35f0f0dba849ac67f25ac3"
+    },
+    {
+      "provider": "pocket",
+      "name": "flow_lm_main_int8.onnx",
+      "sha256": "f9bd8106b79a0192c1c43399ab938fb24900a95c1c599870d75a884e99000116"
+    },
+    {
+      "provider": "pocket",
+      "name": "flow_lm_flow_int8.onnx",
+      "sha256": "3dd781ee5abee9e195320bf0106bebd6372a852b3b36352524ee78b40554635d"
+    },
+    {
+      "provider": "pocket",
+      "name": "mimi_decoder_int8.onnx",
+      "sha256": "3630450a3297a101792a6ac66619ebc70ab916b265e6220c2afaef8b1673f925"
+    }
+  ],
+  "runs": [
+    {
+      "stage": "pocket",
+      "referenceSeconds": 3,
+      "reference": {
+        "file": "synthetic-3s.wav",
+        "seconds": 3,
+        "sampleRate": 24000,
+        "sampleCount": 72000,
+        "wavSha256": "b919786a5cb8f2c6396a021b6f7943e5c28f0ffb362ab040735cb2341cdf1355",
+        "sourceStartSample": 0,
+        "sourceEndSample": 72000
+      },
+      "referenceId": "44a1ac3f5228abb87ce70295101ed101d330776ce92855a3cce3e31ba3360bd2",
+      "conditioningAndLoadMs": 2346.5396,
+      "generationMs": 2692.5800999999997,
+      "output": {
+        "samples": 57600,
+        "peak": 0.5578243136405945,
+        "rms": 0.10154445364280942,
+        "sha256": "4ea09c3462ebc7a525d4b846fb485852b6df3eb090f79dfa8216769edb1ba6a4",
+        "seconds": 2.4,
+        "sampleRate": 24000
+      },
+      "mp3": {
+        "bytes": 19584,
+        "sha256": "42065f18ea93448b2015bbaf291216c181a3b373a93825dda18de0b25f4056ef",
+        "inspection": {
+          "seconds": 2.4480000000000017,
+          "sampleRates": [
+            24000
+          ],
+          "channels": [
+            1
+          ]
+        },
+        "decoded": {
+          "samples": 58752,
+          "peak": 0.5326863527297974,
+          "rms": 0.09558328994740695,
+          "sha256": "5c3d7fe35f612bd3f37cad1134588e7b9d0db848209d6b369b24ac7b08b8115e",
+          "sampleRate": 24000,
+          "seconds": 2.448
+        }
+      },
+      "provenance": {
+        "contract": {
+          "schema": 1,
+          "provider": "pocket-custom-reference-node-v1",
+          "artifact": "experimental-reference-pcm-v1",
+          "runtime": "onnxruntime-node-1.21.0-cpu",
+          "package": "pocket-tts-js-0.1.0",
+          "workerSha256": "0e2d18c0f309c42099c3a56c0c54e3cf31605bee457f62433b0644776dc606dc",
+          "modelInventorySha256": "25491f670771aa597ed59bd5693edac00d88f6ce208603099150186125d366bd",
+          "modelRevision": "c469236dbc5f68287fa2fbf175b66de3b80123af",
+          "language": "english_2026-04",
+          "sampleRate": 24000,
+          "sampling": "upstream-v0.1.0-steps1-temperature0.7-eos-4",
+          "personalSynthesisEnabled": false,
+          "resumable": false
+        },
+        "referenceId": "44a1ac3f5228abb87ce70295101ed101d330776ce92855a3cce3e31ba3360bd2",
+        "fileSha256": "b919786a5cb8f2c6396a021b6f7943e5c28f0ffb362ab040735cb2341cdf1355",
+        "pcmSha256": "2fb79d4ede5b17d54cffaddafc388ff5a68dd3f2206319f44604157e77729c8f",
+        "text": "The small lantern glows beside the open window.",
+        "consent": {
+          "schema": 1,
+          "notice": "reference-preparation-2026-10-25",
+          "attestationId": "aa4b8c7d-4e93-4f14-a5b4-bd5377c1ca72",
+          "attestedAt": 1792921210571,
+          "label": "Generated Kokoro preset reference 3 seconds",
+          "authority": "synthetic",
+          "scope": "Local synthetic-only experimental validation; no personal voice or publication.",
+          "provenance": "Kokoro af_sarah preset; generated phrase SHA256 c4cfc099ad56453d4a278ab06f386da9275d9487d1317de43ceb4fb7e7e41a1f; source PCM SHA256 25baeb7fc71a5f0531dc7463cb3c29ad4141fb95b3dd8536abf8cc9d1f1c12a4; exact first 3 seconds; no recorded person or character references.",
+          "permissionAttested": true,
+          "aiDisclosure": true
+        },
+        "sampleCount": 57600,
+        "metrics": {
+          "rtfx": 1.1656947120347916,
+          "genTime": 2.0588581000000015,
+          "audioDuration": 2.4,
+          "stopped": false
+        }
+      },
+      "disposed": true,
+      "maxSampledRssBytes": 869548032
+    },
+    {
+      "stage": "pocket",
+      "referenceSeconds": 5,
+      "reference": {
+        "file": "synthetic-5s.wav",
+        "seconds": 5,
+        "sampleRate": 24000,
+        "sampleCount": 120000,
+        "wavSha256": "257c63a443d6f216730c596676c4afa48f4d8864b1e2552eba0e214c6384e66f",
+        "sourceStartSample": 0,
+        "sourceEndSample": 120000
+      },
+      "referenceId": "dcb93cec6b4eef5f78267a2020765e590db1170ad55204d2f85feb83f8e90880",
+      "conditioningAndLoadMs": 2596.9062000000004,
+      "generationMs": 3464.4509999999996,
+      "output": {
+        "samples": 71040,
+        "peak": 0.6134291887283325,
+        "rms": 0.09312948436107617,
+        "sha256": "ffa4d9cab5813448178bec3642ac4cf1cd44122923a09b952fe4845d39a63c8a",
+        "seconds": 2.96,
+        "sampleRate": 24000
+      },
+      "mp3": {
+        "bytes": 24192,
+        "sha256": "157d9681f58f0260b6d3443479419b6b8e8b833e42c66489187aeecdba771659",
+        "inspection": {
+          "seconds": 3.0240000000000022,
+          "sampleRates": [
+            24000
+          ],
+          "channels": [
+            1
+          ]
+        },
+        "decoded": {
+          "samples": 72576,
+          "peak": 0.5704808235168457,
+          "rms": 0.08748360523764896,
+          "sha256": "4720e7aa4dd5a29a716bb4bb9b17bd6075584a5ae464550692bebbd00fe00ea5",
+          "sampleRate": 24000,
+          "seconds": 3.024
+        }
+      },
+      "provenance": {
+        "contract": {
+          "schema": 1,
+          "provider": "pocket-custom-reference-node-v1",
+          "artifact": "experimental-reference-pcm-v1",
+          "runtime": "onnxruntime-node-1.21.0-cpu",
+          "package": "pocket-tts-js-0.1.0",
+          "workerSha256": "0e2d18c0f309c42099c3a56c0c54e3cf31605bee457f62433b0644776dc606dc",
+          "modelInventorySha256": "25491f670771aa597ed59bd5693edac00d88f6ce208603099150186125d366bd",
+          "modelRevision": "c469236dbc5f68287fa2fbf175b66de3b80123af",
+          "language": "english_2026-04",
+          "sampleRate": 24000,
+          "sampling": "upstream-v0.1.0-steps1-temperature0.7-eos-4",
+          "personalSynthesisEnabled": false,
+          "resumable": false
+        },
+        "referenceId": "dcb93cec6b4eef5f78267a2020765e590db1170ad55204d2f85feb83f8e90880",
+        "fileSha256": "257c63a443d6f216730c596676c4afa48f4d8864b1e2552eba0e214c6384e66f",
+        "pcmSha256": "6965ccdb12511a477429dcfbdc49e69b922f07264ae416fef2fa71d55b0596b7",
+        "text": "The small lantern glows beside the open window.",
+        "consent": {
+          "schema": 1,
+          "notice": "reference-preparation-2026-10-25",
+          "attestationId": "2f40f963-ec5f-4046-bfa2-d073ea482abb",
+          "attestedAt": 1792921215945,
+          "label": "Generated Kokoro preset reference 5 seconds",
+          "authority": "synthetic",
+          "scope": "Local synthetic-only experimental validation; no personal voice or publication.",
+          "provenance": "Kokoro af_sarah preset; generated phrase SHA256 c4cfc099ad56453d4a278ab06f386da9275d9487d1317de43ceb4fb7e7e41a1f; source PCM SHA256 25baeb7fc71a5f0531dc7463cb3c29ad4141fb95b3dd8536abf8cc9d1f1c12a4; exact first 5 seconds; no recorded person or character references.",
+          "permissionAttested": true,
+          "aiDisclosure": true
+        },
+        "sampleCount": 71040,
+        "metrics": {
+          "rtfx": 1.1019780953559524,
+          "genTime": 2.686078799999998,
+          "audioDuration": 2.96,
+          "stopped": false
+        }
+      },
+      "cancellation": {
+        "published": false,
+        "name": "AbortError",
+        "rejectionMs": 57.3766999999998
+      },
+      "disposed": true,
+      "maxSampledRssBytes": 957681664
+    }
+  ],
+  "status": "passed",
+  "limitations": "Finite PCM and decoded MP3 do not establish likeness, intelligibility, spoken-word correctness, browser readiness or native cleanup guarantees. Task-local generated WAV/MP3 only; no production enrollment or persistent embedding.",
+  "kokoro": {
+    "stage": "kokoro",
+    "referenceText": "This is generated sample speech for a local synthetic reference test. It describes a calm morning and a clear sky.",
+    "voice": "af_sarah",
+    "sampleRate": 24000,
+    "generated": {
+      "samples": 196200,
+      "peak": 0.6896724700927734,
+      "rms": 0.08271263822166994,
+      "sha256": "25baeb7fc71a5f0531dc7463cb3c29ad4141fb95b3dd8536abf8cc9d1f1c12a4",
+      "seconds": 8.175
+    },
+    "inferenceMs": 11252.455600000001,
+    "references": [
+      {
+        "file": "synthetic-3s.wav",
+        "seconds": 3,
+        "sampleRate": 24000,
+        "sampleCount": 72000,
+        "wavSha256": "b919786a5cb8f2c6396a021b6f7943e5c28f0ffb362ab040735cb2341cdf1355",
+        "sourceStartSample": 0,
+        "sourceEndSample": 72000
+      },
+      {
+        "file": "synthetic-5s.wav",
+        "seconds": 5,
+        "sampleRate": 24000,
+        "sampleCount": 120000,
+        "wavSha256": "257c63a443d6f216730c596676c4afa48f4d8864b1e2552eba0e214c6384e66f",
+        "sourceStartSample": 0,
+        "sourceEndSample": 120000
+      }
+    ],
+    "derivation": "Exact first 3 and 5 seconds of one generated preset output, encoded PCM16 WAV. Prefix cuts may intersect speech; not quality-optimized references or an ASR transcript.",
+    "maxSampledRssBytes": 490455040
+  },
+  "models": {
+    "kokoro": {
+      "repository": "onnx-community/Kokoro-82M-v1.0-ONNX",
+      "revision": "1939ad2a8e416c0acfeecc08a694d14ef25f2231",
+      "voice": "af_sarah"
+    },
+    "pocket": {
+      "repository": "vlapky/pocket-tts-onnx",
+      "revision": "c469236dbc5f68287fa2fbf175b66de3b80123af",
+      "inventorySha256Lf": "25491f670771aa597ed59bd5693edac00d88f6ce208603099150186125d366bd"
+    }
+  },
+  "runContext": {
+    "baseline": "7b3003fb8dd758e4898f3bf34a62899a82c8e123",
+    "initialHarnessStop": "Offline localModelPath default did not point at the verified existing cache; no inference ran. Corrected only the local model directory, then reran with identical limits.",
+    "freshPocketLicenseLookup": "Pinned upstream README unavailable through web tool; used existing pinned verified inventory metadata identifying CC-BY-4.0, not a new permission or personal voice grant.",
+    "kokoroLicenseSource": "https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/blob/1939ad2a8e416c0acfeecc08a694d14ef25f2231/README.md",
+    "audioCommitted": false,
+    "postRunAnnotation": "Added model identifiers and measurement/scope labels from the unchanged verified catalog after the successful run; no repeated inference for annotation."
+  },
+  "validation": {
+    "fullTests": 371,
+    "pass": 371,
+    "fail": 0,
+    "productionBuild": true,
+    "scriptSyntaxCheck": true,
+    "productionSourcesUnchangedSince": "7b3003fb8dd758e4898f3bf34a62899a82c8e123"
+  }
+}
