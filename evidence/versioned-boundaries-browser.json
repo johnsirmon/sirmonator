@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "kind": "Native Edge on isolated synthetic app; procedural tone TTS transport, actual storage/checkpoints/UI",
+  "origin": "http://127.0.0.1:4206",
+  "oversizedInput": {"utf16Length": 241, "sourcePreserved": true, "preflightErrorVisible": true, "createRejected": true, "customPreviewRejected": true, "focus": "text", "recordingsCreated": 0, "existingCompletedRecordingPreserved": true},
+  "legacyPreview": {"revision": "exact-offsets-240-v1", "newStudioCreationRejected": true, "focus": "text-boundaries"},
+  "newRecording": {
+    "revision": "word-grapheme-240-v2",
+    "recordingId": "a0407f64b76aae73d5234794da0033f7239462a63f8a3144b3272321b0ab80a7",
+    "source": "John arrived.\n\nFamily 👩‍👧 stays joined.\n\nCafé é left.",
+    "spokenPreview": "jon arrived.\n\nFamily 👩‍👧 stays joined.\n\nCafé é left.",
+    "interruptedByReloadAfterCommittedParts": 2,
+    "resumedToCommittedParts": 3,
+    "totalParts": 3,
+    "identityUnchanged": true,
+    "draftPolicyRestored": true,
+    "completedStatus": "Complete. Your MP3 is ready to listen or save."
+  },
+  "limits": "Browser uses synthetic tones, not model speech. Actual cached Kokoro Node inference is separate evidence. No download completion, listening, screen-reader output or phone behavior is claimed."
+}

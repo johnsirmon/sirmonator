@@ -1,0 +1,174 @@
+{
+  "schema": 1,
+  "source": {
+    "files": {
+      "src/engine-specs.js": "52790f6b8bf121172ddfc7428393eb2ed64ee303af55619047dfbfbf43bb1667",
+      "src/asset-integrity.js": "bb74dd13c8908f33c55943fc7a70b7430146181a25e56bfe283e3026b7b9f951",
+      "src/pinned-kokoro.js": "100b5eca066a536f621b46c9d92b8574f53297d35c4c7a24221a6bbb0db643cb",
+      "src/tts-worker.js": "e53a80321e716ec92116aee32e13a1952aef6045adb02219d91b7c481e6d9072",
+      "src/speech-runner.js": "37f045c9b4572cfc6d5e715748b1d32b975743fa096e39dce4d4ba34e90fcebc",
+      "src/render-provenance.js": "40120361c7de5a99cd2b282dd9b2bdf0afde88f723e6256a85b7bf28de322c31",
+      "src/render-metrics.js": "e8caacfd6ee8a56db8e828d5f02d3826695ee2af4ff6e28ba35f4230b5c216e2",
+      "src/core.js": "969b136d6e19fe0116f2c0cb8391257b123095d6068b1456f1d9b68a1b501a34",
+      "src/recording.js": "0afe47c4c54c86320ade5e38bded3f3736f878086343ea2ee8e1168b7c42de44",
+      "src/job-runner.js": "721fdc2279a9707dbc8d46f616347bf36ec76b59ac5995edfbd9fd079d30325a",
+      "src/storage.js": "761b4354358b9884e781607aa42345970be6bf5944f7a34f9ee73b4fede75a4a",
+      "src/take-selection.js": "278c9afdebcd43dba267cc189c1660a4fb0c0f9b698ff571a84dec7c49358ab1",
+      "src/passage-takes.js": "f361003d1c655ba6abf68cf996f712c663a80ff0a0fd165b3d9eb5e0963f4dfb",
+      "src/render-contract-944aa8e.json": "c2c9217ab7bbd41243059cdd40b24bae46744ab743befaddff7d2e80d1e54208",
+      "src/pronunciation.js": "2c0573c3e3a8bf1912f35ad85139acd8451f62e5589905605754eb933d87e31f",
+      "src/pronunciation-compatibility.json": "142fdb60cdf1387725cd77714ab7c4d5a5491efda8d88d8be963a6e048475ab4",
+      "src/render-contract-1458c2e.json": "30c64253f1c62c6dcd1c42821edbf62bf3002104727e96f473bc2aaa668ea7f4",
+      "src/mp3-export-worker.js": "250e7d1fc79c2b89c46bbeabc03d82661162e606d79fbd3223acd09ae93797db",
+      "src/audio-effects.js": "618ac26b9c977c3b9c6dcca05f0ecb68742c70c939fbb988c6181a1a964d2d77",
+      "src/character-settings.js": "fade27a9f2f99e47fe7e7f237788786d9732ebdbc386fe8969d8cb007dedd5b2",
+      "src/voices.js": "ddbbf77b7b63781e70cb91839dfad0e2c0e6815eafbabfcf979f441e7ceedf57",
+      "src/tempo.js": "cfd1e68699ea7a26eb448153e3f59d9873e07f8fbf8b9bc493b5041f2469b1de",
+      "src/pocket-client.js": "9f6510e22f5316f4e409a1f1c1276d5010cefbcea8dd1efc194535ad74f55b04",
+      "src/pocket-engine.js": "76a31352996e6707c970280aac4b619a36642eb84e11e34a91bec5f81a61134a",
+      "src/supertonic-engine.js": "727324ed481fe27c709f8815b61666d31d6fc14c236406e2884b4c905fd959c5",
+      "src/vendor/supertonic.js": "d027434b6989e5d284380f22bc28a8d56fb8625c639741e4cfd6867203833c84",
+      "src/vendor/pocket/worker.js": "f2e35600d4bc74803eaf3d310b369cebfeb07cea08ec9160ce6fdc97103e7005",
+      "src/vendor/pocket/tokenizer.js": "70788cc36841a7be1c08f9e56b280552826a753a854b354a44fb399c6df49651",
+      "src/vendor/pocket/binary.js": "f6b38f71380ce450861f6710df42c7d80e9f751df888f1cafbd18beb071b016a",
+      "src/mp3.js": "eb09e9d0b0d3971182efd4e6946b7e45b127a8cac4ecbe4bdf3bd553e412314b",
+      "src/continuity.js": "7d9699b5a1ed38a1a6eef8c5ba1eea5945623cd2cedb5a34c26ee4b9ac02b6a3",
+      "package-lock.json": "dc85b64b6a8d659211cf05af19e4d9bd396ecbe8f23a5294c377f39fe541424f"
+    },
+    "sha256": "a439ca42783f7dc211a1abdbc03155e882ad06c96da5d4d7a0ab9c1d700e3e9d"
+  },
+  "packages": {
+    "kokoro-js": {
+      "version": "1.2.1",
+      "integrity": "sha512-oq0HZJWis3t8lERkMJh84WLU86dpYD0EuBPtqYnLlQzyFP1OkyBRDcweAqCfhNOpltyN9j/azp1H6uuC47gShw=="
+    },
+    "@huggingface/transformers": {
+      "version": "3.8.1",
+      "integrity": "sha512-tsTk4zVjImqdqjS8/AOZg2yNLd1z9S5v+7oUPpXaasDRwEDhB+xnglK1k5cad26lL5/ZIaeREgWWy0bs9y9pPA=="
+    },
+    "onnxruntime-web": {
+      "version": "1.30.0",
+      "integrity": "sha512-q0y+JrrtukXSzsBWEMccVfqX25LRmosXHF+CaRJmg8pZClzcV7svNc4rKY3jL02Vb7QmRMDs1SigqR4CXAfKYQ=="
+    },
+    "pocket-tts-js": {
+      "version": "0.1.0",
+      "integrity": "sha512-kjGrPgVrDwmnDJ9EkhdHkkEXFDl4rvPbLOJaVZbq3V3j5UkWRzOln3qkcWSZ4741i6nKLkXaun8oj5C3W54mog=="
+    },
+    "soundtouchjs": {
+      "version": "0.3.0",
+      "integrity": "sha512-P/+SwnIE4BLrMbYK8aB8+GfXRfLv3+BV8HFMrEqOuF0F9BsI3sKEN1T+kY/JqiVURcCQgr50BC8D/uVzE/GozQ=="
+    },
+    "@breezystack/lamejs": {
+      "version": "1.2.7",
+      "integrity": "sha512-6wc7ck65ctA75Hq7FYHTtTvGnYs6msgdxiSUICQ+A01nVOWg6rqouZB8IdyteRlfpYYiFovkf67dIeOgWIUzTA=="
+    },
+    "phonemizer": {
+      "version": "1.2.1",
+      "integrity": "sha512-v0KJ4mi2T4Q7eJQ0W15Xd4G9k4kICSXE8bpDeJ8jisL4RyJhNWsweKTOi88QXFc4r4LZlz5jVL5lCHhkpdT71A=="
+    }
+  },
+  "kokoro": {
+    "repository": "onnx-community/Kokoro-82M-v1.0-ONNX",
+    "revision": "1939ad2a8e416c0acfeecc08a694d14ef25f2231",
+    "files": {
+      "config.json": {
+        "size": 44,
+        "gitBlob": "790faf216e7e3f490e71e8bc80df79ed8941101c"
+      },
+      "onnx/model.onnx": {
+        "size": 325532232,
+        "sha256": "8fbea51ea711f2af382e88c833d9e288c6dc82ce5e98421ea61c058ce21a34cb"
+      },
+      "onnx/model_quantized.onnx": {
+        "size": 92361116,
+        "sha256": "fbae9257e1e05ffc727e951ef9b9c98418e6d79f1c9b6b13bd59f5c9028a1478"
+      },
+      "tokenizer.json": {
+        "size": 3497,
+        "gitBlob": "4280f55fc1c32211bc9bb4d55545759a00054ecd"
+      },
+      "tokenizer_config.json": {
+        "size": 113,
+        "gitBlob": "5c81e9a3a06db9139900d6ee5b60e8bb701ccb0b"
+      },
+      "voices/af_bella.bin": {
+        "size": 522240,
+        "sha256": "f69d836209b78eb8c66e75e3cda491e26ea838a3674257e9d4e5703cbaf55c8b"
+      },
+      "voices/af_heart.bin": {
+        "size": 522240,
+        "sha256": "d583ccff3cdca2f7fae535cb998ac07e9fcb90f09737b9a41fa2734ec44a8f0b"
+      },
+      "voices/af_kore.bin": {
+        "size": 522240,
+        "sha256": "9be5221b6a941c04b561959b8ff0b06e809444dcc4ab7e75a7b23606f691819e"
+      },
+      "voices/af_nicole.bin": {
+        "size": 522240,
+        "sha256": "cd2191ab31b914ed7b318416b0e4440fdf392ddad9106a060819aa600a64f59a"
+      },
+      "voices/af_sarah.bin": {
+        "size": 522240,
+        "sha256": "4409fbc125afabacc615d94db5398d847006a737b0247d6892b7a9a0007a2f0a"
+      },
+      "voices/am_fenrir.bin": {
+        "size": 522240,
+        "sha256": "c27989f741f7ee34d273a39d8a595cc0837d35f5ced9a29b7cc162614616df43"
+      },
+      "voices/am_michael.bin": {
+        "size": 522240,
+        "sha256": "1d1f21dd8da39c30705cd4c75d039d265e9bc4a2a93ed09bc9e1b1225eb95ba1"
+      },
+      "voices/am_onyx.bin": {
+        "size": 522240,
+        "sha256": "da5d135b424164916d75a68ffb4c2abce3d7d5ccc82dd1ee6cf447ce286145e6"
+      },
+      "voices/am_puck.bin": {
+        "size": 522240,
+        "sha256": "fcf73c989033e9233e0b98713eca600c8c74dcc1614b37009d5450ff4a2274a0"
+      },
+      "voices/bf_alice.bin": {
+        "size": 522240,
+        "sha256": "08afa6ba24da61ea5e8efa139e5aadc938d83f0a6da5a900adaf763ac1da5573"
+      },
+      "voices/bf_emma.bin": {
+        "size": 522240,
+        "sha256": "669fe0647f9dd04fcab92f1439a40eeb4c8b4ab1f82e4996fe3d918ce4a63b73"
+      },
+      "voices/bm_fable.bin": {
+        "size": 522240,
+        "sha256": "f889083196807b4adb15e9204252165f503b8d33d3982e681c52443c49d798f1"
+      },
+      "voices/bm_george.bin": {
+        "size": 522240,
+        "sha256": "c4b235a4c1f2cd3b939fed08b899ce9385638b763f7b73a59616c4fc9bd6c9bc"
+      },
+      "voices/bm_lewis.bin": {
+        "size": 522240,
+        "sha256": "b8f671cef828c30e66fdf0b0756a76bba58f6bb3398cbbf27058642acbcedb97"
+      }
+    }
+  },
+  "references": {
+    "prime": {
+      "file": "references/prime.wav",
+      "size": 274846,
+      "sha256": "7c502a358eba1c4d5a3abc1540d421b53773f16f66f3e4bfaa1f821c0b4313e8"
+    },
+    "fenix": {
+      "file": "references/fenix.wav",
+      "size": 232962,
+      "sha256": "8320d56915c94514f2586ed4ebe8c725f4f3a79d0c9d4704facc2d696bd0b3db"
+    },
+    "prime-v2": {
+      "file": "references/prime-v2.wav",
+      "size": 274846,
+      "sha256": "7c502a358eba1c4d5a3abc1540d421b53773f16f66f3e4bfaa1f821c0b4313e8"
+    },
+    "fenix-v2": {
+      "file": "references/fenix-v2.wav",
+      "size": 268432,
+      "sha256": "6f86d8ee85d4ce41617737e28c9b6ea8bf83ff3c73f62b7a1453c0ea8e30f26f"
+    }
+  }
+}

@@ -14,7 +14,7 @@ for(const kind of ['audio','podcast'])for(const stage of ['blob','package']){
     const gate=deferred(),started=deferred(),elements=new Map(),publications=[];
     const job={id:'A',next:1,passages:[{}],title:'Synthetic test',settings:{}};
     const $=id=>{if(!elements.has(id))elements.set(id,{});return elements.get(id);};
-    const context=vm.createContext({$,AbortController,abortable,assertActive,store:{job:async()=>job,podcastGuid:async()=>{}},
+    const context=vm.createContext({importing:false,$,AbortController,abortable,assertActive,store:{job:async()=>job,podcastGuid:async()=>{}},
       recordingBlob:async()=>{if(stage==='blob'){started.resolve();await gate.promise;}return {blob:new Blob(['mp3'])};},
       episodePackage:async()=>{if(stage==='package'){started.resolve();await gate.promise;}return {files:[],metadata:{warnings:[]}};},
       Blob,File,packageZip:()=>new Blob(['zip']),saveFile:()=>publications.push('download'),navigator:{share:()=>publications.push('share')},
@@ -23,3 +23,18 @@ for(const kind of ['audio','podcast'])for(const stage of ['blob','package']){
     const pending=context.start();await started.promise;$('stop').onclick();gate.resolve();await pending;assert.deepEqual(publications,[]);
   });
 }
+test('final-chapter ended cannot acknowledge another tab take revision or export unseen audio',async()=>{
+ const job={id:'A',next:1,passages:[{chapter:0}],title:'Synthetic test',settings:{}},remote={...job,takeSelection:{schema:1,revision:1,selected:{0:'other-tab-take'},history:[]}},elements=new Map();let prepared=0,published=0;
+ const $=id=>{if(!elements.has(id))elements.set(id,{});return elements.get(id);};
+ const ended=main.slice(main.indexOf("$('audio').onended="),main.indexOf("$('download').onclick="));
+ const context=vm.createContext({$,AbortController,abortable,assertActive,store:{job:async()=>structuredClone(remote)},recordingBlob:async()=>{prepared++;return {blob:new Blob(['mp3'])};},Blob,File,saveFile:()=>published++,safeFilename:v=>v,controls:()=>{},busy:()=>false,warn:e=>e.message,renderDetails:()=>{},availableChapters:()=>[0],navigator:{},loadChapter:()=>{throw Error('must not silently load');}});
+ vm.runInContext(`let selectedJob=${JSON.stringify(job)},loadedJobId='A',loadedChapter=0,loadedThrough=1,selectionToken=0,renderToken=0,exporting=false,exportController=null;${ended}\n${audioExport}\nglobalThis.start=()=>exportAudio();globalThis.revision=()=>selectedJob.takeSelection?.revision??0;`,context);
+ await $('audio').onended();assert.equal(context.revision(),0);assert.match($('export-status').textContent,/changed in another window/);await context.start();assert.equal(prepared,0);assert.equal(published,0);assert.equal(context.revision(),0);assert.match($('export-status').textContent,/Load latest/);
+});
+test('actual podcast handler forwards frozen selected artifact duration without rewriting original job duration',async()=>{
+ const job={id:'A',next:1,passages:[{}],title:'Synthetic test',seconds:3,takeSelection:{revision:1}},elements=new Map();let received,published=0;
+ const $=id=>{if(!elements.has(id))elements.set(id,{});return elements.get(id);};
+ const context=vm.createContext({$,AbortController,abortable,assertActive,store:{job:async()=>structuredClone(job),podcastGuid:async()=>{}},recordingBlob:async()=>({blob:new Blob(['mp3']),seconds:1.5,takeRevision:1}),episodePackage:async(saved,_audio,_fields,artifact)=>{received={saved,artifact};return {files:[],metadata:{warnings:[]}};},Blob,saveFile:()=>published++,packageZip:()=>new Blob(['zip']),safeFilename:v=>v,controls:()=>{},busy:()=>false,flushPodcast:async()=>{},podcastFields:()=>({}),warn:e=>e.message});
+ vm.runInContext(`let selectedJob=${JSON.stringify(job)},selectionToken=0,exporting=false,exportController=null;${podcastExport}`,context);
+ await $('pod-export').onclick();assert.equal(received.saved.seconds,3);assert.equal(received.artifact.seconds,1.5);assert.equal(received.artifact.takeRevision,1);assert.equal(job.seconds,3);assert.equal(published,1);
+});

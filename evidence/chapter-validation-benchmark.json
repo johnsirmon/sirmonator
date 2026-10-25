@@ -1,0 +1,154 @@
+{
+  "schema": 1,
+  "baseline": "cbb8bd128edf1fcc619add6fbcb80d3aa161e165",
+  "fixture": {
+    "passages": 2000,
+    "chapters": 15,
+    "sourceCharacters": 83998,
+    "pronunciation": true,
+    "selectedTakes": 16,
+    "pcmBytes": 192000
+  },
+  "scope": "Current chapter and next-chapter preparation after open; real Node MP3 workers, synthetic short PCM, in-memory instrumented store returning structured-cloned IDB-shaped metadata.",
+  "runs": [
+    {
+      "mode": "before",
+      "elapsedMs": 1005.329,
+      "reads": {
+        "job": 2,
+        "parts": 4,
+        "partRows": 8000,
+        "take": 64
+      },
+      "current": {
+        "sha256": "97cba4813ad33133510d04915008d81bd74437a0983e59882616e847bd9d7210",
+        "seconds": 0.2860000000000002,
+        "bytes": 2688,
+        "takeRevision": 1
+      },
+      "next": {
+        "sha256": "ed81f29b8a284d89ed2afa55e00254b4c5c31bcc2c5d4eb41042a0b5990dbe2f",
+        "seconds": 0.2850000000000002,
+        "bytes": 2688,
+        "takeRevision": 1
+      }
+    },
+    {
+      "mode": "after",
+      "elapsedMs": 496.69039999999995,
+      "reads": {
+        "job": 1,
+        "parts": 1,
+        "partRows": 2000,
+        "take": 16
+      },
+      "current": {
+        "sha256": "97cba4813ad33133510d04915008d81bd74437a0983e59882616e847bd9d7210",
+        "seconds": 0.2860000000000002,
+        "bytes": 2688,
+        "takeRevision": 1
+      },
+      "next": {
+        "sha256": "ed81f29b8a284d89ed2afa55e00254b4c5c31bcc2c5d4eb41042a0b5990dbe2f",
+        "seconds": 0.2850000000000002,
+        "bytes": 2688,
+        "takeRevision": 1
+      }
+    },
+    {
+      "mode": "before",
+      "elapsedMs": 907.2444,
+      "reads": {
+        "job": 2,
+        "parts": 4,
+        "partRows": 8000,
+        "take": 64
+      },
+      "current": {
+        "sha256": "97cba4813ad33133510d04915008d81bd74437a0983e59882616e847bd9d7210",
+        "seconds": 0.2860000000000002,
+        "bytes": 2688,
+        "takeRevision": 1
+      },
+      "next": {
+        "sha256": "ed81f29b8a284d89ed2afa55e00254b4c5c31bcc2c5d4eb41042a0b5990dbe2f",
+        "seconds": 0.2850000000000002,
+        "bytes": 2688,
+        "takeRevision": 1
+      }
+    },
+    {
+      "mode": "after",
+      "elapsedMs": 444.7068000000004,
+      "reads": {
+        "job": 1,
+        "parts": 1,
+        "partRows": 2000,
+        "take": 16
+      },
+      "current": {
+        "sha256": "97cba4813ad33133510d04915008d81bd74437a0983e59882616e847bd9d7210",
+        "seconds": 0.2860000000000002,
+        "bytes": 2688,
+        "takeRevision": 1
+      },
+      "next": {
+        "sha256": "ed81f29b8a284d89ed2afa55e00254b4c5c31bcc2c5d4eb41042a0b5990dbe2f",
+        "seconds": 0.2850000000000002,
+        "bytes": 2688,
+        "takeRevision": 1
+      }
+    },
+    {
+      "mode": "before",
+      "elapsedMs": 871.4834000000001,
+      "reads": {
+        "job": 2,
+        "parts": 4,
+        "partRows": 8000,
+        "take": 64
+      },
+      "current": {
+        "sha256": "97cba4813ad33133510d04915008d81bd74437a0983e59882616e847bd9d7210",
+        "seconds": 0.2860000000000002,
+        "bytes": 2688,
+        "takeRevision": 1
+      },
+      "next": {
+        "sha256": "ed81f29b8a284d89ed2afa55e00254b4c5c31bcc2c5d4eb41042a0b5990dbe2f",
+        "seconds": 0.2850000000000002,
+        "bytes": 2688,
+        "takeRevision": 1
+      }
+    },
+    {
+      "mode": "after",
+      "elapsedMs": 448.1705000000002,
+      "reads": {
+        "job": 1,
+        "parts": 1,
+        "partRows": 2000,
+        "take": 16
+      },
+      "current": {
+        "sha256": "97cba4813ad33133510d04915008d81bd74437a0983e59882616e847bd9d7210",
+        "seconds": 0.2860000000000002,
+        "bytes": 2688,
+        "takeRevision": 1
+      },
+      "next": {
+        "sha256": "ed81f29b8a284d89ed2afa55e00254b4c5c31bcc2c5d4eb41042a0b5990dbe2f",
+        "seconds": 0.2850000000000002,
+        "bytes": 2688,
+        "takeRevision": 1
+      }
+    }
+  ],
+  "identicalOutputs": true,
+  "limitations": "Read counts measure application calls/rows, not disk IO. Timings include actual encoding/worker startup but not browser IndexedDB or real speech inference. Synthetic tiny PCM is not a phone or whole-sermon audio benchmark.",
+  "summary": {
+    "order": "before,after repeated three times",
+    "beforeMedianMs": 907.2444,
+    "afterMedianMs": 448.1705000000002
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "minutes": 60,
+  "kind": "Lazy procedural CC0 PCM metadata store; production validation and Node MP3 worker, no database/model/speech",
+  "caps": {
+    "rssBytes": 671088640,
+    "artifactBytes": 41943040,
+    "runMs": 150000
+  },
+  "limits": "RSS sampled every 25 ms includes Node workers, may miss instantaneous peaks and cannot impose a hard OS limit. Synthetic lazy reads are not browser disk throughput. Only one part materializes per read; this is not a constant total memory guarantee.",
+  "passed": false,
+  "stoppedBecause": "Choose a smaller chapter range: up to 150,000 characters per recording.",
+  "errorName": "Error",
+  "memory": {
+    "peakRss": 53329920,
+    "samplingMs": 25,
+    "samples": [
+      {
+        "phase": "baseline",
+        "rss": 53329920,
+        "heapTotal": 10526720,
+        "heapUsed": 5360600,
+        "external": 2217070,
+        "arrayBuffers": 137471
+      }
+    ]
+  },
+  "totalMs": 6.288599999999988
+}

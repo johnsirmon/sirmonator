@@ -6,7 +6,7 @@ const deferred=()=>{let resolve;const promise=new Promise(yes=>resolve=yes);retu
 const pcm=blob=>({blob:blob??new Blob([new Uint8Array(8)]),format:'pcm-s16le',sampleCount:4,sampleRate:24000,channels:1});
 for(const stage of ['blob','part','finish'])test(`abort during deferred ${stage} rejects immediately, terminates worker and discards late completion`,async()=>{
   const started=deferred(),gate=deferred(),controller=new AbortController(),messages=[];let terminated=false;
-  const worker={terminate(){terminated=true;},postMessage(data){messages.push(data.type);if(data.type===stage){started.resolve();gate.promise.then(()=>this.onmessage({data:{parts:[new Uint8Array([1])]}}));}else queueMicrotask(()=>this.onmessage({data:{ok:true}}));}};
+  const worker={terminate(){terminated=true;},postMessage(data){messages.push(data.type);if(data.type===stage){started.resolve();gate.promise.then(()=>this.onmessage({data:{id:data.id,type:data.type,ok:true,parts:[new Uint8Array([1])]}}));}else queueMicrotask(()=>this.onmessage({data:{id:data.id,type:data.type,ok:true}}));}};
   class DeferredBlob extends Blob{arrayBuffer(){started.resolve();return gate.promise;}}
   const part=pcm(stage==='blob'?new DeferredBlob([new Uint8Array(8)]):undefined);
   const result=encodePcmParts([part],24000,{signal:controller.signal,createWorker:()=>worker});
@@ -15,7 +15,7 @@ for(const stage of ['blob','part','finish'])test(`abort during deferred ${stage}
 });
 test('stale state after final encoder response cannot publish an artifact',async()=>{
   let current=true,terminated=false;
-  const worker={terminate(){terminated=true;},postMessage(data){queueMicrotask(()=>{if(data.type==='finish')current=false;this.onmessage({data:{parts:[new Uint8Array([1])]}});});}};
+  const worker={terminate(){terminated=true;},postMessage(data){queueMicrotask(()=>{if(data.type==='finish')current=false;this.onmessage({data:{id:data.id,type:data.type,ok:true,parts:[new Uint8Array([1])]}});});}};
   await assert.rejects(encodePcmParts([pcm()],24000,{isCurrent:()=>current,createWorker:()=>worker}),/cancelled/);assert.equal(terminated,true);
 });
 test('chapter preparation is shared before ended, reusable on revisit, and keyed to committed chapter snapshot',async()=>{

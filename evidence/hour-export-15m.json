@@ -1,0 +1,142 @@
+{
+  "schema": 1,
+  "minutes": 15,
+  "kind": "Lazy procedural CC0 PCM metadata store; production validation and Node MP3 worker, no database/model/speech",
+  "caps": {
+    "rssBytes": 671088640,
+    "artifactBytes": 41943040,
+    "runMs": 150000
+  },
+  "limits": "RSS sampled every 25 ms includes Node workers, may miss instantaneous peaks and cannot impose a hard OS limit. Synthetic lazy reads are not browser disk throughput. Only one part materializes per read; this is not a constant total memory guarantee.",
+  "passed": true,
+  "sourceBuildSha256": "92a85931b89c963754f12884237bff75934f01ceaf8d68570abccff2100577a3",
+  "fixture": {
+    "passages": 450,
+    "seconds": 900,
+    "logicalPcmBytes": 43200000,
+    "retainedPcmBytes": 0,
+    "partBytes": 96000
+  },
+  "integrity": [
+    {
+      "index": 0,
+      "rejected": true,
+      "elapsedMs": 6.636700000000019,
+      "reads": {
+        "parts": 1,
+        "rows": 450,
+        "job": 0,
+        "take": 0,
+        "blobReads": 1,
+        "blobBytes": 96000,
+        "maxReadBytes": 96000,
+        "corruptedReads": 1
+      }
+    },
+    {
+      "index": 225,
+      "rejected": true,
+      "elapsedMs": 641.3870999999999,
+      "reads": {
+        "parts": 1,
+        "rows": 450,
+        "job": 0,
+        "take": 0,
+        "blobReads": 226,
+        "blobBytes": 21696000,
+        "maxReadBytes": 96000,
+        "corruptedReads": 1
+      }
+    },
+    {
+      "index": 449,
+      "rejected": true,
+      "elapsedMs": 1282.9188999999997,
+      "reads": {
+        "parts": 1,
+        "rows": 450,
+        "job": 0,
+        "take": 0,
+        "blobReads": 450,
+        "blobBytes": 43200000,
+        "maxReadBytes": 96000,
+        "corruptedReads": 1
+      }
+    }
+  ],
+  "full": {
+    "elapsedMs": 23256.5358,
+    "seconds": 900,
+    "bytes": 7200384,
+    "frameParsedSeconds": 900.0480000000332,
+    "sha256": "dcf23bffd3cd131c0a1b7b72f6334b2f452cbe3cf334138707d976a54e7d9008",
+    "reads": {
+      "parts": 1,
+      "rows": 450,
+      "job": 0,
+      "take": 0,
+      "blobReads": 900,
+      "blobBytes": 86400000,
+      "maxReadBytes": 96000,
+      "corruptedReads": 0
+    }
+  },
+  "takeUndo": {
+    "chapter": 2,
+    "originalSeconds": 222,
+    "selectedSeconds": 222.1,
+    "originalHash": "a3bc8fbb59db0012e976dbadc4cc7b76342c4e8d66055d5c764a5830cd949c54",
+    "selectedHash": "9eecdcbc8486ecd8212fe937d12913fee9bdccaff3c92683ba8ac124528739f9",
+    "undoHash": "a3bc8fbb59db0012e976dbadc4cc7b76342c4e8d66055d5c764a5830cd949c54",
+    "revision": 2,
+    "reads": {
+      "parts": 3,
+      "rows": 1350,
+      "job": 0,
+      "take": 1,
+      "blobReads": 1684,
+      "blobBytes": 161673600,
+      "maxReadBytes": 100800,
+      "corruptedReads": 0
+    }
+  },
+  "memory": {
+    "peakRss": 361672704,
+    "samplingMs": 25,
+    "samples": [
+      {
+        "phase": "baseline",
+        "rss": 53264384,
+        "heapTotal": 10526720,
+        "heapUsed": 5361552,
+        "external": 2217070,
+        "arrayBuffers": 137471
+      },
+      {
+        "phase": "metadata-ready",
+        "rss": 56987648,
+        "heapTotal": 11837440,
+        "heapUsed": 6264240,
+        "external": 2416798,
+        "arrayBuffers": 143615
+      },
+      {
+        "phase": "full-artifact",
+        "rss": 275607552,
+        "heapTotal": 26779648,
+        "heapUsed": 6939736,
+        "external": 9712947,
+        "arrayBuffers": 7343999
+      },
+      {
+        "phase": "take-undo-finished",
+        "rss": 294981632,
+        "heapTotal": 20488192,
+        "heapUsed": 6151344,
+        "external": 15134503,
+        "arrayBuffers": 16063103
+      }
+    ]
+  },
+  "totalMs": 45360.366
+}

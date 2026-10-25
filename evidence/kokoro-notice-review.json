@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "baseline": "dad21c03233a94f068f0eff93d61e5f509a55f7e",
+  "scope": "Existing exact installed runtime license packaging only",
+  "package": {
+    "name": "kokoro-js",
+    "version": "1.2.1",
+    "license": "Apache-2.0",
+    "rootLicenseNoticeFiles": [
+      "LICENSE"
+    ]
+  },
+  "source": "node_modules/kokoro-js/LICENSE",
+  "target": "vendor/KOKORO-LICENSE.txt",
+  "bytes": 11357,
+  "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+  "hashConvention": "Raw installed package bytes and matching dist bytes; not normalized Git source text",
+  "canonicalSource": "Locked installed package LICENSE; emitted directly without a duplicate tracked license or line-ending settings change",
+  "validation": {
+    "noticeTests": 4,
+    "pass": 4,
+    "productionBuild": true,
+    "installedAndDistByteEqual": true
+  },
+  "limits": "Runtime Apache notice copy is not blanket model/voice permission or complete compliance assurance. No model assets downloaded, dependency versions changed, agreements accepted or source-reference recordings altered. Prime/Fenix reference redistribution evidence remains unresolved. Individual upstream Pocket voices/reference recordings can have different terms."
+}

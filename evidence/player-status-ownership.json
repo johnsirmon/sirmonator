@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "baseline": "4a2fe5cfeb474ba35e9486e76b49385e43a85b06",
+  "mainSha256Lf": "19c220626470c8418bfcb29b64a46388dcd648a0a5f8248c93ae4ae436f0b9b1",
+  "purpose": "Settle current refresh failures and clear inherited playback errors only on successful acknowledgement of the same recording.",
+  "deterministic": {"focusedNewCases":5,"fullTests":380,"failed":0,"build":"passed","scope":"Actual main functions and handlers with controlled storage/preparation/media doubles; preserves later unrelated warnings, other recording errors and cancellation status."},
+  "native": {
+    "browser":"Edge extension",
+    "origin":"http://127.0.0.1:4291",
+    "tab":"1497930519",
+    "scope":"Current app orchestration, native IndexedDB and MP3 worker with task-only controlled completion gates, procedural PCM, muted media and no model or remote fetch.",
+    "openRetry":{"failure":"SIMULATED read failure","afterSuccessGeneralStatus":"","afterSuccessPreparation":"Chapter 2: MP3 encoding complete."},
+    "refreshFailure":{"preparation":"SIMULATED preparation failure","export":"SIMULATED preparation failure","retainedTitle":"ACCEPTANCE A · synthetic"},
+    "refreshRetry":{"preparation":"Chapter 1 audio ready.","export":"","generalStatus":"","selectedRevision":2,"loadedRevision":2,"chapter":0,"preparing":false,"exporting":false,"matchesExpectedMp3Hash":true},
+    "allMediaMutedZeroPaused":true,
+    "passed":true
+  },
+  "limits":["No audible quality, real model or deployed build verification.","Preservation of newer/unrelated warnings exercised deterministically, not via native browser fault injection.","No screenshot requested or attempted for this bounded replay.","No audio/source changes, downloads, main merge or deployment."]
+}

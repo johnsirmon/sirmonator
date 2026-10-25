@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "kind": "Actual Edge app UI on an isolated loopback origin, simulated TTS and real storage/MP3",
+  "origin": "http://127.0.0.1:4196/.cache/integration-app.html",
+  "generation": "Explicit procedural CC0 tone worker; no browser speech/model inference",
+  "checks": {
+    "originalAndSpokenPreview": {"passed": true, "source": "Paul arrived.\n\nPaul listened.\n\nPaul left.", "spoken": "pawl arrived.\n\npawl listened.\n\npawl left."},
+    "newRecordingStopResume": {"passed": true, "savedAtStop": 1, "totalPassages": 3, "completedAfterResume": 3},
+    "alternativeTakeUndo": {"passed": true, "passage": 2, "alternativeRevision": 1, "undoRevision": 2, "originalRetained": true},
+    "manualReviewReload": {"passed": true, "transcript": "pawl", "candidate": "possible omission: listened", "notes": "Synthetic UI integration note; no listening claim.", "listenedByUser": false},
+    "crossTabStaleReview": {"passed": true, "anotherTabRevision": 3, "saveDisabled": true, "findingsCleared": true, "unsavedNotesRetained": true},
+    "mp3Capture": {"passed": true, "inMemoryOnly": true, "downloadCompleted": false, "revision": 2, "bytes": 13248, "frameParsedSeconds": 1.656000000000001, "sha256": "f6d708522a45e75fa20a65071eab9cbd18624ce58ef07b53b8ed92a1c493b704"},
+    "progressCancel": {"passed": true, "mode": "Real encoder with explicitly delayed test transport", "startingPhaseVisible": true, "capturedBeforeCancel": 2, "capturedAfterCancel": 2, "meterHidden": true},
+    "storageRetry": {"passed": true, "initialFailure": "Explicit harness injection, not a native blocked upgrade", "retry": "Actual IndexedDB open", "unsavedTextPreserved": "Unsaved exact text for the synthetic storage retry check.", "finalStatus": "Local recordings connected. Saved data was not reset."},
+    "nativePlaybackEnd": {"passed": true, "selectedRevision": 3, "playThenPauseControlObserved": true, "ended": true, "currentTime": 1.68, "duration": 1.68, "mediaError": null}
+  },
+  "defectFoundAndFixed": "Default MP3 watchdog timers used the wrong receiver in browsers, causing Illegal invocation. Global-receiver wrappers and a regression now cover it.",
+  "productionDataTouched": false,
+  "newModelDownloads": false,
+  "browserDownloadCompletionClaimed": false,
+  "unrun": ["Browser real speech inference", "Phone/background suspension", "Subjective listening and word accuracy", "Native side-database upgrade UI", "Screenshot capture; prior transport failures were not repeated"],
+  "limitations": "Accessibility/DOM and media state evidence; browser TTS is simulated. Native decoder completion and MP3 parsing do not establish acoustic quality. Real cached-model inference is separately recorded in integration-real-node.json."
+}

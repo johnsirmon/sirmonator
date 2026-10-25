@@ -1,5 +1,5 @@
 import {inspectMp3} from './mp3.js';
-import {safeFilename} from './recording.js';
+import {portableFilename as safeFilename,assertArchiveName} from './export-safety.js';
 export const DISCLOSURE='This episode uses AI-generated narration from supplied text. Speech synthesis may mispronounce, omit, or repeat words.';
 const xml=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
 export function publicUrl(value){
@@ -20,19 +20,21 @@ export function podcastReadiness(fields){
  warnings.push('Loudness and true peak are not measured or normalized here. Review against Apple audio guidance (about -16 LKFS ±1; true peak at most -1 dBFS).');
  return warnings;
 }
-export async function episodePackage(job,audio,fields){
+export async function episodePackage(job,audio,fields,artifact=null){
  fields={...fields};
  for(const key of ['audioUrl','artworkUrl','feedUrl','websiteUrl']){
   let url;try{url=new URL(fields[key]);}catch{}
   if(url?.username||url?.password)throw Error('Remove embedded credentials from hosting URLs before exporting.');
   if(!publicUrl(fields[key]))fields[key]='';
  }
- for(const value of Object.values(fields))if(typeof value==='string'&&/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffe\uffff]/u.test(value))throw Error('Remove unsupported control characters from episode metadata.');
+ for(const value of [...Object.values(fields),job.title,job.episodeGuid])if(typeof value==='string'&&(!value.isWellFormed()||/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffe\uffff]/u.test(value)))throw Error('Remove unsupported control characters or incomplete Unicode from episode metadata.');
  if(job.next!==job.passages.length||!job.next)throw Error('Finish this recording before preparing a podcast episode. Partial recordings cannot be exported as episodes.');
  if(!job.episodeGuid)throw Error('Save this episode identity before exporting.');
  if(audio.type!=='audio/mpeg')throw Error('Podcast export requires actual MP3 audio.');
  const bytes=new Uint8Array(await audio.arrayBuffer()),audioInfo=inspectMp3(bytes),seconds=audioInfo.seconds;if(!bytes.length||!seconds)throw Error('No valid MP3 audio.');
- if(Math.abs(seconds-job.seconds)>.2)throw Error('Saved audio duration does not match the complete checkpoint.');
+ const revision=job.takeSelection?.revision??0;
+ if((revision>0&&!artifact)||(artifact&&(!Number.isFinite(artifact.seconds)||artifact.seconds<0||artifact.takeRevision!==revision)))throw Error('Podcast preparation requires the matching frozen audio selection and duration.');
+ if(Math.abs(seconds-(artifact?.seconds??job.seconds))>.2)throw Error('Saved audio duration does not match the complete checkpoint.');
  const name=safeFilename(fields.episodeTitle||job.title),date=new Date(job.createdAt);if(!Number.isFinite(date.getTime()))throw Error('Invalid episode date.');
  const warnings=podcastReadiness(fields);if(audioInfo.sampleRates.some(rate=>![44100,48000].includes(rate)))warnings.push('This MP3 retains the model sample rate ('+audioInfo.sampleRates.join(', ')+' Hz). Check platform recommendations; no 44.1/48 kHz resampling was performed.');
  const description=(fields.episodeDescription||'')+'\n\n'+DISCLOSURE;
@@ -45,6 +47,10 @@ export async function episodePackage(job,audio,fields){
 // Stored ZIP entries avoid another full copy of the compressed audio in memory.
 function crc32(bytes){let crc=0xffffffff;for(const byte of bytes){crc^=byte;for(let bit=0;bit<8;bit++)crc=(crc>>>1)^((crc&1)?0xedb88320:0);}return (crc^0xffffffff)>>>0;}
 export function packageZip(files){
+ if(!Array.isArray(files)||files.length>65535)throw Error('Too many entries for this ZIP format.');
+ // Conservatively collapse Unicode uppercase expansions/final sigma as well
+ // as ASCII case. This is not a universal filesystem-equivalence guarantee.
+ const names=new Set();for(const file of files){assertArchiveName(file.name);const key=file.name.normalize('NFKC').toUpperCase();if(names.has(key))throw Error('Archive entry names must be unique.');names.add(key);}
  const encode=new TextEncoder(),local=[],central=[];let offset=0,centralSize=0;
  for(const file of files){const name=encode.encode(file.name),data=typeof file.data==='string'?encode.encode(file.data):file.data,crc=crc32(data);
  const header=new Uint8Array(30+name.length),h=new DataView(header.buffer);h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x800,true);h.setUint32(14,crc,true);h.setUint32(18,data.length,true);h.setUint32(22,data.length,true);h.setUint16(26,name.length,true);header.set(name,30);local.push(header,data);

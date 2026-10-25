@@ -1,0 +1,258 @@
+{
+  "schema": 1,
+  "kind": "Seeded actual-main UI orchestration schedules with controlled doubles",
+  "rows": [
+    {
+      "seed": 3,
+      "scheduleBits": {
+        "showNewerFirst": true,
+        "chapterNewerFirst": true,
+        "openStopDuringRead": false,
+        "refreshValidationFailure": false,
+        "resumeStop": false
+      },
+      "events": [
+        "reordered-shows-latest-A",
+        "Stop-invalidates-position-wait",
+        "reordered-chapter-position-writes",
+        "chapter-invalidates-pending-Open",
+        "Stop-invalidates-Open-position",
+        "Open-read-failure-and-other-tab-deletion",
+        "other-tab-revision-fail-refuse-retry-export",
+        "create-fail-resume-complete"
+      ],
+      "final": {
+        "id": "B",
+        "revision": 0,
+        "chapter": 0
+      },
+      "traceSteps": 61,
+      "passed": true
+    },
+    {
+      "seed": 8,
+      "scheduleBits": {
+        "showNewerFirst": false,
+        "chapterNewerFirst": false,
+        "openStopDuringRead": false,
+        "refreshValidationFailure": true,
+        "resumeStop": false
+      },
+      "events": [
+        "reordered-shows-latest-A",
+        "Stop-invalidates-position-wait",
+        "reordered-chapter-position-writes",
+        "chapter-invalidates-pending-Open",
+        "Stop-invalidates-Open-position",
+        "Open-read-failure-and-other-tab-deletion",
+        "other-tab-revision-fail-refuse-retry-export",
+        "create-fail-resume-complete"
+      ],
+      "final": {
+        "id": "B",
+        "revision": 0,
+        "chapter": 0
+      },
+      "traceSteps": 60,
+      "passed": true
+    },
+    {
+      "seed": 19,
+      "scheduleBits": {
+        "showNewerFirst": true,
+        "chapterNewerFirst": true,
+        "openStopDuringRead": false,
+        "refreshValidationFailure": false,
+        "resumeStop": false
+      },
+      "events": [
+        "reordered-shows-latest-A",
+        "Stop-invalidates-position-wait",
+        "reordered-chapter-position-writes",
+        "chapter-invalidates-pending-Open",
+        "Stop-invalidates-Open-position",
+        "Open-read-failure-and-other-tab-deletion",
+        "other-tab-revision-fail-refuse-retry-export",
+        "create-fail-resume-complete"
+      ],
+      "final": {
+        "id": "B",
+        "revision": 0,
+        "chapter": 0
+      },
+      "traceSteps": 61,
+      "passed": true
+    },
+    {
+      "seed": 28,
+      "scheduleBits": {
+        "showNewerFirst": false,
+        "chapterNewerFirst": false,
+        "openStopDuringRead": true,
+        "refreshValidationFailure": true,
+        "resumeStop": false
+      },
+      "events": [
+        "reordered-shows-latest-A",
+        "Stop-invalidates-position-wait",
+        "reordered-chapter-position-writes",
+        "chapter-invalidates-pending-Open",
+        "Stop-invalidates-Open-read",
+        "Open-read-failure-and-other-tab-deletion",
+        "other-tab-revision-fail-refuse-retry-export",
+        "create-fail-resume-complete"
+      ],
+      "final": {
+        "id": "B",
+        "revision": 0,
+        "chapter": 0
+      },
+      "traceSteps": 61,
+      "passed": true
+    },
+    {
+      "seed": 41,
+      "scheduleBits": {
+        "showNewerFirst": true,
+        "chapterNewerFirst": false,
+        "openStopDuringRead": false,
+        "refreshValidationFailure": true,
+        "resumeStop": true
+      },
+      "events": [
+        "reordered-shows-latest-A",
+        "Stop-invalidates-position-wait",
+        "reordered-chapter-position-writes",
+        "chapter-invalidates-pending-Open",
+        "Stop-invalidates-Open-position",
+        "Open-read-failure-and-other-tab-deletion",
+        "other-tab-revision-fail-refuse-retry-export",
+        "resume-stop-retry-complete"
+      ],
+      "final": {
+        "id": "B",
+        "revision": 0,
+        "chapter": 0
+      },
+      "traceSteps": 61,
+      "passed": true
+    },
+    {
+      "seed": 52,
+      "scheduleBits": {
+        "showNewerFirst": false,
+        "chapterNewerFirst": false,
+        "openStopDuringRead": true,
+        "refreshValidationFailure": false,
+        "resumeStop": true
+      },
+      "events": [
+        "reordered-shows-latest-A",
+        "Stop-invalidates-position-wait",
+        "reordered-chapter-position-writes",
+        "chapter-invalidates-pending-Open",
+        "Stop-invalidates-Open-read",
+        "Open-read-failure-and-other-tab-deletion",
+        "other-tab-revision-fail-refuse-retry-export",
+        "resume-stop-retry-complete"
+      ],
+      "final": {
+        "id": "B",
+        "revision": 0,
+        "chapter": 0
+      },
+      "traceSteps": 63,
+      "passed": true
+    },
+    {
+      "seed": 67,
+      "scheduleBits": {
+        "showNewerFirst": true,
+        "chapterNewerFirst": true,
+        "openStopDuringRead": false,
+        "refreshValidationFailure": false,
+        "resumeStop": false
+      },
+      "events": [
+        "reordered-shows-latest-A",
+        "Stop-invalidates-position-wait",
+        "reordered-chapter-position-writes",
+        "chapter-invalidates-pending-Open",
+        "Stop-invalidates-Open-position",
+        "Open-read-failure-and-other-tab-deletion",
+        "other-tab-revision-fail-refuse-retry-export",
+        "create-fail-resume-complete"
+      ],
+      "final": {
+        "id": "B",
+        "revision": 0,
+        "chapter": 0
+      },
+      "traceSteps": 61,
+      "passed": true
+    },
+    {
+      "seed": 80,
+      "scheduleBits": {
+        "showNewerFirst": false,
+        "chapterNewerFirst": false,
+        "openStopDuringRead": false,
+        "refreshValidationFailure": false,
+        "resumeStop": false
+      },
+      "events": [
+        "reordered-shows-latest-A",
+        "Stop-invalidates-position-wait",
+        "reordered-chapter-position-writes",
+        "chapter-invalidates-pending-Open",
+        "Stop-invalidates-Open-position",
+        "Open-read-failure-and-other-tab-deletion",
+        "other-tab-revision-fail-refuse-retry-export",
+        "create-fail-resume-complete"
+      ],
+      "final": {
+        "id": "B",
+        "revision": 0,
+        "chapter": 0
+      },
+      "traceSteps": 61,
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "limits": "Real main handlers/controls with storage, preparation, URL/audio, planner and generation doubles. Artifact bodies carry synthetic identity tags, not real MP3. No model, browser, playback, native memory or production deployment validation.",
+  "baseline": "7bfef60db748d08a774728a22d4013a927e310d9",
+  "fixed": [
+    {
+      "problem": "A chapter intent awaiting position persistence could restart preparation after an enabled Stop action.",
+      "change": "Register an owned controller and new render intent before saving position; capture the requested chapter, preserve the loaded chapter control, and check ownership before loading."
+    },
+    {
+      "problem": "An older Open awaiting position persistence could publish B after a newer A chapter intent completed.",
+      "change": "Own both position and recording-read waits, reject stale/cancelled intent before showRecording, and keep prior acknowledged player identity. Missing/read-failed recordings produce an explicit settled error."
+    }
+  ],
+  "negativeControls": {
+    "historicalSource": "7bfef60db748d08a774728a22d4013a927e310d9",
+    "sameHarnessHistoricalExpectedFailures": 1,
+    "historicalFailure": "Stop must not restart deferred chapter intent",
+    "intermediateReproduction": "After the chapter-only fix while old Open remained, the harness failed stale Open must not replace newer chapter intent. Not a separate committed snapshot."
+  },
+  "validation": {
+    "fullTests": 374,
+    "pass": 374,
+    "fail": 0,
+    "productionBuild": true,
+    "renderCatalogExact": true,
+    "seeds": 8,
+    "distinctScheduleBitCombinations": 6,
+    "traceSteps": 489
+  },
+  "sourceHashesSha256Lf": {
+    "src/main.js": "3766c7de5329585c348ea5def80b879c2728ced7172b9217636fc905fee4618c",
+    "scripts/player-schedule-matrix.mjs": "ad8bc3dbba79aac0d5aa4808ac5efbbc7667abe4c4c5815f01131403b668049c",
+    "tests/player-schedule-matrix.test.js": "196bb1a2591a71228e5af12d6d484b99e4085dfd589f3ea491545e4313e7699c"
+  },
+  "cancellationLimit": "Underlying IndexedDB position writes need not stop; cancelled or superseded waits cannot publish player selection. No native storage cancellation guarantee.",
+  "releaseGates": "Feature branch only; no merge/deployment. Personal cloning stays disabled and character-reference redistribution evidence remains unresolved."
+}

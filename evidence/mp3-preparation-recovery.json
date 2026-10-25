@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "baseline": "6dd60494d487ce24d79cfcc273e5d750415eff3d",
+  "kind": "Actual Node MP3 worker before/after and failed-attempt retry; synthetic CC0 PCM only",
+  "source": "scripts/chapter-benchmark-fixture.mjs",
+  "newModelsOrCodecs": false,
+  "personalVoiceUsed": false,
+  "parts": 160,
+  "selectedTakes": 2,
+  "inputSamples": 7728,
+  "seconds": 0.32200000000000023,
+  "mp3Bytes": 3072,
+  "beforeMp3Seconds": 0.38400000000000006,
+  "afterMp3Seconds": 0.38400000000000006,
+  "beforeHash": "d808eb47c05b760da21533e7c1e8e5b76dfb28b3e7bbbbde1cd4c6e1a5e616c3",
+  "afterHash": "d808eb47c05b760da21533e7c1e8e5b76dfb28b3e7bbbbde1cd4c6e1a5e616c3",
+  "identical": true,
+  "selectedJobUnchanged": true,
+  "injectedFailure": "MP3 worker response could not be read. Retry preparation, or choose a smaller chapter. Saved passages and selected takes were not changed.",
+  "failedWorkerTerminationCalls": 1,
+  "requestTimeoutMs": 180000,
+  "progress": [
+    {
+      "phase": "starting",
+      "completedParts": 0,
+      "totalParts": 160,
+      "completedSamples": 0,
+      "totalSamples": 7728
+    },
+    {
+      "phase": "encoding",
+      "completedParts": 0,
+      "totalParts": 160,
+      "completedSamples": 0,
+      "totalSamples": 7728
+    },
+    {
+      "phase": "finalizing",
+      "completedParts": 160,
+      "totalParts": 160,
+      "completedSamples": 7728,
+      "totalSamples": 7728
+    },
+    {
+      "phase": "complete",
+      "completedParts": 160,
+      "totalParts": 160,
+      "completedSamples": 7728,
+      "totalSamples": 7728
+    }
+  ],
+  "limitations": "Bit identity, frame-parsed MP3 duration and input duration accounting do not establish speech accuracy, acoustic quality or browser/phone performance. Watchdog expiration is tested with fake timers, not a real three-minute wait."
+}

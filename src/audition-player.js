@@ -10,13 +10,14 @@ export function createAuditionPlayer({audio,setBusy,notify}){
   const play=async url=>{
     stop();const current=sequence;
     audio.src=url;audio.hidden=false;setBusy(true);notify('Playing voice audition…');
-    const finish=message=>{if(current!==sequence)return;setBusy(false);notify(message);};
+    const finish=message=>{if(current!==sequence)return;sequence++;audio.onended=null;audio.onerror=null;setBusy(false);notify(message);};
     audio.onended=()=>finish('Audition finished. Choose a voice or read your sermon.');
     audio.onerror=()=>finish('The audition audio could not load. Please try again. Your manuscript is unchanged.');
     try{await audio.play();}
     catch(error){
       if(current!==sequence)return;
-      finish(error.name==='NotAllowedError'?'Audition ready. Press Play in the sample player below.':'The audition audio could not load. Please try again. Your manuscript is unchanged.');
+      if(error.name==='NotAllowedError'){setBusy(false);notify('Audition ready. Press Play in the sample player below.');}
+      else finish('The audition audio could not load. Please try again. Your manuscript is unchanged.');
     }
   };
   return {play,stop};

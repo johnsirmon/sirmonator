@@ -1,0 +1,21 @@
+{
+  "kind": "Observed Edge UI, native IndexedDB and production MP3 worker; procedural CC0 PCM, no synthesis",
+  "origin": "http://127.0.0.1:4201",
+  "namespace": "synthetic-long-browser-oct25-resilience",
+  "passages": 120,
+  "chapters": 3,
+  "inputSeconds": 240,
+  "pcmBytes": 11520000,
+  "sourceHash": "12e802bc781c76485c4285acf46047916becc004e791bf7ef1aecba84cd0e9b3",
+  "reloadThenVerify": {"verified": true, "parts": 120, "allOriginalHashes": true},
+  "export": {
+    "exportedInMemory": true,
+    "downloadCompleted": false,
+    "mp3Bytes": 1920384,
+    "frameParsedSeconds": 240.0480000000082,
+    "sha256": "45ea23917eaa3b5394d33181214165971b368cd0668867e749c5ab07615df9d7",
+    "matchesNodeOracle": true,
+    "checksumPolicy": "original-pcm-sha256-v1"
+  },
+  "limits": "DOM/AX evidence; screenshots previously transport-timed-out and not retried. No downloaded-file completion, listening, model synthesis or phone validation claimed."
+}

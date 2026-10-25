@@ -1,0 +1,142 @@
+{
+  "schema": 2,
+  "kind": "Historical-code regression effectiveness; no production mutants",
+  "currentCheckpoint": "aa4cbb398fff3b404f9ba0caa4f96390fad759bd",
+  "productionInputsMatchHead": true,
+  "evidenceScriptSha256": "0064878b462d97f1b20b18c71e3de1fa0fddec6d842ae1668c8450265ce4fd06",
+  "sourceHashConvention": "SHA-256 of source text normalized to LF",
+  "checks": [
+    {
+      "id": "worker-disposal-cannot-strand-request",
+      "historicalCommit": "fb25d0c5ce41204522186f0b934506143efa1cf6",
+      "path": "src/synthesis-client.js",
+      "scope": "Actual synthesis client module; injected worker/timers, no native worker or cleanup guarantee",
+      "historicalSourceSha256": "f3b2e3830f62813aaf8c77fa9690f9bdaf12df7b3e94377898d1e0047123c0ae",
+      "currentSourceSha256": "e7e2fbc1fd2a9a9ea573cb9a9111c6a97afc59f8dc6983c239496e71aa44b77f",
+      "positiveControlsPass": true,
+      "historicalRegressionPass": false,
+      "currentRegressionPass": true,
+      "knownBugCaught": true,
+      "historicalObserved": {
+        "cancelThrew": true,
+        "rejectedAfterFirstCancel": false,
+        "twoWarmRetries": false
+      },
+      "currentObserved": {
+        "cancelThrew": false,
+        "rejectedAfterFirstCancel": true,
+        "twoWarmRetries": true
+      }
+    },
+    {
+      "id": "source-import-stop-rejects-late-read",
+      "historicalCommit": "0c803a57ddf96b3a8ee57b43b8efbac7989fd312",
+      "path": "src/main.js",
+      "scope": "Actual file/Stop handlers plus current importer; deferred read and save stubs, not native PDF/DOCX I/O",
+      "historicalSourceSha256": "2bd3c52c421edfbff1007f48a63fbfc03a0a1cf176bb0b3a40f645a6092bd91f",
+      "currentSourceSha256": "29390e6b99fbec1bd61fcb1271e86356ad48e99ffd3039669c895ade0bf30fbd",
+      "positiveControlsPass": true,
+      "historicalRegressionPass": false,
+      "currentRegressionPass": true,
+      "knownBugCaught": true,
+      "historicalObserved": {
+        "text": "Imported source",
+        "reading": false,
+        "message": "Document loaded. Review its chapter range."
+      },
+      "currentObserved": {
+        "text": "Newer source",
+        "reading": false,
+        "message": "Document import cancelled. Your current text was kept."
+      }
+    },
+    {
+      "id": "undo-clear-invalidates-boundary-acknowledgment",
+      "historicalCommit": "0c803a57ddf96b3a8ee57b43b8efbac7989fd312",
+      "path": "src/main.js",
+      "scope": "Actual Undo Clear handler; chapter replanning stub deliberately does not clear review",
+      "historicalSourceSha256": "2bd3c52c421edfbff1007f48a63fbfc03a0a1cf176bb0b3a40f645a6092bd91f",
+      "currentSourceSha256": "29390e6b99fbec1bd61fcb1271e86356ad48e99ffd3039669c895ade0bf30fbd",
+      "positiveControlsPass": true,
+      "historicalRegressionPass": false,
+      "currentRegressionPass": true,
+      "knownBugCaught": true,
+      "historicalObserved": {
+        "restoredText": "Original reviewed source.",
+        "reviewAcknowledged": true
+      },
+      "currentObserved": {
+        "restoredText": "Original reviewed source.",
+        "reviewAcknowledged": false
+      }
+    },
+    {
+      "id": "late-draft-save-preserves-storage-warning",
+      "historicalCommit": "cbb8bd128edf1fcc619add6fbcb80d3aa161e165",
+      "path": "src/main.js",
+      "scope": "Actual flushDraft and connection-invalidation handlers; deferred storage, no browser IndexedDB",
+      "historicalSourceSha256": "8fbc8cfef0ae06b7fdddedc46911d7008745e16004ed78d0039d670252dd69a0",
+      "currentSourceSha256": "29390e6b99fbec1bd61fcb1271e86356ad48e99ffd3039669c895ade0bf30fbd",
+      "positiveControlsPass": true,
+      "historicalRegressionPass": false,
+      "currentRegressionPass": true,
+      "knownBugCaught": true,
+      "historicalObserved": {
+        "status": "Draft saved on this device. Private browsing or clearing site data can remove it.",
+        "warning": "Draft edits may be unsaved. Download a text backup before reloading.",
+        "preserved": false
+      },
+      "currentObserved": {
+        "status": "Draft edits may be unsaved. Download a text backup before reloading.",
+        "warning": "Draft edits may be unsaved. Download a text backup before reloading.",
+        "preserved": true
+      }
+    },
+    {
+      "id": "same-length-pcm-corruption-is-rejected",
+      "historicalCommit": "23d62a8e229a8fdbee6406c14b4330529f8fa9e2",
+      "path": "src/job-runner.js",
+      "scope": "Actual checkpoint validator, real SHA-256, in-memory Blob; recording planner and take resolution stubbed",
+      "historicalSourceSha256": "85d8c487cd967547f33edcaddf603ce1698ad7a57e6734b42afb64e650a1de1e",
+      "currentSourceSha256": "fb734b2c05ac3ac4e87e758b9196a16efc2e5629b467311ac3519074a2291c7e",
+      "positiveControlsPass": true,
+      "historicalRegressionPass": false,
+      "currentRegressionPass": true,
+      "knownBugCaught": true,
+      "historicalObserved": {
+        "sameByteLength": true,
+        "corruptionRejected": false
+      },
+      "currentObserved": {
+        "sameByteLength": true,
+        "corruptionRejected": true
+      }
+    },
+    {
+      "id": "ended-event-cannot-acknowledge-unseen-take-export",
+      "historicalCommit": "1aa0d486212bf528a5ea268a25d8dea44f75435d",
+      "path": "src/main.js",
+      "scope": "Actual ended/export handlers; remote job revision and file publication stubbed, no encoding or browser",
+      "historicalSourceSha256": "5f58d804b22da90feac11fcdf25784300e99e52f63809ac8c8031716bf47db57",
+      "currentSourceSha256": "29390e6b99fbec1bd61fcb1271e86356ad48e99ffd3039669c895ade0bf30fbd",
+      "positiveControlsPass": true,
+      "historicalRegressionPass": false,
+      "currentRegressionPass": true,
+      "knownBugCaught": true,
+      "historicalObserved": {
+        "revision": 1,
+        "prepared": 1,
+        "published": 1,
+        "message": "Download started: Synthetic-takes-r1.mp3 (0.0 MB)."
+      },
+      "currentObserved": {
+        "revision": 0,
+        "prepared": 0,
+        "published": 0,
+        "message": "Passage selection changed in another window. Load latest saved audio before export."
+      }
+    }
+  ],
+  "allKnownBugsCaught": true,
+  "limits": "Injected worker, UI and storage seams; only PCM hashing uses actual byte integrity logic. Not native browser/media/IndexedDB, model, acoustic or deployment verification. Historical commits must exist locally; missing history fails without fetching."
+}

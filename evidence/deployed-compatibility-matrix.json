@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "baseline": "c2f5cbbe980a8af6587bee3d4d95e7aa21fc5296",
+  "kind": "Actual old code/schema + latest readers/codec; fake-indexeddb; procedural CC0 PCM/MP3, no model",
+  "rows": [
+    {
+      "pipeline": "mp3-passages-v1-2026-10-23",
+      "oldSchema": 1,
+      "newSchema": 2,
+      "recordingId": "e2695868816bb8e29534345b064d41d8ed56dc08d3bff21d368d44b3375ac6f9",
+      "sourceHash": "1f469a2dca481edf672745f078c7532b0304fddbea1bc48499adba54c3a4e5b8",
+      "parts": 3,
+      "seconds": 0.504,
+      "mp3Bytes": 4032,
+      "oldMp3Sha256": "0d312dc2a405fc9361b95d623cd9d4e09e19a77367a70cead78c7ad21589f3c4",
+      "newMp3Sha256": "0d312dc2a405fc9361b95d623cd9d4e09e19a77367a70cead78c7ad21589f3c4",
+      "identical": true,
+      "draftPreserved": true,
+      "checkpointIntegrity": "legacy-original-checksums-unrecorded",
+      "provenance": "legacy-historical-model-and-voice-revision-unrecorded"
+    },
+    {
+      "pipeline": "pcm-passages-v2-2026-10-24",
+      "oldSchema": 1,
+      "newSchema": 2,
+      "recordingId": "58e01bb1487a54548c0e855f1be988e54847b361faf54cba91ecff32939a39e0",
+      "sourceHash": "1f469a2dca481edf672745f078c7532b0304fddbea1bc48499adba54c3a4e5b8",
+      "parts": 3,
+      "seconds": 0.30000000000000004,
+      "mp3Bytes": 2880,
+      "oldMp3Sha256": "a0058f6933abc11eb153a3c66ebbb445f68dd58de909b4348f87f9038763b3b8",
+      "newMp3Sha256": "a0058f6933abc11eb153a3c66ebbb445f68dd58de909b4348f87f9038763b3b8",
+      "identical": true,
+      "draftPreserved": true,
+      "checkpointIntegrity": "legacy-original-checksums-unrecorded",
+      "provenance": "legacy-historical-model-and-voice-revision-unrecorded"
+    },
+    {
+      "pipeline": "pcm-manifest-v3-2026-10-24",
+      "oldSchema": 1,
+      "newSchema": 2,
+      "recordingId": "9c9ef7dca267dcb55a49b22fe2374f456a43e024152b6b04c95a3e126a272647",
+      "sourceHash": "1f469a2dca481edf672745f078c7532b0304fddbea1bc48499adba54c3a4e5b8",
+      "parts": 3,
+      "seconds": 0.30000000000000004,
+      "mp3Bytes": 2880,
+      "oldMp3Sha256": "a0058f6933abc11eb153a3c66ebbb445f68dd58de909b4348f87f9038763b3b8",
+      "newMp3Sha256": "a0058f6933abc11eb153a3c66ebbb445f68dd58de909b4348f87f9038763b3b8",
+      "identical": true,
+      "draftPreserved": true,
+      "checkpointIntegrity": "legacy-original-checksums-unrecorded",
+      "provenance": "frozen-render-inputs"
+    }
+  ],
+  "limits": "Byte-identical procedural encoding is not inference compatibility or acoustic accuracy. Native-browser evidence is separate; c2f5cbb predates review/reference side databases."
+}

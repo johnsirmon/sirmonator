@@ -1,0 +1,1297 @@
+{
+  "schema": 1,
+  "kind": "Deterministic seeded storage/take/review/export scenarios, synthetic CC0 PCM only",
+  "runs": [
+    {
+      "seed": 105220,
+      "steps": 48,
+      "sourceHash": "591d8e60be4eb18c578eb92012dcd70f5e1c43c5feb27f93fe5ba3a9b9d880f7",
+      "passages": 8,
+      "originalHashes": [
+        "73f06d660e8152fa5f1534582b71de646b2dce198366f1918e2748502e22544b",
+        "d5b3cb7045bcc85a3891d01fb79dac34f91317bf1299fd34632ce46cd0681ade",
+        "5d5a260d2e9fe7707a0aa6500884af7740c563472285577abdf0c9cf00b1d74e",
+        "3c59f90573f16bb382dd90b58fb6fac64b9efa5ec598ef832b0f281eac323dba",
+        "8a38762d03b0af49cd8fa814161d1de0243264b8bdbb2b7c92b3594c73dce16b",
+        "cf60be4b528a091da2d25075a02b138ee5deef1be29426c045443816aa0a8445",
+        "1908eb3e6ff3272ba43994cb33bde80307476edd2ec032035395e0ab69fd8970",
+        "25cd1eb1002c01d12d6f62bc9e8d51694b3276635b20a0a28300df322fccddc7"
+      ],
+      "finalRevision": 14,
+      "alternatives": 5,
+      "publications": 6,
+      "readsAndWrites": {
+        "claim": 7,
+        "ensureJob": 1,
+        "job": 97,
+        "parts": 138,
+        "commit": 11,
+        "changeTake": 19,
+        "takes": 54,
+        "part": 44,
+        "savePreparation": 6,
+        "release": 7,
+        "close": 7,
+        "take": 60
+      },
+      "trace": [
+        {
+          "step": 0,
+          "kind": "select",
+          "index": 0,
+          "choice": 1,
+          "beforeRevision": 0,
+          "afterRevision": 0
+        },
+        {
+          "step": 1,
+          "kind": "export",
+          "index": 6,
+          "choice": 2,
+          "beforeRevision": 0,
+          "afterRevision": 0
+        },
+        {
+          "step": 2,
+          "kind": "review",
+          "index": 3,
+          "choice": 1,
+          "beforeRevision": 0,
+          "afterRevision": 0
+        },
+        {
+          "step": 3,
+          "kind": "reopen",
+          "index": 3,
+          "choice": 0,
+          "beforeRevision": 0,
+          "afterRevision": 0
+        },
+        {
+          "step": 4,
+          "kind": "abort-take",
+          "index": 0,
+          "choice": 1,
+          "beforeRevision": 0,
+          "afterRevision": 0
+        },
+        {
+          "step": 5,
+          "kind": "corrupt",
+          "index": 1,
+          "choice": 3,
+          "beforeRevision": 0,
+          "rejected": "same-length-original-corruption",
+          "afterRevision": 0
+        },
+        {
+          "step": 6,
+          "kind": "export",
+          "index": 5,
+          "choice": 0,
+          "beforeRevision": 0,
+          "afterRevision": 0
+        },
+        {
+          "step": 7,
+          "kind": "regenerate",
+          "index": 2,
+          "choice": 2,
+          "beforeRevision": 0,
+          "afterRevision": 1
+        },
+        {
+          "step": 8,
+          "kind": "regenerate",
+          "index": 5,
+          "choice": 3,
+          "beforeRevision": 1,
+          "afterRevision": 2
+        },
+        {
+          "step": 9,
+          "kind": "abort-take",
+          "index": 6,
+          "choice": 2,
+          "beforeRevision": 2,
+          "afterRevision": 2
+        },
+        {
+          "step": 10,
+          "kind": "undo",
+          "index": 2,
+          "choice": 0,
+          "beforeRevision": 2,
+          "afterRevision": 3
+        },
+        {
+          "step": 11,
+          "kind": "review",
+          "index": 5,
+          "choice": 0,
+          "beforeRevision": 3,
+          "afterRevision": 3
+        },
+        {
+          "step": 12,
+          "kind": "select",
+          "index": 6,
+          "choice": 1,
+          "beforeRevision": 3,
+          "afterRevision": 3
+        },
+        {
+          "step": 13,
+          "kind": "export",
+          "index": 7,
+          "choice": 3,
+          "beforeRevision": 3,
+          "afterRevision": 3
+        },
+        {
+          "step": 14,
+          "kind": "abort-take",
+          "index": 6,
+          "choice": 1,
+          "beforeRevision": 3,
+          "afterRevision": 3
+        },
+        {
+          "step": 15,
+          "kind": "undo",
+          "index": 1,
+          "choice": 3,
+          "beforeRevision": 3,
+          "afterRevision": 4
+        },
+        {
+          "step": 16,
+          "kind": "reopen",
+          "index": 6,
+          "choice": 0,
+          "beforeRevision": 4,
+          "afterRevision": 4
+        },
+        {
+          "step": 17,
+          "kind": "regenerate",
+          "index": 0,
+          "choice": 1,
+          "beforeRevision": 4,
+          "afterRevision": 5
+        },
+        {
+          "step": 18,
+          "kind": "review",
+          "index": 7,
+          "choice": 2,
+          "beforeRevision": 5,
+          "afterRevision": 5
+        },
+        {
+          "step": 19,
+          "kind": "duplicate",
+          "index": 4,
+          "choice": 3,
+          "beforeRevision": 5,
+          "afterRevision": 5
+        },
+        {
+          "step": 20,
+          "kind": "export",
+          "index": 5,
+          "choice": 2,
+          "beforeRevision": 5,
+          "afterRevision": 5
+        },
+        {
+          "step": 21,
+          "kind": "review",
+          "index": 6,
+          "choice": 3,
+          "beforeRevision": 5,
+          "afterRevision": 5
+        },
+        {
+          "step": 22,
+          "kind": "undo",
+          "index": 0,
+          "choice": 0,
+          "beforeRevision": 5,
+          "afterRevision": 6
+        },
+        {
+          "step": 23,
+          "kind": "select",
+          "index": 1,
+          "choice": 2,
+          "beforeRevision": 6,
+          "afterRevision": 6
+        },
+        {
+          "step": 24,
+          "kind": "stale-export",
+          "index": 2,
+          "choice": 3,
+          "beforeRevision": 6,
+          "rejected": "stale-export",
+          "afterRevision": 7
+        },
+        {
+          "step": 25,
+          "kind": "abort-take",
+          "index": 0,
+          "choice": 1,
+          "beforeRevision": 7,
+          "afterRevision": 7
+        },
+        {
+          "step": 26,
+          "kind": "select",
+          "index": 3,
+          "choice": 1,
+          "beforeRevision": 7,
+          "afterRevision": 7
+        },
+        {
+          "step": 27,
+          "kind": "undo",
+          "index": 6,
+          "choice": 1,
+          "beforeRevision": 7,
+          "afterRevision": 8
+        },
+        {
+          "step": 28,
+          "kind": "regenerate",
+          "index": 5,
+          "choice": 0,
+          "beforeRevision": 8,
+          "afterRevision": 9
+        },
+        {
+          "step": 29,
+          "kind": "export",
+          "index": 3,
+          "choice": 3,
+          "beforeRevision": 9,
+          "afterRevision": 9
+        },
+        {
+          "step": 30,
+          "kind": "undo",
+          "index": 7,
+          "choice": 0,
+          "beforeRevision": 9,
+          "afterRevision": 10
+        },
+        {
+          "step": 31,
+          "kind": "corrupt",
+          "index": 5,
+          "choice": 0,
+          "beforeRevision": 10,
+          "rejected": "same-length-original-corruption",
+          "afterRevision": 10
+        },
+        {
+          "step": 32,
+          "kind": "stale-export",
+          "index": 5,
+          "choice": 2,
+          "beforeRevision": 10,
+          "rejected": "stale-export",
+          "afterRevision": 11
+        },
+        {
+          "step": 33,
+          "kind": "export",
+          "index": 2,
+          "choice": 0,
+          "beforeRevision": 11,
+          "afterRevision": 11
+        },
+        {
+          "step": 34,
+          "kind": "duplicate",
+          "index": 1,
+          "choice": 0,
+          "beforeRevision": 11,
+          "afterRevision": 11
+        },
+        {
+          "step": 35,
+          "kind": "select",
+          "index": 6,
+          "choice": 3,
+          "beforeRevision": 11,
+          "afterRevision": 11
+        },
+        {
+          "step": 36,
+          "kind": "reopen",
+          "index": 6,
+          "choice": 1,
+          "beforeRevision": 11,
+          "afterRevision": 11
+        },
+        {
+          "step": 37,
+          "kind": "review",
+          "index": 1,
+          "choice": 3,
+          "beforeRevision": 11,
+          "afterRevision": 11
+        },
+        {
+          "step": 38,
+          "kind": "abort-take",
+          "index": 3,
+          "choice": 3,
+          "beforeRevision": 11,
+          "afterRevision": 11
+        },
+        {
+          "step": 39,
+          "kind": "reopen",
+          "index": 2,
+          "choice": 0,
+          "beforeRevision": 11,
+          "afterRevision": 11
+        },
+        {
+          "step": 40,
+          "kind": "duplicate",
+          "index": 2,
+          "choice": 0,
+          "beforeRevision": 11,
+          "afterRevision": 11
+        },
+        {
+          "step": 41,
+          "kind": "stale-export",
+          "index": 5,
+          "choice": 1,
+          "beforeRevision": 11,
+          "rejected": "stale-export",
+          "afterRevision": 12
+        },
+        {
+          "step": 42,
+          "kind": "reopen",
+          "index": 0,
+          "choice": 0,
+          "beforeRevision": 12,
+          "afterRevision": 12
+        },
+        {
+          "step": 43,
+          "kind": "reopen",
+          "index": 7,
+          "choice": 1,
+          "beforeRevision": 12,
+          "afterRevision": 12
+        },
+        {
+          "step": 44,
+          "kind": "corrupt",
+          "index": 5,
+          "choice": 1,
+          "beforeRevision": 12,
+          "rejected": "same-length-original-corruption",
+          "afterRevision": 12
+        },
+        {
+          "step": 45,
+          "kind": "abort-take",
+          "index": 6,
+          "choice": 3,
+          "beforeRevision": 12,
+          "afterRevision": 12
+        },
+        {
+          "step": 46,
+          "kind": "stale-export",
+          "index": 6,
+          "choice": 0,
+          "beforeRevision": 12,
+          "rejected": "stale-export",
+          "afterRevision": 13
+        },
+        {
+          "step": 47,
+          "kind": "select",
+          "index": 2,
+          "choice": 1,
+          "beforeRevision": 13,
+          "afterRevision": 14
+        }
+      ],
+      "kind": "Seeded actual storage APIs in supplied IndexedDB implementation; procedural CC0 PCM, no synthesis"
+    },
+    {
+      "seed": 12648430,
+      "steps": 48,
+      "sourceHash": "591d8e60be4eb18c578eb92012dcd70f5e1c43c5feb27f93fe5ba3a9b9d880f7",
+      "passages": 8,
+      "originalHashes": [
+        "73f06d660e8152fa5f1534582b71de646b2dce198366f1918e2748502e22544b",
+        "d5b3cb7045bcc85a3891d01fb79dac34f91317bf1299fd34632ce46cd0681ade",
+        "5d5a260d2e9fe7707a0aa6500884af7740c563472285577abdf0c9cf00b1d74e",
+        "3c59f90573f16bb382dd90b58fb6fac64b9efa5ec598ef832b0f281eac323dba",
+        "8a38762d03b0af49cd8fa814161d1de0243264b8bdbb2b7c92b3594c73dce16b",
+        "cf60be4b528a091da2d25075a02b138ee5deef1be29426c045443816aa0a8445",
+        "1908eb3e6ff3272ba43994cb33bde80307476edd2ec032035395e0ab69fd8970",
+        "25cd1eb1002c01d12d6f62bc9e8d51694b3276635b20a0a28300df322fccddc7"
+      ],
+      "finalRevision": 18,
+      "alternatives": 13,
+      "publications": 3,
+      "readsAndWrites": {
+        "claim": 4,
+        "ensureJob": 1,
+        "job": 98,
+        "parts": 145,
+        "commit": 10,
+        "takes": 64,
+        "changeTake": 21,
+        "take": 308,
+        "part": 15,
+        "savePreparation": 3,
+        "release": 4,
+        "close": 4
+      },
+      "trace": [
+        {
+          "step": 0,
+          "kind": "stale-export",
+          "index": 0,
+          "choice": 3,
+          "beforeRevision": 0,
+          "rejected": "stale-export",
+          "afterRevision": 1
+        },
+        {
+          "step": 1,
+          "kind": "regenerate",
+          "index": 0,
+          "choice": 1,
+          "beforeRevision": 1,
+          "afterRevision": 2
+        },
+        {
+          "step": 2,
+          "kind": "review",
+          "index": 6,
+          "choice": 1,
+          "beforeRevision": 2,
+          "afterRevision": 2
+        },
+        {
+          "step": 3,
+          "kind": "export",
+          "index": 1,
+          "choice": 3,
+          "beforeRevision": 2,
+          "afterRevision": 2
+        },
+        {
+          "step": 4,
+          "kind": "abort-take",
+          "index": 0,
+          "choice": 1,
+          "beforeRevision": 2,
+          "afterRevision": 2
+        },
+        {
+          "step": 5,
+          "kind": "regenerate",
+          "index": 7,
+          "choice": 1,
+          "beforeRevision": 2,
+          "afterRevision": 3
+        },
+        {
+          "step": 6,
+          "kind": "regenerate",
+          "index": 6,
+          "choice": 1,
+          "beforeRevision": 3,
+          "afterRevision": 4
+        },
+        {
+          "step": 7,
+          "kind": "corrupt",
+          "index": 1,
+          "choice": 3,
+          "beforeRevision": 4,
+          "rejected": "same-length-original-corruption",
+          "afterRevision": 4
+        },
+        {
+          "step": 8,
+          "kind": "select",
+          "index": 0,
+          "choice": 0,
+          "beforeRevision": 4,
+          "afterRevision": 5
+        },
+        {
+          "step": 9,
+          "kind": "select",
+          "index": 3,
+          "choice": 3,
+          "beforeRevision": 5,
+          "afterRevision": 5
+        },
+        {
+          "step": 10,
+          "kind": "corrupt",
+          "index": 5,
+          "choice": 3,
+          "beforeRevision": 5,
+          "rejected": "same-length-original-corruption",
+          "afterRevision": 5
+        },
+        {
+          "step": 11,
+          "kind": "review",
+          "index": 3,
+          "choice": 2,
+          "beforeRevision": 5,
+          "afterRevision": 5
+        },
+        {
+          "step": 12,
+          "kind": "abort-take",
+          "index": 5,
+          "choice": 3,
+          "beforeRevision": 5,
+          "afterRevision": 5
+        },
+        {
+          "step": 13,
+          "kind": "reopen",
+          "index": 0,
+          "choice": 3,
+          "beforeRevision": 5,
+          "afterRevision": 5
+        },
+        {
+          "step": 14,
+          "kind": "abort-take",
+          "index": 7,
+          "choice": 0,
+          "beforeRevision": 5,
+          "afterRevision": 5
+        },
+        {
+          "step": 15,
+          "kind": "regenerate",
+          "index": 5,
+          "choice": 1,
+          "beforeRevision": 5,
+          "afterRevision": 6
+        },
+        {
+          "step": 16,
+          "kind": "undo",
+          "index": 4,
+          "choice": 0,
+          "beforeRevision": 6,
+          "afterRevision": 7
+        },
+        {
+          "step": 17,
+          "kind": "stale-export",
+          "index": 3,
+          "choice": 0,
+          "beforeRevision": 7,
+          "rejected": "stale-export",
+          "afterRevision": 8
+        },
+        {
+          "step": 18,
+          "kind": "corrupt",
+          "index": 3,
+          "choice": 0,
+          "beforeRevision": 8,
+          "rejected": "same-length-original-corruption",
+          "afterRevision": 8
+        },
+        {
+          "step": 19,
+          "kind": "abort-take",
+          "index": 5,
+          "choice": 0,
+          "beforeRevision": 8,
+          "afterRevision": 8
+        },
+        {
+          "step": 20,
+          "kind": "duplicate",
+          "index": 2,
+          "choice": 2,
+          "beforeRevision": 8,
+          "afterRevision": 8
+        },
+        {
+          "step": 21,
+          "kind": "stale-export",
+          "index": 2,
+          "choice": 0,
+          "beforeRevision": 8,
+          "rejected": "stale-export",
+          "afterRevision": 9
+        },
+        {
+          "step": 22,
+          "kind": "regenerate",
+          "index": 0,
+          "choice": 3,
+          "beforeRevision": 9,
+          "rejected": "take-limit",
+          "afterRevision": 9
+        },
+        {
+          "step": 23,
+          "kind": "reopen",
+          "index": 7,
+          "choice": 3,
+          "beforeRevision": 9,
+          "afterRevision": 9
+        },
+        {
+          "step": 24,
+          "kind": "undo",
+          "index": 0,
+          "choice": 0,
+          "beforeRevision": 9,
+          "afterRevision": 10
+        },
+        {
+          "step": 25,
+          "kind": "abort-take",
+          "index": 5,
+          "choice": 2,
+          "beforeRevision": 10,
+          "afterRevision": 10
+        },
+        {
+          "step": 26,
+          "kind": "stale-export",
+          "index": 1,
+          "choice": 1,
+          "beforeRevision": 10,
+          "rejected": "stale-export",
+          "afterRevision": 11
+        },
+        {
+          "step": 27,
+          "kind": "export",
+          "index": 3,
+          "choice": 3,
+          "beforeRevision": 11,
+          "afterRevision": 11
+        },
+        {
+          "step": 28,
+          "kind": "export",
+          "index": 2,
+          "choice": 3,
+          "beforeRevision": 11,
+          "afterRevision": 11
+        },
+        {
+          "step": 29,
+          "kind": "regenerate",
+          "index": 2,
+          "choice": 3,
+          "beforeRevision": 11,
+          "afterRevision": 12
+        },
+        {
+          "step": 30,
+          "kind": "stale-export",
+          "index": 1,
+          "choice": 2,
+          "beforeRevision": 12,
+          "rejected": "stale-export",
+          "afterRevision": 13
+        },
+        {
+          "step": 31,
+          "kind": "regenerate",
+          "index": 0,
+          "choice": 2,
+          "beforeRevision": 13,
+          "rejected": "take-limit",
+          "afterRevision": 13
+        },
+        {
+          "step": 32,
+          "kind": "corrupt",
+          "index": 6,
+          "choice": 3,
+          "beforeRevision": 13,
+          "rejected": "same-length-original-corruption",
+          "afterRevision": 13
+        },
+        {
+          "step": 33,
+          "kind": "select",
+          "index": 6,
+          "choice": 3,
+          "beforeRevision": 13,
+          "afterRevision": 13
+        },
+        {
+          "step": 34,
+          "kind": "review",
+          "index": 0,
+          "choice": 3,
+          "beforeRevision": 13,
+          "afterRevision": 13
+        },
+        {
+          "step": 35,
+          "kind": "regenerate",
+          "index": 1,
+          "choice": 1,
+          "beforeRevision": 13,
+          "afterRevision": 14
+        },
+        {
+          "step": 36,
+          "kind": "reopen",
+          "index": 3,
+          "choice": 0,
+          "beforeRevision": 14,
+          "afterRevision": 14
+        },
+        {
+          "step": 37,
+          "kind": "regenerate",
+          "index": 6,
+          "choice": 0,
+          "beforeRevision": 14,
+          "afterRevision": 15
+        },
+        {
+          "step": 38,
+          "kind": "review",
+          "index": 0,
+          "choice": 1,
+          "beforeRevision": 15,
+          "afterRevision": 15
+        },
+        {
+          "step": 39,
+          "kind": "select",
+          "index": 3,
+          "choice": 1,
+          "beforeRevision": 15,
+          "afterRevision": 15
+        },
+        {
+          "step": 40,
+          "kind": "review",
+          "index": 6,
+          "choice": 0,
+          "beforeRevision": 15,
+          "afterRevision": 15
+        },
+        {
+          "step": 41,
+          "kind": "undo",
+          "index": 3,
+          "choice": 0,
+          "beforeRevision": 15,
+          "afterRevision": 16
+        },
+        {
+          "step": 42,
+          "kind": "duplicate",
+          "index": 1,
+          "choice": 2,
+          "beforeRevision": 16,
+          "afterRevision": 16
+        },
+        {
+          "step": 43,
+          "kind": "review",
+          "index": 7,
+          "choice": 3,
+          "beforeRevision": 16,
+          "afterRevision": 16
+        },
+        {
+          "step": 44,
+          "kind": "review",
+          "index": 2,
+          "choice": 1,
+          "beforeRevision": 16,
+          "afterRevision": 16
+        },
+        {
+          "step": 45,
+          "kind": "regenerate",
+          "index": 3,
+          "choice": 2,
+          "beforeRevision": 16,
+          "afterRevision": 17
+        },
+        {
+          "step": 46,
+          "kind": "stale-export",
+          "index": 4,
+          "choice": 2,
+          "beforeRevision": 17,
+          "rejected": "stale-export",
+          "afterRevision": 18
+        },
+        {
+          "step": 47,
+          "kind": "abort-take",
+          "index": 4,
+          "choice": 1,
+          "beforeRevision": 18,
+          "afterRevision": 18
+        }
+      ],
+      "kind": "Seeded actual storage APIs in supplied IndexedDB implementation; procedural CC0 PCM, no synthesis"
+    },
+    {
+      "seed": 3735928559,
+      "steps": 48,
+      "sourceHash": "591d8e60be4eb18c578eb92012dcd70f5e1c43c5feb27f93fe5ba3a9b9d880f7",
+      "passages": 8,
+      "originalHashes": [
+        "73f06d660e8152fa5f1534582b71de646b2dce198366f1918e2748502e22544b",
+        "d5b3cb7045bcc85a3891d01fb79dac34f91317bf1299fd34632ce46cd0681ade",
+        "5d5a260d2e9fe7707a0aa6500884af7740c563472285577abdf0c9cf00b1d74e",
+        "3c59f90573f16bb382dd90b58fb6fac64b9efa5ec598ef832b0f281eac323dba",
+        "8a38762d03b0af49cd8fa814161d1de0243264b8bdbb2b7c92b3594c73dce16b",
+        "cf60be4b528a091da2d25075a02b138ee5deef1be29426c045443816aa0a8445",
+        "1908eb3e6ff3272ba43994cb33bde80307476edd2ec032035395e0ab69fd8970",
+        "25cd1eb1002c01d12d6f62bc9e8d51694b3276635b20a0a28300df322fccddc7"
+      ],
+      "finalRevision": 9,
+      "alternatives": 5,
+      "publications": 6,
+      "readsAndWrites": {
+        "claim": 8,
+        "ensureJob": 1,
+        "job": 93,
+        "parts": 134,
+        "commit": 12,
+        "part": 45,
+        "savePreparation": 6,
+        "takes": 54,
+        "changeTake": 15,
+        "take": 47,
+        "release": 8,
+        "close": 8
+      },
+      "trace": [
+        {
+          "step": 0,
+          "kind": "export",
+          "index": 5,
+          "choice": 1,
+          "beforeRevision": 0,
+          "afterRevision": 0
+        },
+        {
+          "step": 1,
+          "kind": "select",
+          "index": 4,
+          "choice": 1,
+          "beforeRevision": 0,
+          "afterRevision": 0
+        },
+        {
+          "step": 2,
+          "kind": "undo",
+          "index": 7,
+          "choice": 1,
+          "beforeRevision": 0,
+          "skipped": "no-history",
+          "afterRevision": 0
+        },
+        {
+          "step": 3,
+          "kind": "regenerate",
+          "index": 4,
+          "choice": 1,
+          "beforeRevision": 0,
+          "afterRevision": 1
+        },
+        {
+          "step": 4,
+          "kind": "export",
+          "index": 1,
+          "choice": 2,
+          "beforeRevision": 1,
+          "afterRevision": 1
+        },
+        {
+          "step": 5,
+          "kind": "corrupt",
+          "index": 1,
+          "choice": 1,
+          "beforeRevision": 1,
+          "rejected": "same-length-original-corruption",
+          "afterRevision": 1
+        },
+        {
+          "step": 6,
+          "kind": "reopen",
+          "index": 5,
+          "choice": 3,
+          "beforeRevision": 1,
+          "afterRevision": 1
+        },
+        {
+          "step": 7,
+          "kind": "undo",
+          "index": 1,
+          "choice": 0,
+          "beforeRevision": 1,
+          "afterRevision": 2
+        },
+        {
+          "step": 8,
+          "kind": "undo",
+          "index": 4,
+          "choice": 3,
+          "beforeRevision": 2,
+          "skipped": "no-history",
+          "afterRevision": 2
+        },
+        {
+          "step": 9,
+          "kind": "review",
+          "index": 4,
+          "choice": 1,
+          "beforeRevision": 2,
+          "afterRevision": 2
+        },
+        {
+          "step": 10,
+          "kind": "select",
+          "index": 6,
+          "choice": 3,
+          "beforeRevision": 2,
+          "afterRevision": 2
+        },
+        {
+          "step": 11,
+          "kind": "corrupt",
+          "index": 2,
+          "choice": 1,
+          "beforeRevision": 2,
+          "rejected": "same-length-original-corruption",
+          "afterRevision": 2
+        },
+        {
+          "step": 12,
+          "kind": "duplicate",
+          "index": 5,
+          "choice": 0,
+          "beforeRevision": 2,
+          "afterRevision": 2
+        },
+        {
+          "step": 13,
+          "kind": "export",
+          "index": 3,
+          "choice": 0,
+          "beforeRevision": 2,
+          "afterRevision": 2
+        },
+        {
+          "step": 14,
+          "kind": "abort-take",
+          "index": 3,
+          "choice": 3,
+          "beforeRevision": 2,
+          "afterRevision": 2
+        },
+        {
+          "step": 15,
+          "kind": "abort-take",
+          "index": 3,
+          "choice": 0,
+          "beforeRevision": 2,
+          "afterRevision": 2
+        },
+        {
+          "step": 16,
+          "kind": "stale-export",
+          "index": 4,
+          "choice": 3,
+          "beforeRevision": 2,
+          "rejected": "stale-export",
+          "afterRevision": 3
+        },
+        {
+          "step": 17,
+          "kind": "select",
+          "index": 7,
+          "choice": 1,
+          "beforeRevision": 3,
+          "afterRevision": 3
+        },
+        {
+          "step": 18,
+          "kind": "abort-take",
+          "index": 0,
+          "choice": 0,
+          "beforeRevision": 3,
+          "afterRevision": 3
+        },
+        {
+          "step": 19,
+          "kind": "corrupt",
+          "index": 1,
+          "choice": 0,
+          "beforeRevision": 3,
+          "rejected": "same-length-original-corruption",
+          "afterRevision": 3
+        },
+        {
+          "step": 20,
+          "kind": "undo",
+          "index": 1,
+          "choice": 0,
+          "beforeRevision": 3,
+          "afterRevision": 4
+        },
+        {
+          "step": 21,
+          "kind": "duplicate",
+          "index": 3,
+          "choice": 1,
+          "beforeRevision": 4,
+          "afterRevision": 4
+        },
+        {
+          "step": 22,
+          "kind": "regenerate",
+          "index": 5,
+          "choice": 0,
+          "beforeRevision": 4,
+          "afterRevision": 5
+        },
+        {
+          "step": 23,
+          "kind": "export",
+          "index": 5,
+          "choice": 0,
+          "beforeRevision": 5,
+          "afterRevision": 5
+        },
+        {
+          "step": 24,
+          "kind": "corrupt",
+          "index": 5,
+          "choice": 1,
+          "beforeRevision": 5,
+          "rejected": "same-length-original-corruption",
+          "afterRevision": 5
+        },
+        {
+          "step": 25,
+          "kind": "export",
+          "index": 7,
+          "choice": 3,
+          "beforeRevision": 5,
+          "afterRevision": 5
+        },
+        {
+          "step": 26,
+          "kind": "corrupt",
+          "index": 7,
+          "choice": 2,
+          "beforeRevision": 5,
+          "rejected": "same-length-original-corruption",
+          "afterRevision": 5
+        },
+        {
+          "step": 27,
+          "kind": "undo",
+          "index": 4,
+          "choice": 3,
+          "beforeRevision": 5,
+          "afterRevision": 6
+        },
+        {
+          "step": 28,
+          "kind": "reopen",
+          "index": 2,
+          "choice": 0,
+          "beforeRevision": 6,
+          "afterRevision": 6
+        },
+        {
+          "step": 29,
+          "kind": "select",
+          "index": 3,
+          "choice": 1,
+          "beforeRevision": 6,
+          "afterRevision": 6
+        },
+        {
+          "step": 30,
+          "kind": "corrupt",
+          "index": 1,
+          "choice": 1,
+          "beforeRevision": 6,
+          "rejected": "same-length-original-corruption",
+          "afterRevision": 6
+        },
+        {
+          "step": 31,
+          "kind": "reopen",
+          "index": 0,
+          "choice": 0,
+          "beforeRevision": 6,
+          "afterRevision": 6
+        },
+        {
+          "step": 32,
+          "kind": "reopen",
+          "index": 5,
+          "choice": 1,
+          "beforeRevision": 6,
+          "afterRevision": 6
+        },
+        {
+          "step": 33,
+          "kind": "duplicate",
+          "index": 5,
+          "choice": 0,
+          "beforeRevision": 6,
+          "afterRevision": 6
+        },
+        {
+          "step": 34,
+          "kind": "corrupt",
+          "index": 4,
+          "choice": 1,
+          "beforeRevision": 6,
+          "rejected": "same-length-original-corruption",
+          "afterRevision": 6
+        },
+        {
+          "step": 35,
+          "kind": "reopen",
+          "index": 6,
+          "choice": 1,
+          "beforeRevision": 6,
+          "afterRevision": 6
+        },
+        {
+          "step": 36,
+          "kind": "export",
+          "index": 0,
+          "choice": 0,
+          "beforeRevision": 6,
+          "afterRevision": 6
+        },
+        {
+          "step": 37,
+          "kind": "select",
+          "index": 1,
+          "choice": 3,
+          "beforeRevision": 6,
+          "afterRevision": 6
+        },
+        {
+          "step": 38,
+          "kind": "duplicate",
+          "index": 4,
+          "choice": 3,
+          "beforeRevision": 6,
+          "afterRevision": 6
+        },
+        {
+          "step": 39,
+          "kind": "regenerate",
+          "index": 0,
+          "choice": 3,
+          "beforeRevision": 6,
+          "afterRevision": 7
+        },
+        {
+          "step": 40,
+          "kind": "corrupt",
+          "index": 0,
+          "choice": 0,
+          "beforeRevision": 7,
+          "rejected": "same-length-original-corruption",
+          "afterRevision": 7
+        },
+        {
+          "step": 41,
+          "kind": "select",
+          "index": 3,
+          "choice": 2,
+          "beforeRevision": 7,
+          "afterRevision": 7
+        },
+        {
+          "step": 42,
+          "kind": "reopen",
+          "index": 3,
+          "choice": 3,
+          "beforeRevision": 7,
+          "afterRevision": 7
+        },
+        {
+          "step": 43,
+          "kind": "regenerate",
+          "index": 1,
+          "choice": 3,
+          "beforeRevision": 7,
+          "afterRevision": 8
+        },
+        {
+          "step": 44,
+          "kind": "review",
+          "index": 0,
+          "choice": 1,
+          "beforeRevision": 8,
+          "afterRevision": 8
+        },
+        {
+          "step": 45,
+          "kind": "regenerate",
+          "index": 4,
+          "choice": 1,
+          "beforeRevision": 8,
+          "afterRevision": 9
+        },
+        {
+          "step": 46,
+          "kind": "reopen",
+          "index": 5,
+          "choice": 1,
+          "beforeRevision": 9,
+          "afterRevision": 9
+        },
+        {
+          "step": 47,
+          "kind": "abort-take",
+          "index": 5,
+          "choice": 2,
+          "beforeRevision": 9,
+          "afterRevision": 9
+        }
+      ],
+      "kind": "Seeded actual storage APIs in supplied IndexedDB implementation; procedural CC0 PCM, no synthesis"
+    }
+  ],
+  "limits": "Fake-indexeddb plus production storage/take/review/codec APIs; bounded fixed seeds are not exhaustive proof, acoustic validation or phone testing."
+}

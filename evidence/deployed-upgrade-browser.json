@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "kind": "Native Edge IndexedDB v1 seeded with actual deployed code, then latest isolated app; procedural CC0 PCM only",
+  "origin": "http://127.0.0.1:4204",
+  "oldCommit": "c2f5cbbe980a8af6587bee3d4d95e7aa21fc5296",
+  "recordingId": "9c9ef7dca267dcb55a49b22fe2374f456a43e024152b6b04c95a3e126a272647",
+  "sourceHash": "1f469a2dca481edf672745f078c7532b0304fddbea1bc48499adba54c3a4e5b8",
+  "parts": 3,
+  "inputSeconds": 0.30000000000000004,
+  "draftTitleRestored": "Preserved old draft",
+  "libraryLabel": "SYNTHETIC deployed compatibility · ready",
+  "storageMessage": "Local recordings connected. Saved data was not reset.",
+  "provenanceMessage": "Frozen render inputs saved. Pinned inputs do not guarantee identical speech across devices. No pronunciation substitutions are stored for this recording. Historical original-audio checksum policy was not recorded.",
+  "playback": {"ended": true, "currentTime": 0.36, "duration": 0.36, "error": null},
+  "export": {"capturedInMemory": true, "downloadCompleted": false, "bytes": 2880, "frameParsedSeconds": 0.36000000000000004, "sha256": "a0058f6933abc11eb153a3c66ebbb445f68dd58de909b4348f87f9038763b3b8", "matchesOldAndNewNode": true},
+  "limits": "Short synthetic fixture, not speech inference/acoustic QA. Multi-connection and failure injection use deterministic fake-indexeddb tests, not separate native-browser tabs. One startup DOM frame timeout recovered through supported accessibility view; no duplicate action or download."
+}

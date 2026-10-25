@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "noRulesOverrides": {
+    "src/recording.js": "fe02ddb27bd959389c2eca9258c0768d37992c04a760845e3ee010a9ef76e6ad",
+    "src/tts-worker.js": "72acbdeec465445921cb13252d51cb45504bb85ba4167e75d6f6473f69057c6c",
+    "src/pronunciation.js": "8ce3d506a9fe2137f1014b34fdf28a159ed6ae16fbca50a38a1330c11554daf9",
+    "src/engine-capabilities.js": "001af6355074be03e2b9c02b6e711fadc5a5de8cdb1a024dbeed862f9db65147",
+    "src/continuity.js": "9da1bb60e87124150764e9dd4c3228aab6795afd3d9aabd2eed9d40301e0b8fe",
+    "src/mp3-export-worker.js": "baad3353f7370ea1239d1f9e5a9fa098699bfb64934896e30714cfa9d30e2737",
+    "src/text-boundaries.js": "fa9d4e5a90e959a5b588c066569567bb34125e9057e0a8c8d2b7de04a6e74e74"
+  }
+}

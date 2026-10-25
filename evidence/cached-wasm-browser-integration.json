@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "kind": "Actual Edge production Kokoro worker over a cache-only local transport; no synthetic TTS adapter",
+  "origin": "http://127.0.0.1:4198/.cache/integration-app.html",
+  "productionCodeBaseline": "4b0944178b398dafeca1de31514721b4f20cb64b",
+  "modelRevision": "1939ad2a8e416c0acfeecc08a694d14ef25f2231",
+  "voice": "af_sarah",
+  "text": "Paul arrived.\n\nPaul listened.\n\nPaul left.",
+  "frozenPronunciation": "Paul => pawl",
+  "generation": {
+    "passed": true,
+    "completedPassages": 3,
+    "reportedProvider": "wasm",
+    "uiRoundedRenderSeconds": 49.95,
+    "uiRoundedLoadSeconds": 6.37,
+    "uiRoundedInferenceSeconds": 43.18
+  },
+  "regeneration": {"passed": true, "passage": 2, "exactSourceShown": "Paul listened.\n\n", "selectedRevision": 1},
+  "undo": {"passed": true, "selected": "Original", "revision": 2, "alternativeRetained": true},
+  "manualReview": {"passed": true, "source": "Paul listened.\n\n", "spoken": "pawl listened.\n\n", "suppliedTranscript": "pawl", "candidate": "possible omission: listened", "saved": true, "acousticVerification": false},
+  "mp3": {"capturedInMemory": true, "downloadCompleted": false, "filename": "CACHED-WASM-integration-takes-r2.mp3", "bytes": 54720, "frameParsedSeconds": 6.840000000000005, "sha256": "2c71bdf4150ea01cfbb0516640df8b0b32e417d354c3964cb3ad2e4a2a484731"},
+  "localAssetAudit": {
+    "servedExistingVerifiedFiles": ["config.json", "tokenizer.json", "tokenizer_config.json", "onnx/model_quantized.onnx", "voices/af_sarah.bin"],
+    "unavailableLocalFp32Attempts": 2,
+    "externalFetchEvents": 0,
+    "newExternalModelBytes": 0,
+    "providerSelection": "Production fp32/WebGPU attempt failed locally because no existing fp32 asset was available; normal production fallback used cached q8 WASM. No missing model was downloaded."
+  },
+  "inventory": "evidence/cached-wasm-local-inventory.json",
+  "productionDataTouched": false,
+  "limits": ["Browser run preceded the separate quota fixes; those passed deterministic tests afterwards", "Node prelaunch hashes verify disk assets; route logs are not full-model per-response browser hashes", "No subjective listening, word-accuracy, phone, long-form or native quota-exhaustion claim", "Captured artifact parsing does not claim browser download completion", "Personal cloning remains disabled"]
+}

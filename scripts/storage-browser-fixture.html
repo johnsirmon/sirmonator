@@ -1,0 +1,19 @@
+<!doctype html><meta charset="utf-8"><title>Sirmonator synthetic storage lifecycle fixture</title>
+<h1>Synthetic storage lifecycle fixture</h1><p>No production database names, recordings or model downloads.</p>
+<p id="status" role="status">Starting…</p><pre id="events"></pre>
+<button id="close">Close fixture holder</button><button id="retry">Open / retry fixture recordings</button><button id="change">Request fixture version change</button>
+<script type="module">
+import {openStorage} from '/src/storage.js';
+const params=new URLSearchParams(location.search),run=params.get('run');
+if(!/^[a-z0-9-]{1,60}$/i.test(run??''))throw Error('Supply a unique synthetic run ID');
+const name='synthetic-lifecycle-fixture-'+run,$=id=>document.getElementById(id);let holder,store,next;
+const log=message=>{$('events').textContent+=message+'\n';$('status').textContent=message;};
+$('close').onclick=()=>{holder?.close();holder=null;log('Fixture holder closed. Retry in the second tab.');};
+$('retry').onclick=async()=>{try{store?.close();store=await openStorage(indexedDB,name,{onState:s=>log(s.state+': '+s.message)});const draft=await store.draft();log('PASS: fixture opened; preserved draft: '+draft?.text);}catch(e){log(e.name+': '+e.message);}};
+$('change').onclick=()=>{const request=indexedDB.open(name,3);request.onsuccess=async()=>{next=request.result;try{await store.draft();log('FAIL: closed store remained usable');}catch(e){log('PASS: version change guarded old connection: '+e.name);}next.close();};request.onerror=()=>log('ERROR: '+request.error);};
+if(params.get('mode')==='holder'){
+ const request=indexedDB.open(name,1);request.onupgradeneeded=()=>{const db=request.result;db.createObjectStore('prefs');db.createObjectStore('jobs',{keyPath:'id'});db.createObjectStore('parts',{keyPath:['jobId','index']});db.createObjectStore('locks');};
+ request.onsuccess=()=>{holder=request.result;const tx=holder.transaction('prefs','readwrite');tx.objectStore('prefs').put({text:'Synthetic fixture text preserved.'},'draft');tx.oncomplete=()=>log('READY: version 1 fixture holder open; open the second tab with mode=upgrade.');};request.onerror=()=>log('ERROR: '+request.error);
+}else log('READY: press Open / retry while the first tab holds version 1.');
+window.addEventListener('pagehide',()=>{holder?.close();store?.close();next?.close();});
+</script>
