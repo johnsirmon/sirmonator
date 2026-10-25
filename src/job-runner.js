@@ -11,10 +11,10 @@ export async function validateCheckpoint(store,job,options={}){
   assertActive(options);
   const fail=()=>{throw Error('Saved recording checkpoint failed its text integrity check. Restore a backup or remove this recording and recreate it from your reviewed source.');};
   if(!job||typeof job.source!=='string'||!job.settings)fail();
-  const expected=await makeRecording(job.source,job.settings);
+  const expected=await makeRecording(job.source,job.settings,undefined,{frozenPassages:job.passages});
   assertActive(options);
   if(job.settings.pipeline===FOUNDATION_PIPELINE&&job.renderManifestHash!==expected.renderManifestHash)fail();
-  if(job.id!==expected.id||job.sourceHash!==expected.sourceHash||
+  if(job.id!==expected.id||job.sourceHash!==expected.sourceHash||job.boundaryPlanHash!==expected.boundaryPlanHash||
      JSON.stringify(job.settings)!==JSON.stringify(expected.settings)||
      JSON.stringify(job.passages)!==JSON.stringify(expected.passages)||
      JSON.stringify(job.chapters)!==JSON.stringify(expected.chapters)||
@@ -106,6 +106,7 @@ export async function renderReport(store,job){
  const parts=await validateCheckpoint(store,job);
  return {schema:1,recordingId:job.id,sourceHash:job.sourceHash,sourceCharacters:job.source.length,settings:job.settings,
   checkpointIntegrity:job.settings.renderManifest?.checkpointIntegrity??'legacy-original-checksums-unrecorded',
+  boundaryPolicy:job.settings.renderManifest?.chunker?.revision??'exact-offsets-240-v1',boundaryPlanHash:job.boundaryPlanHash??null,
   provenance:job.settings.renderManifest?'frozen-render-inputs':'legacy-historical-model-and-voice-revision-unrecorded',
   renderManifestHash:job.renderManifestHash??null,takeSelection:job.takeSelection??null,performance:metricsSummary(parts),preparations:job.preparations??[],
   passages:parts.map(part=>({index:part.index,takeId:selectedTake(job,part.index),spokenTextHash:part.spokenTextHash??null,audioHash:part.audioHash??null,sourceSliceHash:part.sourceSliceHash??null,executedBuildSourceSha:part.executedBuildSourceSha??null,start:job.passages[part.index].start,end:job.passages[part.index].end,seconds:part.seconds,format:part.format??'mp3',sampleRate:part.sampleRate??job.sampleRate,sampleCount:part.sampleCount??null,renderManifestHash:part.renderManifestHash??null,metrics:part.metrics??null})),

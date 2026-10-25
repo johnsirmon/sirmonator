@@ -2,6 +2,8 @@
   "schema": 1,
   "source": {
     "files": {
+      "src/text-boundaries.js": "fa9d4e5a90e959a5b588c066569567bb34125e9057e0a8c8d2b7de04a6e74e74",
+      "src/render-contract-d71b201.json": "ad5f7d4f0783b0686b3d5af21df300a71185d4cd2504a21292eaca1aed3faab4",
       "src/render-contract-23d62a8.json": "d865869b37f6e74692d972afae400121c6819255c5941098a28e6a2e0aca8e66",
       "src/render-contract-4b09441.json": "052d8c5e9b7e01546b5605c21030fc1000b44c2d7b84413aa04a660fda0a3556",
       "src/render-contract-584b0cd.json": "1175a0976f72047308affbf59d900c36fe579a56bf4ee88e0893e765fd045e09",
@@ -15,17 +17,17 @@
       "src/pinned-kokoro.js": "100b5eca066a536f621b46c9d92b8574f53297d35c4c7a24221a6bbb0db643cb",
       "src/tts-worker.js": "72acbdeec465445921cb13252d51cb45504bb85ba4167e75d6f6473f69057c6c",
       "src/speech-runner.js": "37f045c9b4572cfc6d5e715748b1d32b975743fa096e39dce4d4ba34e90fcebc",
-      "src/render-provenance.js": "60b2cce7ce1a4f1b1d6d91189d71dc2d2d22d0a956771c7189145be67c5fc28c",
+      "src/render-provenance.js": "8b4e41af32e29781923f479751f77268a4567150cfd6c5169f50864f57aba70e",
       "src/render-metrics.js": "e8caacfd6ee8a56db8e828d5f02d3826695ee2af4ff6e28ba35f4230b5c216e2",
       "src/core.js": "969b136d6e19fe0116f2c0cb8391257b123095d6068b1456f1d9b68a1b501a34",
-      "src/recording.js": "bc05056098ea12fbee3b6e5a6bc6c1f877e6cd16639eeba28052a2a77002c8b8",
-      "src/job-runner.js": "b6deb1d07d1cdc635bac329a28ccf113750a2002fa6d2e5d601a2806754af2b9",
+      "src/recording.js": "fe02ddb27bd959389c2eca9258c0768d37992c04a760845e3ee010a9ef76e6ad",
+      "src/job-runner.js": "fb734b2c05ac3ac4e87e758b9196a16efc2e5629b467311ac3519074a2291c7e",
       "src/storage.js": "bece362c1422961f3b046a2f58996a553adb2fba7b9a089a410c005ef030b298",
       "src/take-selection.js": "9ccbbb6f37794cf7ada5a5b0937e5494685611e4b65383501be64fa4c3df6812",
       "src/passage-takes.js": "f361003d1c655ba6abf68cf996f712c663a80ff0a0fd165b3d9eb5e0963f4dfb",
       "src/render-contract-944aa8e.json": "c2c9217ab7bbd41243059cdd40b24bae46744ab743befaddff7d2e80d1e54208",
       "src/pronunciation.js": "8ce3d506a9fe2137f1014b34fdf28a159ed6ae16fbca50a38a1330c11554daf9",
-      "src/pronunciation-compatibility.json": "f008ecd816db8e2e3e330148340dbfd35d1f4d5e0f485e6d4a41bb2765caaeea",
+      "src/pronunciation-compatibility.json": "1b88469d97b0c80c7e686970431e3c6ed8db6c86f6cb03082d967aa997af1b6d",
       "src/render-contract-1458c2e.json": "30c64253f1c62c6dcd1c42821edbf62bf3002104727e96f473bc2aaa668ea7f4",
       "src/render-contract-8e3e830.json": "15647f3c4a2bedc4f34e849bc52b84bdb588e67eb62486c75b0604af01d27c38",
       "src/render-contract-0bd2d4a.json": "45e144ef88c251e5ee763aef8d43abe37ea0b67c92e773ce6bf3f70d0b905b7a",
@@ -46,7 +48,7 @@
       "src/continuity.js": "9da1bb60e87124150764e9dd4c3228aab6795afd3d9aabd2eed9d40301e0b8fe",
       "package-lock.json": "dc85b64b6a8d659211cf05af19e4d9bd396ecbe8f23a5294c377f39fe541424f"
     },
-    "sha256": "92a85931b89c963754f12884237bff75934f01ceaf8d68570abccff2100577a3"
+    "sha256": "7dd63b575bd4e77716abfa813bf3e84e967569ea0ed59079310dbf8e21d0cb92"
   },
   "packages": {
     "kokoro-js": {

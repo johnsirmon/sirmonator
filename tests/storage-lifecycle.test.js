@@ -57,7 +57,7 @@ test('actual main lifecycle handler interrupts generation, editors and exports w
 test('storage-only contract bridge keeps archived original and pronunciation recordings resumable',()=>{
  for(const matcher of [null,LEGACY_PRONUNCIATION_MATCHER,'literal-unicode-token-longest-v2']){
   const settings={voice:'af_sarah',speed:1,edition:'refined',delivery:'natural',pipeline:FOUNDATION_PIPELINE,...(matcher?{pronunciation:{...parsePronunciation('Paul => pawl'),matcher}}:{})};
-  const manifest=currentManifest(settings);manifest.source=archived.source;assertSupportedManifest({...settings,renderManifest:manifest});
+  const manifest=currentManifest(settings);manifest.chunker={revision:'exact-offsets-240-v1',maxCharacters:240};manifest.source=archived.source;assertSupportedManifest({...settings,renderManifest:manifest});
  }
 });
 test('actual bootstrap retries a failed open without replacing an unsaved draft',async()=>{

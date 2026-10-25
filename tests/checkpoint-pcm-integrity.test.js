@@ -24,7 +24,7 @@ test('declared checksum policy cannot lose its hash or be removed without breaki
  }finally{store.close();}
 });
 test('historical manifests without checksums remain readable and explicitly labeled unknown',async()=>{
- const base={voice:'af_sarah',edition:'refined',delivery:'natural',speed:1,pipeline:FOUNDATION_PIPELINE},manifest=currentManifest(base);manifest.source=archived.source;delete manifest.checkpointIntegrity;
+ const base={voice:'af_sarah',edition:'refined',delivery:'natural',speed:1,pipeline:FOUNDATION_PIPELINE},manifest=currentManifest(base);manifest.chunker={revision:'exact-offsets-240-v1',maxCharacters:240};manifest.source=archived.source;delete manifest.checkpointIntegrity;
  const store=await openStorage(indexedDB,'pcm-legacy-'+crypto.randomUUID()),job=await makeRecording('Historical source.',{...base,renderManifest:manifest});
  try{assertSupportedManifest(job.settings);await store.ensureJob(job);await store.claim('fixture');const saved=await store.commit(job.id,0,await syntheticPassage({text:job.source,settings:job.settings,last:true}),'fixture'),wrapper={...store,parts:async(...args)=>(await store.parts(...args)).map(part=>{delete part.audioHash;return part;})};assert.equal((await validateCheckpoint(wrapper,saved)).length,1);assert.equal((await renderReport(wrapper,saved)).checkpointIntegrity,'legacy-original-checksums-unrecorded');}
  finally{store.close();}

@@ -9,6 +9,8 @@ import preparationRecoveryContract from './render-contract-6dd6049.json' with {t
 import browserTimerContract from './render-contract-584b0cd.json' with {type:'json'};
 import quotaContract from './render-contract-4b09441.json' with {type:'json'};
 import resilienceContract from './render-contract-23d62a8.json' with {type:'json'};
+import boundaryContract from './render-contract-d71b201.json' with {type:'json'};
+import {LEGACY_BOUNDARIES,wordBoundaryManifest} from './text-boundaries.js';
 import compatibility from './pronunciation-compatibility.json' with {type:'json'};
 import {normalizePronunciation} from './pronunciation.js';
 import {getVoice} from './voices.js';
@@ -22,7 +24,8 @@ export function currentManifest(settings){
   :{repository:'vlapky/pocket-tts-onnx',revision:POCKET_REVISION,language:'english_2026-04',quantized:true,reference:assets.references[reference],sampling:characterSettings(reference)};
  const pronunciation=normalizePronunciation(settings.pronunciation);
  const integrity=settings.renderManifest&&!Object.hasOwn(settings.renderManifest,'checkpointIntegrity')?{}:{checkpointIntegrity:'original-pcm-sha256-v1'};
- return JSON.parse(JSON.stringify({schema:1,pipeline:FOUNDATION_PIPELINE,source:assets.source,packages:assets.packages,engine:voice.engine,voice:{id:voice.id,base:voice.base,edition:settings.edition,revision:voice.revision??1},model,...(pronunciation?{pronunciation}:{}),...integrity,chunker:{revision:'exact-offsets-240-v1',maxCharacters:240},output:{format:'pcm-s16le',channels:1,encoder:'lamejs-64kbps-single-artifact'},determinism:'Pinned inputs do not guarantee bit-identical inference across devices or repeated stochastic sampling.'}));
+ const chunker=settings.renderManifest?.chunker?.revision===LEGACY_BOUNDARIES?{revision:LEGACY_BOUNDARIES,maxCharacters:240}:wordBoundaryManifest();
+ return JSON.parse(JSON.stringify({schema:1,pipeline:FOUNDATION_PIPELINE,source:assets.source,packages:assets.packages,engine:voice.engine,voice:{id:voice.id,base:voice.base,edition:settings.edition,revision:voice.revision??1},model,...(pronunciation?{pronunciation}:{}),...integrity,chunker,output:{format:'pcm-s16le',channels:1,encoder:'lamejs-64kbps-single-artifact'},determinism:'Pinned inputs do not guarantee bit-identical inference across devices or repeated stochastic sampling.'}));
 }
 export function validateManifest(manifest,settings){
  // Historical manifests may be viewed/exported even when this build cannot
@@ -45,8 +48,9 @@ export function assertSupportedManifest(settings){
  // storage and provenance code changed. Every synthesis/voice/DSP/dependency
  // hash must still match, and all non-source manifest fields must be identical.
  const orchestration=new Set(['src/render-provenance.js','src/job-runner.js','src/storage.js','src/take-selection.js','src/passage-takes.js','src/render-contract-944aa8e.json','src/render-contract-1458c2e.json','src/render-contract-8e3e830.json','src/render-contract-0bd2d4a.json','src/pronunciation-compatibility.json']);
- // Old contracts have no aliases. Reviewed adapter overrides are pinned to
- // exact current file hashes; future audio edits cannot inherit this bridge.
+ // Reviewed adapters (including the legacy branch of the versioned recorder)
+ // are exact hash pins. The new boundary module is never used to recut legacy
+ // recordings; future edits cannot inherit this compatibility bridge.
  const pinned=Object.entries(compatibility.noRulesOverrides).every(([name,hash])=>assets.source.files[name]===hash);
  orchestration.add('src/idb-lifecycle.js');orchestration.add('src/render-contract-40459e2.json');
  orchestration.add('src/render-contract-cbb8bd1.json');orchestration.add('src/chapter-cache.js');
@@ -54,10 +58,11 @@ export function assertSupportedManifest(settings){
  orchestration.add('src/render-contract-584b0cd.json');
  orchestration.add('src/render-contract-4b09441.json');
  orchestration.add('src/render-contract-23d62a8.json');
- for(const archived of [previous,takesContract,pronunciationContract,preparationContract,storageContract,recoveryContract,preparationRecoveryContract,browserTimerContract,quotaContract,resilienceContract]){
+ orchestration.add('src/render-contract-d71b201.json');
+ for(const archived of [previous,takesContract,pronunciationContract,preparationContract,storageContract,recoveryContract,preparationRecoveryContract,browserTimerContract,quotaContract,resilienceContract,boundaryContract]){
   const sameAudio=Object.entries(archived.source.files).every(([name,hash])=>orchestration.has(name)||assets.source.files[name]===hash||(pinned&&name in compatibility.noRulesOverrides))&&Object.keys(assets.source.files).every(name=>orchestration.has(name)||name in archived.source.files||(pinned&&name in compatibility.noRulesOverrides));
-  const supportedDictionary=!saved?.pronunciation||(archived===pronunciationContract&&saved.pronunciation.matcher==='literal-unicode-token-longest-v1')||([preparationContract,storageContract,recoveryContract,preparationRecoveryContract,browserTimerContract,quotaContract,resilienceContract].includes(archived)&&['literal-unicode-token-longest-v1','literal-unicode-token-longest-v2'].includes(saved.pronunciation.matcher));
-  if(supportedDictionary&&pinned&&sameAudio&&JSON.stringify(saved?.source)===JSON.stringify(archived.source)&&JSON.stringify({...saved,source:current.source})===JSON.stringify(current))return;
+  const supportedDictionary=!saved?.pronunciation||(archived===pronunciationContract&&saved.pronunciation.matcher==='literal-unicode-token-longest-v1')||([preparationContract,storageContract,recoveryContract,preparationRecoveryContract,browserTimerContract,quotaContract,resilienceContract,boundaryContract].includes(archived)&&['literal-unicode-token-longest-v1','literal-unicode-token-longest-v2'].includes(saved.pronunciation.matcher));
+  if(saved?.chunker?.revision===LEGACY_BOUNDARIES&&supportedDictionary&&pinned&&sameAudio&&JSON.stringify(saved?.source)===JSON.stringify(archived.source)&&JSON.stringify({...saved,source:current.source})===JSON.stringify(current))return;
  }
  throw Error('These saved render inputs are not supported by this build. Saved audio can still be played and exported. Start a new recording to use updated inputs.');
 }

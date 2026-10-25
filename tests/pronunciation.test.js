@@ -47,7 +47,7 @@ test('v2 considers overlapping starts after rejected boundaries, while frozen v1
   const legacy={...dictionary,matcher:LEGACY_PRONUNCIATION_MATCHER};assert.equal(spokenPassage(source,legacy).text,source);
  }
  const dictionary=rules('a-a => X\nx-a => earlier');assert.equal(spokenPassage('x-a-a-a',dictionary).text,'earlier-X');
- const old={...rules('a-a => X'),matcher:LEGACY_PRONUNCIATION_MATCHER},manifest=currentManifest({...settings,pronunciation:old});manifest.source=pronunciationBaseline.source;
+ const old={...rules('a-a => X'),matcher:LEGACY_PRONUNCIATION_MATCHER},manifest=currentManifest({...settings,pronunciation:old});manifest.chunker={revision:'exact-offsets-240-v1',maxCharacters:240};manifest.source=pronunciationBaseline.source;
  const job=await makeRecording('xa-a-a',{...settings,pronunciation:old,renderManifest:manifest});assertSupportedManifest(job.settings);assert.equal(spokenPassage(job.source,job.settings.pronunciation).text,'xa-a-a');
  const report=JSON.parse(await readFile('evidence/pronunciation-real-node.json','utf8'));if(report.after.settings.pronunciation.matcher===LEGACY_PRONUNCIATION_MATCHER)assertSupportedManifest(report.after.settings);
 });
@@ -75,7 +75,7 @@ test('source and dictionary revisions produce immutable identities; source routi
 test('no-rule compatibility overrides are exact pins and the old worker path is structurally unchanged',async()=>{
  const snapshot=await sourceSnapshot();for(const [name,hash] of Object.entries(compatibility.noRulesOverrides))assert.equal(snapshot.files[name],hash);
  let worker=await readFile('src/tts-worker.js','utf8');worker=worker.replace(/import \{assertEngineRequest\} from '.\/engine-capabilities.js';\r?\n/u,'').replace(/    assertEngineRequest\(profile.engine,data.settings\);\r?\n/u,'');worker=worker.replace("import {spokenPassage} from './pronunciation.js';\n",'').replace("import {spokenPassage} from './pronunciation.js';\r\n",'').replace(/    const spoken=spokenPassage\(data.text,data.settings.pronunciation\).text;\r?\n/u,'').replace(/    if\(data.settings.pronunciation\)provenance.spokenText=spoken;\r?\n/u,'').replace('.pocket(spoken,','.pocket(data.text,').replace('.supertonic(spoken,','.supertonic(data.text,').replace(':await kokoro(spoken,',':await kokoro(data.text,');assert.equal(await digest(worker.replaceAll('\r\n','\n')),baseline.source.files['src/tts-worker.js']);
- const manifest=currentManifest(settings);manifest.source=baseline.source;assertSupportedManifest({...settings,renderManifest:manifest});manifest.source=structuredClone(baseline.source);manifest.source.files['src/tts-worker.js']='a'.repeat(64);assert.throws(()=>assertSupportedManifest({...settings,renderManifest:manifest}),/not supported/);
+ const manifest=currentManifest(settings);manifest.chunker={revision:'exact-offsets-240-v1',maxCharacters:240};manifest.source=baseline.source;assertSupportedManifest({...settings,renderManifest:manifest});manifest.source=structuredClone(baseline.source);manifest.source.files['src/tts-worker.js']='a'.repeat(64);assert.throws(()=>assertSupportedManifest({...settings,renderManifest:manifest}),/not supported/);
 });
 test('actual worker handler sends resolved text to the stub engine, retains original pause accounting and provenance',async()=>{
  const source='Paul?\n\n',job=await makeRecording(source,{...settings,pronunciation:rules('Paul? => pawl')}),messages=[],calls=[];

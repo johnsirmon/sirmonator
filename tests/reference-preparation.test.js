@@ -54,7 +54,7 @@ test('all existing engines reject personal reference intent instead of silently 
 });
 test('guard-only renderer changes preserve archived no-reference jobs and both pronunciation matcher versions',async()=>{
  const base={voice:'af_sarah',edition:'refined',delivery:'natural',speed:1,pipeline:FOUNDATION_PIPELINE};
- for(const pronunciation of [undefined,parsePronunciation('Paul => pawl'),{...parsePronunciation('Paul => pawl'),matcher:LEGACY_PRONUNCIATION_MATCHER}]){const settings={...base,...(pronunciation?{pronunciation}:{})},manifest=currentManifest(settings);manifest.source=archived.source;const job=await makeRecording('Paul spoke.',{...settings,renderManifest:manifest});assertSupportedManifest(job.settings);assert.equal(job.source,'Paul spoke.');}
+ for(const pronunciation of [undefined,parsePronunciation('Paul => pawl'),{...parsePronunciation('Paul => pawl'),matcher:LEGACY_PRONUNCIATION_MATCHER}]){const settings={...base,...(pronunciation?{pronunciation}:{})},manifest=currentManifest(settings);manifest.chunker={revision:'exact-offsets-240-v1',maxCharacters:240};manifest.source=archived.source;const job=await makeRecording('Paul spoke.',{...settings,renderManifest:manifest});assertSupportedManifest(job.settings);assert.equal(job.source,'Paul spoke.');}
 });
 function elements(){const map=new Map();return id=>{if(!map.has(id))map.set(id,{value:'',checked:false,disabled:false,textContent:'',files:[],listeners:{},addEventListener(type,fn){this.listeners[type]=fn;}});return map.get(id);};}
 test('actual main bootstrap restores reference metadata after initial selection and later selections still cancel',async()=>{

@@ -1,0 +1,324 @@
+{
+  "kind": "Actual production worker/client + cached verified Kokoro q8 Node CPU; fake-indexeddb; network disabled",
+  "source": "John reads the original words about hope and care. John reads the original words about hope and care. John reads the original words about hope and care. John reads the original words about hope and care. Café means café; é stays in the reviewed text.",
+  "inputs": [
+    {
+      "text": "John reads the original words about hope and care. John reads the original words about hope and care. John reads the original words about hope and care. John reads the original words about hope and care. ",
+      "spokenText": "jon reads the original words about hope and care. jon reads the original words about hope and care. jon reads the original words about hope and care. jon reads the original words about hope and care. ",
+      "last": false,
+      "seconds": 13.385,
+      "sampleCount": 321240,
+      "sha256": "96065ace03f8d7a0855eb4043e92165952c0110949a072a7089e65345a0c8e0d"
+    },
+    {
+      "text": "Café means café; é stays in the reviewed text.",
+      "spokenText": "Café means café; é stays in the reviewed text.",
+      "last": true,
+      "seconds": 4.1,
+      "sampleCount": 98400,
+      "sha256": "f8ec3a3e9dc144527104f66e6f9f08003ba280bfa741a0d2608ee4e70ae67b96"
+    }
+  ],
+  "verifiedLocalFiles": [
+    {
+      "name": "config.json",
+      "bytes": 44,
+      "hash": "790faf216e7e3f490e71e8bc80df79ed8941101c"
+    },
+    {
+      "name": "tokenizer.json",
+      "bytes": 3497,
+      "hash": "4280f55fc1c32211bc9bb4d55545759a00054ecd"
+    },
+    {
+      "name": "tokenizer_config.json",
+      "bytes": 113,
+      "hash": "5c81e9a3a06db9139900d6ee5b60e8bb701ccb0b"
+    },
+    {
+      "name": "onnx/model_quantized.onnx",
+      "bytes": 92361116,
+      "hash": "fbae9257e1e05ffc727e951ef9b9c98418e6d79f1c9b6b13bd59f5c9028a1478"
+    },
+    {
+      "name": "voices/af_sarah.bin",
+      "bytes": 522240,
+      "hash": "4409fbc125afabacc615d94db5398d847006a737b0247d6892b7a9a0007a2f0a"
+    }
+  ],
+  "workerSourceSHA256": "c19b532f3a77669b70d9bd0f5dd54368082c15500663996556fb4150547b301a",
+  "report": {
+    "schema": 1,
+    "recordingId": "04ab5c625c3f4f2ed14649a7070f9acdac6d394e28fc1bfe0499728a1d2b77dc",
+    "sourceHash": "b9539895a678bd8197ef099e9992c5cae56fdb52ab1382f83f139c5b84bad8d7",
+    "sourceCharacters": 251,
+    "settings": {
+      "voice": "af_sarah",
+      "edition": "refined",
+      "delivery": "natural",
+      "speed": 1,
+      "voiceRevision": 1,
+      "pipeline": "pcm-manifest-v3-2026-10-24",
+      "pronunciation": {
+        "schema": 1,
+        "matcher": "literal-unicode-token-longest-v2",
+        "revision": 1,
+        "caseSensitive": false,
+        "rules": [
+          {
+            "from": "John",
+            "to": "jon"
+          }
+        ]
+      },
+      "renderManifest": {
+        "schema": 1,
+        "pipeline": "pcm-manifest-v3-2026-10-24",
+        "source": {
+          "files": {
+            "src/text-boundaries.js": "fa9d4e5a90e959a5b588c066569567bb34125e9057e0a8c8d2b7de04a6e74e74",
+            "src/render-contract-d71b201.json": "ad5f7d4f0783b0686b3d5af21df300a71185d4cd2504a21292eaca1aed3faab4",
+            "src/render-contract-23d62a8.json": "d865869b37f6e74692d972afae400121c6819255c5941098a28e6a2e0aca8e66",
+            "src/render-contract-4b09441.json": "052d8c5e9b7e01546b5605c21030fc1000b44c2d7b84413aa04a660fda0a3556",
+            "src/render-contract-584b0cd.json": "1175a0976f72047308affbf59d900c36fe579a56bf4ee88e0893e765fd045e09",
+            "src/render-contract-6dd6049.json": "51932267a901a1013555c0f5a18e6e9bfe2336b97bd8f912200fd054b35ccc97",
+            "src/chapter-cache.js": "a4496df7f8b9adec6fdca15929bcaa5fee52163387ac89b57a875dba9ddaa547",
+            "src/render-contract-cbb8bd1.json": "5ffe8a9270a626f9d868b8fba47242b44e0d30bc746e0e36be248c0e33ac4c31",
+            "src/idb-lifecycle.js": "92fdea0a61f9decf22f62415aa2396856125a45e15168dee034e9ec98a24bdf2",
+            "src/render-contract-40459e2.json": "e947dcd4f39efbfce359ccbb4298224c51df1e040e4e0d55859a5c3c9e28b88d",
+            "src/engine-specs.js": "52790f6b8bf121172ddfc7428393eb2ed64ee303af55619047dfbfbf43bb1667",
+            "src/asset-integrity.js": "bb74dd13c8908f33c55943fc7a70b7430146181a25e56bfe283e3026b7b9f951",
+            "src/pinned-kokoro.js": "100b5eca066a536f621b46c9d92b8574f53297d35c4c7a24221a6bbb0db643cb",
+            "src/tts-worker.js": "72acbdeec465445921cb13252d51cb45504bb85ba4167e75d6f6473f69057c6c",
+            "src/speech-runner.js": "37f045c9b4572cfc6d5e715748b1d32b975743fa096e39dce4d4ba34e90fcebc",
+            "src/render-provenance.js": "8b4e41af32e29781923f479751f77268a4567150cfd6c5169f50864f57aba70e",
+            "src/render-metrics.js": "e8caacfd6ee8a56db8e828d5f02d3826695ee2af4ff6e28ba35f4230b5c216e2",
+            "src/core.js": "969b136d6e19fe0116f2c0cb8391257b123095d6068b1456f1d9b68a1b501a34",
+            "src/recording.js": "fe02ddb27bd959389c2eca9258c0768d37992c04a760845e3ee010a9ef76e6ad",
+            "src/job-runner.js": "fb734b2c05ac3ac4e87e758b9196a16efc2e5629b467311ac3519074a2291c7e",
+            "src/storage.js": "bece362c1422961f3b046a2f58996a553adb2fba7b9a089a410c005ef030b298",
+            "src/take-selection.js": "9ccbbb6f37794cf7ada5a5b0937e5494685611e4b65383501be64fa4c3df6812",
+            "src/passage-takes.js": "f361003d1c655ba6abf68cf996f712c663a80ff0a0fd165b3d9eb5e0963f4dfb",
+            "src/render-contract-944aa8e.json": "c2c9217ab7bbd41243059cdd40b24bae46744ab743befaddff7d2e80d1e54208",
+            "src/pronunciation.js": "8ce3d506a9fe2137f1014b34fdf28a159ed6ae16fbca50a38a1330c11554daf9",
+            "src/pronunciation-compatibility.json": "1b88469d97b0c80c7e686970431e3c6ed8db6c86f6cb03082d967aa997af1b6d",
+            "src/render-contract-1458c2e.json": "30c64253f1c62c6dcd1c42821edbf62bf3002104727e96f473bc2aaa668ea7f4",
+            "src/render-contract-8e3e830.json": "15647f3c4a2bedc4f34e849bc52b84bdb588e67eb62486c75b0604af01d27c38",
+            "src/render-contract-0bd2d4a.json": "45e144ef88c251e5ee763aef8d43abe37ea0b67c92e773ce6bf3f70d0b905b7a",
+            "src/engine-capabilities.js": "001af6355074be03e2b9c02b6e711fadc5a5de8cdb1a024dbeed862f9db65147",
+            "src/mp3-export-worker.js": "baad3353f7370ea1239d1f9e5a9fa098699bfb64934896e30714cfa9d30e2737",
+            "src/audio-effects.js": "618ac26b9c977c3b9c6dcca05f0ecb68742c70c939fbb988c6181a1a964d2d77",
+            "src/character-settings.js": "fade27a9f2f99e47fe7e7f237788786d9732ebdbc386fe8969d8cb007dedd5b2",
+            "src/voices.js": "ddbbf77b7b63781e70cb91839dfad0e2c0e6815eafbabfcf979f441e7ceedf57",
+            "src/tempo.js": "cfd1e68699ea7a26eb448153e3f59d9873e07f8fbf8b9bc493b5041f2469b1de",
+            "src/pocket-client.js": "9f6510e22f5316f4e409a1f1c1276d5010cefbcea8dd1efc194535ad74f55b04",
+            "src/pocket-engine.js": "76a31352996e6707c970280aac4b619a36642eb84e11e34a91bec5f81a61134a",
+            "src/supertonic-engine.js": "727324ed481fe27c709f8815b61666d31d6fc14c236406e2884b4c905fd959c5",
+            "src/vendor/supertonic.js": "d027434b6989e5d284380f22bc28a8d56fb8625c639741e4cfd6867203833c84",
+            "src/vendor/pocket/worker.js": "f2e35600d4bc74803eaf3d310b369cebfeb07cea08ec9160ce6fdc97103e7005",
+            "src/vendor/pocket/tokenizer.js": "70788cc36841a7be1c08f9e56b280552826a753a854b354a44fb399c6df49651",
+            "src/vendor/pocket/binary.js": "f6b38f71380ce450861f6710df42c7d80e9f751df888f1cafbd18beb071b016a",
+            "src/mp3.js": "eb09e9d0b0d3971182efd4e6946b7e45b127a8cac4ecbe4bdf3bd553e412314b",
+            "src/continuity.js": "9da1bb60e87124150764e9dd4c3228aab6795afd3d9aabd2eed9d40301e0b8fe",
+            "package-lock.json": "dc85b64b6a8d659211cf05af19e4d9bd396ecbe8f23a5294c377f39fe541424f"
+          },
+          "sha256": "7dd63b575bd4e77716abfa813bf3e84e967569ea0ed59079310dbf8e21d0cb92"
+        },
+        "packages": {
+          "kokoro-js": {
+            "version": "1.2.1",
+            "integrity": "sha512-oq0HZJWis3t8lERkMJh84WLU86dpYD0EuBPtqYnLlQzyFP1OkyBRDcweAqCfhNOpltyN9j/azp1H6uuC47gShw=="
+          },
+          "@huggingface/transformers": {
+            "version": "3.8.1",
+            "integrity": "sha512-tsTk4zVjImqdqjS8/AOZg2yNLd1z9S5v+7oUPpXaasDRwEDhB+xnglK1k5cad26lL5/ZIaeREgWWy0bs9y9pPA=="
+          },
+          "onnxruntime-web": {
+            "version": "1.30.0",
+            "integrity": "sha512-q0y+JrrtukXSzsBWEMccVfqX25LRmosXHF+CaRJmg8pZClzcV7svNc4rKY3jL02Vb7QmRMDs1SigqR4CXAfKYQ=="
+          },
+          "pocket-tts-js": {
+            "version": "0.1.0",
+            "integrity": "sha512-kjGrPgVrDwmnDJ9EkhdHkkEXFDl4rvPbLOJaVZbq3V3j5UkWRzOln3qkcWSZ4741i6nKLkXaun8oj5C3W54mog=="
+          },
+          "soundtouchjs": {
+            "version": "0.3.0",
+            "integrity": "sha512-P/+SwnIE4BLrMbYK8aB8+GfXRfLv3+BV8HFMrEqOuF0F9BsI3sKEN1T+kY/JqiVURcCQgr50BC8D/uVzE/GozQ=="
+          },
+          "@breezystack/lamejs": {
+            "version": "1.2.7",
+            "integrity": "sha512-6wc7ck65ctA75Hq7FYHTtTvGnYs6msgdxiSUICQ+A01nVOWg6rqouZB8IdyteRlfpYYiFovkf67dIeOgWIUzTA=="
+          },
+          "phonemizer": {
+            "version": "1.2.1",
+            "integrity": "sha512-v0KJ4mi2T4Q7eJQ0W15Xd4G9k4kICSXE8bpDeJ8jisL4RyJhNWsweKTOi88QXFc4r4LZlz5jVL5lCHhkpdT71A=="
+          }
+        },
+        "engine": "kokoro",
+        "voice": {
+          "id": "af_sarah",
+          "base": "af_sarah",
+          "edition": "refined",
+          "revision": 1
+        },
+        "model": {
+          "repository": "onnx-community/Kokoro-82M-v1.0-ONNX",
+          "revision": "1939ad2a8e416c0acfeecc08a694d14ef25f2231",
+          "assets": {
+            "config.json": {
+              "size": 44,
+              "gitBlob": "790faf216e7e3f490e71e8bc80df79ed8941101c"
+            },
+            "onnx/model.onnx": {
+              "size": 325532232,
+              "sha256": "8fbea51ea711f2af382e88c833d9e288c6dc82ce5e98421ea61c058ce21a34cb"
+            },
+            "onnx/model_quantized.onnx": {
+              "size": 92361116,
+              "sha256": "fbae9257e1e05ffc727e951ef9b9c98418e6d79f1c9b6b13bd59f5c9028a1478"
+            },
+            "tokenizer.json": {
+              "size": 3497,
+              "gitBlob": "4280f55fc1c32211bc9bb4d55545759a00054ecd"
+            },
+            "tokenizer_config.json": {
+              "size": 113,
+              "gitBlob": "5c81e9a3a06db9139900d6ee5b60e8bb701ccb0b"
+            },
+            "voices/af_sarah.bin": {
+              "size": 522240,
+              "sha256": "4409fbc125afabacc615d94db5398d847006a737b0247d6892b7a9a0007a2f0a"
+            }
+          },
+          "tokenLimit": 512
+        },
+        "pronunciation": {
+          "schema": 1,
+          "matcher": "literal-unicode-token-longest-v2",
+          "revision": 1,
+          "caseSensitive": false,
+          "rules": [
+            {
+              "from": "John",
+              "to": "jon"
+            }
+          ]
+        },
+        "checkpointIntegrity": "original-pcm-sha256-v1",
+        "chunker": {
+          "revision": "word-grapheme-240-v2",
+          "maxCharacters": 240,
+          "segmentation": "Intl.Segmenter-grapheme",
+          "planIdentity": "sha256-source-offsets-v1"
+        },
+        "output": {
+          "format": "pcm-s16le",
+          "channels": 1,
+          "encoder": "lamejs-64kbps-single-artifact"
+        },
+        "determinism": "Pinned inputs do not guarantee bit-identical inference across devices or repeated stochastic sampling."
+      }
+    },
+    "checkpointIntegrity": "original-pcm-sha256-v1",
+    "boundaryPolicy": "word-grapheme-240-v2",
+    "boundaryPlanHash": "1309bab1c67762ed1d46275a047a14f9327a56d1246170f7416766d1158e50d6",
+    "provenance": "frozen-render-inputs",
+    "renderManifestHash": "314b98078250b9b0d27365bb0cbcc2a925a1ca162e97010283f14ef8b162a227",
+    "takeSelection": null,
+    "performance": {
+      "passages": 2,
+      "measured": 2,
+      "missing": 0,
+      "renderMs": 27305.682099999995,
+      "loadMs": 1320.731,
+      "inferenceMs": 25910.979399999997,
+      "modelLoadAttempts": 1,
+      "providers": [
+        "cpu"
+      ],
+      "note": "Measured successful passages only; cancelled/failed attempts are not retained. Render time includes loading. Timing does not measure spoken accuracy."
+    },
+    "preparations": [],
+    "passages": [
+      {
+        "index": 0,
+        "takeId": "original",
+        "spokenTextHash": "87da510ea7392d27faca10cf3b9b7c28ff6f66972173014b4b6dbbb771976fa7",
+        "audioHash": "96065ace03f8d7a0855eb4043e92165952c0110949a072a7089e65345a0c8e0d",
+        "sourceSliceHash": null,
+        "executedBuildSourceSha": null,
+        "start": 0,
+        "end": 204,
+        "seconds": 13.385,
+        "format": "pcm-s16le",
+        "sampleRate": 24000,
+        "sampleCount": 321240,
+        "renderManifestHash": "314b98078250b9b0d27365bb0cbcc2a925a1ca162e97010283f14ef8b162a227",
+        "metrics": {
+          "schema": 1,
+          "engine": "kokoro",
+          "provider": "cpu",
+          "dtype": "q8",
+          "renderMs": 21599.742299999998,
+          "loadMs": 1320.731,
+          "inferenceMs": 20205.550799999997,
+          "postprocessMs": 18.593700000001263,
+          "encodingMs": 0,
+          "totalMs": 21618.336,
+          "modelLoadAttempts": 1,
+          "retries": 0,
+          "modelState": "loaded-this-request",
+          "synthesisAudioSeconds": 13.225,
+          "outputAudioSeconds": 13.385,
+          "format": "pcm-s16le",
+          "renderRTF": 1.6332508355387523,
+          "encoding": "deferred-to-artifact"
+        }
+      },
+      {
+        "index": 1,
+        "takeId": "original",
+        "spokenTextHash": "2242c741593b32acdbb16b12506862f0f9c50e16768ee92c82b122e1381791c7",
+        "audioHash": "f8ec3a3e9dc144527104f66e6f9f08003ba280bfa741a0d2608ee4e70ae67b96",
+        "sourceSliceHash": null,
+        "executedBuildSourceSha": null,
+        "start": 204,
+        "end": 251,
+        "seconds": 4.1,
+        "format": "pcm-s16le",
+        "sampleRate": 24000,
+        "sampleCount": 98400,
+        "renderManifestHash": "314b98078250b9b0d27365bb0cbcc2a925a1ca162e97010283f14ef8b162a227",
+        "metrics": {
+          "schema": 1,
+          "engine": "kokoro",
+          "provider": "cpu",
+          "dtype": "q8",
+          "renderMs": 5705.9397999999965,
+          "loadMs": 0,
+          "inferenceMs": 5705.428599999999,
+          "postprocessMs": 3.6005000000004657,
+          "encodingMs": 0,
+          "totalMs": 5709.540299999997,
+          "modelLoadAttempts": 0,
+          "retries": 0,
+          "modelState": "reused",
+          "synthesisAudioSeconds": 4.1,
+          "outputAudioSeconds": 4.1,
+          "format": "pcm-s16le",
+          "renderRTF": 1.3916926341463407,
+          "encoding": "deferred-to-artifact"
+        }
+      }
+    ],
+    "limitations": "Expected upstream asset hashes are source metadata, not proof of runtime model-file hashing. Pinned inputs and decoding do not establish deterministic inference, spoken accuracy or voice rights."
+  },
+  "artifact": {
+    "file": "C:\\source\\Tina\\sermon-reader\\.cache\\versioned-boundary-real.mp3",
+    "bytes": 140352,
+    "sha256": "b97b94e34d3f75c8df3d6df6e796ba1181f2bd19014e6404d8d3aa3fe8539bc7",
+    "seconds": 17.485,
+    "ffmpegDecode": "passed"
+  },
+  "limitations": "No listening, ASR, word accuracy, browser inference or phone claim. Input reconstruction and decode do not establish acoustic correctness."
+}

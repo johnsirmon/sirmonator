@@ -49,7 +49,7 @@ test('concurrent replacement rejects stale synthesis; per-passage cap is atomic 
 });
 test('legacy remains exportable and read-only; only explicit foundation contract bridge supports new inference',async()=>{
  const {store,job}=await fixture({...config,pipeline:CONTINUITY_PIPELINE});await assert.rejects(changePassage({store,id:job.id,index:1,owner:'owner',revision:0,generate:()=>{throw Error('must not run');}}),/frozen/);assert.ok((await recordingBlob(store,job,null,undefined,{createWorker:createNodeExportWorker})).blob.size);store.close();
- const manifest=currentManifest(config);manifest.source=previous.source;assertSupportedManifest({...config,renderManifest:manifest});
+ const manifest=currentManifest(config);manifest.chunker={revision:'exact-offsets-240-v1',maxCharacters:240};manifest.source=previous.source;assertSupportedManifest({...config,renderManifest:manifest});
  manifest.source=structuredClone(previous.source);manifest.source.files['src/tts-worker.js']='a'.repeat(64);assert.throws(()=>assertSupportedManifest({...config,renderManifest:manifest}),/not supported/);
 });
 test('tampered selected PCM fails validation rather than exporting substituted audio',async()=>{
