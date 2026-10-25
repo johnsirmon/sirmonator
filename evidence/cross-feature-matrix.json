@@ -1,0 +1,225 @@
+{
+  "schema": 1,
+  "kind": "Seeded cross-feature matrix; current real modules/fake IndexedDB/actual MP3 worker",
+  "seeds": [
+    1223476,
+    5126128
+  ],
+  "recordings": [
+    {
+      "seed": 1223476,
+      "sourceCharacters": 10263,
+      "sourceHash": "afacdd0c26e6e318fbe9a4cb36b1337ba8bc2dd943be65a2618b5395240c8f48",
+      "passages": 94,
+      "chapters": 2,
+      "wordBoundaryPlanHash": "fb3aa3d06bc99f4ffb9ed85600cb33585869657e94e24f01226bc4324f3399c9",
+      "originalPcmHashesSha256": "32503aa816aa41be85da33494bab0df7745961c7881585627d72e6e948fbf585",
+      "events": [
+        "pause-after-two-commits",
+        "generation-fail-without-advance",
+        "resume-completes-exact-source",
+        "cancel-take-then-ignore-late-audio",
+        "two-distinct-takes-across-chapters",
+        "undo-twice-reselect-lease-failure-retry",
+        "same-length-original-corruption-rejected-with-takes-selected",
+        "cancel-checksum-read-then-retry-export"
+      ],
+      "exports": [
+        {
+          "label": "original",
+          "chapter": null,
+          "takeRevision": 0,
+          "pcmSha256": "59c9400f71c24dc6a225ba497b92c8d08acec5bbe53184dcfc98cf96ade43ce9",
+          "mp3Sha256": "c40546c374e785cb83078d58ae005610c0fee5217c6cd0af0bb31da96ede94f3",
+          "samples": 84013,
+          "seconds": 3.5005416666666664,
+          "metricsPersisted": true
+        },
+        {
+          "label": "selected-metadata-failure",
+          "chapter": null,
+          "takeRevision": 2,
+          "pcmSha256": "a89ebd38b021a140e4860311fb9423c5c7dcac5f88b4f7ef58e990f7fa38947d",
+          "mp3Sha256": "6ad6e5866bc6a852edf6e38eb8514693762243d3892e4d442c19a96b2c9e71d0",
+          "samples": 84352,
+          "seconds": 3.5146666666666664,
+          "metricsPersisted": false
+        },
+        {
+          "label": "selected-chapter-one",
+          "chapter": 1,
+          "takeRevision": 2,
+          "pcmSha256": "739a9845304c35567291230fcec44c4ca7ccba07ad0e0f790fc6166ad43e414c",
+          "mp3Sha256": "347b428e51764dc99857d69a5e21360d057ee6bb2897ae0f5e91c464f3f5125c",
+          "samples": 34393,
+          "seconds": 1.4330416666666665,
+          "metricsPersisted": true
+        },
+        {
+          "label": "frozen-export-races-undo",
+          "chapter": null,
+          "takeRevision": 2,
+          "pcmSha256": "a89ebd38b021a140e4860311fb9423c5c7dcac5f88b4f7ef58e990f7fa38947d",
+          "mp3Sha256": "6ad6e5866bc6a852edf6e38eb8514693762243d3892e4d442c19a96b2c9e71d0",
+          "samples": 84352,
+          "seconds": 3.5146666666666664,
+          "metricsPersisted": true
+        },
+        {
+          "label": "after-first-undo",
+          "chapter": null,
+          "takeRevision": 3,
+          "pcmSha256": "333a5644ab9417131e40d041a001dbb3410e6c3d2d169025b572813dc80a5d28",
+          "mp3Sha256": "e86d2f29ac80ee132f5ca1293a28c7a5c7b23cb6a18ad6bca8a8a774d275ffa4",
+          "samples": 84126,
+          "seconds": 3.5052499999999998,
+          "metricsPersisted": true
+        },
+        {
+          "label": "restored-original",
+          "chapter": null,
+          "takeRevision": 4,
+          "pcmSha256": "59c9400f71c24dc6a225ba497b92c8d08acec5bbe53184dcfc98cf96ade43ce9",
+          "mp3Sha256": "c40546c374e785cb83078d58ae005610c0fee5217c6cd0af0bb31da96ede94f3",
+          "samples": 84013,
+          "seconds": 3.5005416666666664,
+          "metricsPersisted": true
+        },
+        {
+          "label": "final-retry",
+          "chapter": null,
+          "takeRevision": 5,
+          "pcmSha256": "333a5644ab9417131e40d041a001dbb3410e6c3d2d169025b572813dc80a5d28",
+          "mp3Sha256": "e86d2f29ac80ee132f5ca1293a28c7a5c7b23cb6a18ad6bca8a8a774d275ffa4",
+          "samples": 84126,
+          "seconds": 3.5052499999999998,
+          "metricsPersisted": true
+        }
+      ],
+      "manualReview": {
+        "archivedKey": "035a0611f8e4c34b7c1ec1f1d2a8429114b172af974a8476eb2aa2a5384493f0",
+        "comparisonCandidates": 0,
+        "audioVerified": false,
+        "staleAfterSelectionChange": true
+      },
+      "finalTakeRevision": 5,
+      "originalTextPreserved": true
+    },
+    {
+      "seed": 5126128,
+      "sourceCharacters": 14279,
+      "sourceHash": "873094aa7f9ec489eb7e2a5dfdb7e420045319cead4f6ab73822569a5cb63cd0",
+      "passages": 108,
+      "chapters": 3,
+      "wordBoundaryPlanHash": "5a207de03df4b6674f3e569e0d007fca608e827275ae50c629d17e493cdc3e3e",
+      "originalPcmHashesSha256": "e4140390918d3887179bbb58567eb9af916f5a550a1cb0514bbce708900f2610",
+      "events": [
+        "pause-after-two-commits",
+        "generation-fail-without-advance",
+        "resume-completes-exact-source",
+        "cancel-take-then-ignore-late-audio",
+        "two-distinct-takes-across-chapters",
+        "undo-twice-reselect-lease-failure-retry",
+        "same-length-original-corruption-rejected-with-takes-selected",
+        "cancel-checksum-read-then-retry-export"
+      ],
+      "exports": [
+        {
+          "label": "original",
+          "chapter": null,
+          "takeRevision": 0,
+          "pcmSha256": "3febb6ac5e3a617ca953fe2bdbb7907bc860075bf99759aa29a69f847232b51b",
+          "mp3Sha256": "99711dd1597db30561db4daacf5671e4bbe3e5b742452ec1fc59fac13bf8b822",
+          "samples": 97715,
+          "seconds": 4.071458333333333,
+          "metricsPersisted": true
+        },
+        {
+          "label": "selected-metadata-failure",
+          "chapter": null,
+          "takeRevision": 2,
+          "pcmSha256": "eab3036ecaac5979e6c5aabfec9fe27a79e42b1e2dfdb4147ee4b9557fa5a406",
+          "mp3Sha256": "434a9aedfec08551982c1e67e3e2293d85a55cdb227c6684b6fabeaa8a5fac57",
+          "samples": 98054,
+          "seconds": 4.085583333333333,
+          "metricsPersisted": false
+        },
+        {
+          "label": "selected-chapter-one",
+          "chapter": 1,
+          "takeRevision": 2,
+          "pcmSha256": "49e19d143b6e4ff4b0fe4a42f7b014bb1c5b28ea342af1a5b237a82ee9245653",
+          "mp3Sha256": "203460b56566a8f9a21f9f021c4c479d90dcfe1bbcd2d86abb4b7e0525c7d7c7",
+          "samples": 40798,
+          "seconds": 1.6999166666666674,
+          "metricsPersisted": true
+        },
+        {
+          "label": "frozen-export-races-undo",
+          "chapter": null,
+          "takeRevision": 2,
+          "pcmSha256": "eab3036ecaac5979e6c5aabfec9fe27a79e42b1e2dfdb4147ee4b9557fa5a406",
+          "mp3Sha256": "434a9aedfec08551982c1e67e3e2293d85a55cdb227c6684b6fabeaa8a5fac57",
+          "samples": 98054,
+          "seconds": 4.085583333333333,
+          "metricsPersisted": true
+        },
+        {
+          "label": "after-first-undo",
+          "chapter": null,
+          "takeRevision": 3,
+          "pcmSha256": "1bb2de9ef81136df2e6ffe311ba33805ca9cfe857f3a61fc139a42ca5811ac15",
+          "mp3Sha256": "b7da8e1da17ae0e98490ef78bd3127de67259876894c76bad460f749c81db90b",
+          "samples": 97828,
+          "seconds": 4.0761666666666665,
+          "metricsPersisted": true
+        },
+        {
+          "label": "restored-original",
+          "chapter": null,
+          "takeRevision": 4,
+          "pcmSha256": "3febb6ac5e3a617ca953fe2bdbb7907bc860075bf99759aa29a69f847232b51b",
+          "mp3Sha256": "99711dd1597db30561db4daacf5671e4bbe3e5b742452ec1fc59fac13bf8b822",
+          "samples": 97715,
+          "seconds": 4.071458333333333,
+          "metricsPersisted": true
+        },
+        {
+          "label": "final-retry",
+          "chapter": null,
+          "takeRevision": 5,
+          "pcmSha256": "1bb2de9ef81136df2e6ffe311ba33805ca9cfe857f3a61fc139a42ca5811ac15",
+          "mp3Sha256": "b7da8e1da17ae0e98490ef78bd3127de67259876894c76bad460f749c81db90b",
+          "samples": 97828,
+          "seconds": 4.0761666666666665,
+          "metricsPersisted": true
+        }
+      ],
+      "manualReview": {
+        "archivedKey": "29a4d31c7c4f7ce54fe9527e786beddaf6e71a289a138fcb18de95f1d87b1c19",
+        "comparisonCandidates": 0,
+        "audioVerified": false,
+        "staleAfterSelectionChange": true
+      },
+      "finalTakeRevision": 5,
+      "originalTextPreserved": true
+    }
+  ],
+  "recordingsReopened": 2,
+  "passed": true,
+  "limits": "Synthetic nonidentical PCM and supplied transcript text; not model inference, real browser IndexedDB, acoustic/ASR accuracy, native media playback or production deployment. Expected selected PCM is fixture-planned, with independent continuous encoding and exact transferred-byte assertions.",
+  "validation": {
+    "runtimeBaseline": "dad21c03233a94f068f0eff93d61e5f509a55f7e",
+    "noticeCheckpoint": "595a89ec328127818fc1615c9e73cf8e32207fc3",
+    "fullTests": 373,
+    "pass": 373,
+    "fail": 0,
+    "productionBuild": true,
+    "renderCatalogExact": true
+  },
+  "harnessSourcesSha256Lf": {
+    "scripts/cross-feature-matrix.mjs": "131a6c99ea7b565252f338bfc29b4b5b927ff07fea4f7a48d095662f7639e014",
+    "tests/cross-feature-matrix.test.js": "5c929149c38263466984e595df25b29d13d705046f7df619036ad9dcdc4f27e7"
+  },
+  "faultScope": "Preparation metadata persistence is an injected rejecting sink; podcast metadata failure is injected at fake IndexedDB object-store put and restored immediately. These do not establish real-browser quota behavior."
+}
