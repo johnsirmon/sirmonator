@@ -2,6 +2,7 @@ import {captureReview,compareTranscript,reviewSelectionMatches,validateTranscrip
 import {openReviewStorage} from './review-storage.js';
 import {abortable,assertActive} from './continuity.js';
 import {createRepositoryAccess} from './repository-access.js';
+import {capturePanelFocus} from './panel-focus.js';
 export function createSpeechReviewEditor({$,getStore,getJob,getSelection,isBusy,onBusy,onListen,onRepair,onExport,confirmDiscard=message=>confirm(message),repository}){
  let snapshot=null,comparison=null,context='',controller=null,generation=0,dirty=false,stale=false,pendingLoad=false;
  const storage=createRepositoryAccess(repository,options=>openReviewStorage(undefined,undefined,options),message=>{cancel();invalidate(message+' Unsaved review input was retained. Load current passage to reconnect.');onBusy();});
@@ -27,15 +28,15 @@ export function createSpeechReviewEditor({$,getStore,getJob,getSelection,isBusy,
   assertActive({signal:active.signal,isCurrent:()=>token===generation&&selection===getSelection()});
   if(fresh.key!==snapshot.key||!reviewSelectionMatches(getJob(),snapshot)){invalidate('Selected audio changed. Your input is retained for the old selection. Load latest saved audio, then Load current passage before reviewing again.');throw Error('Review selection is stale.');}
  }
- async function run(action){if(isBusy()||controller||!snapshot||stale)return;const active=new AbortController(),selection=getSelection(),token=++generation;controller=active;onBusy();controls();
-  try{await current(active,selection,token);await action(active);await current(active,selection,token);}
+ async function run(action,{focusAfter}={}){if(isBusy()||controller||!snapshot||stale)return;const restore=capturePanelFocus(['review-compare','review-save','review-export','review-listen','review-repair','review-delete'],$('review-passage')),active=new AbortController(),selection=getSelection(),token=++generation;let succeeded=false;controller=active;onBusy();controls();
+  try{await current(active,selection,token);await action(active);await current(active,selection,token);succeeded=true;}
   catch(error){if(token===generation)status(error.name==='AbortError'?'Review operation cancelled. Saved reviews and audio were kept.':error.message);}
-  finally{if(controller===active)controller=null;onBusy();controls();}
+  finally{if(controller===active)controller=null;onBusy();controls();if(!controller&&selection===getSelection())restore(succeeded?focusAfter?.():undefined);}
  }
  async function load(discard=false){
   const job=getJob();if(!job?.next||isBusy())return;
   if(discard&&dirty&&!confirmDiscard('Load the current selected take? Unsaved review input will be cleared; saved reviews remain tied to their original selection.')){$('review-passage').value=snapshot?.anchor.recordingId===job.id&&snapshot.anchor.passage<job.next?String(snapshot.anchor.passage):'';return;}
-  pendingLoad=false;controller?.abort();const active=new AbortController(),selection=getSelection(),token=++generation;controller=active;onBusy();controls();
+  const restore=capturePanelFocus(['review-refresh','review-passage'],$('review-passage'));pendingLoad=false;controller?.abort();const active=new AbortController(),selection=getSelection(),token=++generation;controller=active;onBusy();controls();
   try{const next=await captureReview(getStore(),job.id,Number($('review-passage').value)||0,{signal:active.signal});
    assertActive({signal:active.signal,isCurrent:()=>token===generation&&selection===getSelection()});
    if(!reviewSelectionMatches(getJob(),next))throw Error('Load latest saved audio before reviewing its selected take.');
@@ -45,18 +46,18 @@ export function createSpeechReviewEditor({$,getStore,getJob,getSelection,isBusy,
    $('review-anchor').textContent=`${next.title} · passage ${next.anchor.passage+1} · ${next.anchor.takeId==='original'?'Original':'Take '+next.anchor.takeId} · selection revision ${next.anchor.selectionRevision}. Exact audio SHA-256 ${next.anchor.audioHash}.`;
    showFindings();status((saved?'Saved manual review loaded for this exact selection. It is not acoustic verification.':'Paste a transcript for this passage, or listen and save manual notes. Automatic transcription is not implemented.')+storageError);
   }catch(error){if(token===generation)invalidate(error.message);}
-  finally{if(controller===active)controller=null;onBusy();controls();}
+  finally{if(controller===active)controller=null;onBusy();controls();if(!controller&&selection===getSelection())restore();}
  }
  function payload(){const transcript=$('review-transcript').value,notes=$('review-notes').value;validateTranscriptInput(transcript,{noWordsHeard:$('review-no-words').checked,allowEmpty:!comparison});if(notes.length>1000||!notes.isWellFormed())throw Error('Review notes are invalid or exceed 1,000 characters.');return {schema:1,method:'manual-review-v1',snapshot,transcript,noWordsHeard:$('review-no-words').checked,listenedByUser:$('review-listened').checked,notes,comparison,automaticTranscription:false,audioVerified:false,savedAt:Date.now()};}
  $('review-compare').onclick=()=>run(async active=>{status('Comparing supplied transcript text only. No automatic transcription or acoustic verification.');const result=await compareTranscript(snapshot,$('review-transcript').value,{noWordsHeard:$('review-no-words').checked,signal:active.signal});await current(active,getSelection(),generation);comparison=result;dirty=true;showFindings();status(result.candidateCount?`${result.candidateCount} possible text differences. ${result.truncated?'First 128 shown. ':''}Review against audio; these can be transcript/alignment errors.`:'No normalized text differences found. This does not verify audio, pronunciation or completeness.');});
  $('review-save').onclick=()=>run(async active=>{const value=payload();await abortable((await storage()).save(value,{signal:active.signal}),active.signal);dirty=false;status('Manual review saved for this exact passage/take/revision. Audio and manuscript were unchanged.');});
  $('review-export').onclick=()=>run(async()=>{onExport(payload());status('Manual review JSON download started. Nothing was uploaded or acoustically verified.');});
- $('review-listen').onclick=()=>run(async()=>onListen(snapshot));$('review-repair').onclick=()=>run(async()=>onRepair(snapshot));
+ $('review-listen').onclick=()=>run(async()=>onListen(snapshot));$('review-repair').onclick=()=>run(async()=>onRepair(snapshot),{focusAfter:()=>$('take-passage')});
  $('review-delete').onclick=()=>run(async active=>{if(!confirmDiscard('Remove this saved manual review only? Original audio, manuscript and takes remain.'))return;await abortable((await storage()).remove(snapshot,{signal:active.signal}),active.signal);dirty=true;status('Saved review removed. Current form input is retained until you load another selection.');});
  $('review-refresh').onclick=()=>load(true);$('review-passage').onchange=()=>load(true);$('review-cancel').onclick=cancel;
- async function archive(clear){if(isBusy()||controller||!getJob()?.next)return;const id=getJob().id,selection=getSelection(),active=new AbortController();controller=active;onBusy();controls();
+ async function archive(clear){if(isBusy()||controller||!getJob()?.next)return;const restore=capturePanelFocus(['review-archive','review-clear-archive'],$('review-passage')),id=getJob().id,selection=getSelection(),active=new AbortController();controller=active;onBusy();controls();
   try{if(clear&&!confirmDiscard('Remove all saved manual reviews for this recording? Export the review archive first. Audio, manuscript and takes remain.'))return;const repository=await storage();assertActive({signal:active.signal,isCurrent:()=>selection===getSelection()&&getJob()?.id===id});if(clear){await repository.deleteJob(id,{signal:active.signal});dirty=true;status('Saved manual-review archive cleared. Current form input is retained. Audio was unchanged.');}else{const value=await abortable(repository.archive(id),active.signal);assertActive({signal:active.signal,isCurrent:()=>selection===getSelection()&&getJob()?.id===id});onExport(value);status('Saved manual-review archive JSON download started. Nothing was uploaded.');}}
-  catch(error){status(error.message);}finally{if(controller===active)controller=null;onBusy();controls();}
+  catch(error){status(error.message);}finally{if(controller===active)controller=null;onBusy();controls();if(!controller&&selection===getSelection())restore();}
  }
  $('review-archive').onclick=()=>archive(false);$('review-clear-archive').onclick=()=>archive(true);
  return {controls,cancel,get busy(){return !!controller;},async deleteJob(id){await (await storage()).deleteJob(id);},async update(job){

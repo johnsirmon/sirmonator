@@ -2,6 +2,7 @@ import {prepareReference,referenceCapabilities} from './reference-provider.js';
 import {openReferenceStorage} from './reference-storage.js';
 import {assertActive,abortable} from './continuity.js';
 import {createRepositoryAccess} from './repository-access.js';
+import {capturePanelFocus} from './panel-focus.js';
 export function createReferenceEditor({$,isBusy=()=>false,onBusy=()=>{},repository}){
  let receipt=null,saved={schema:1,version:0,receipt:null},controller=null,revision=0;
  const storage=createRepositoryAccess(repository,options=>openReferenceStorage(undefined,undefined,options),message=>{cancel();$('reference-report').textContent='';status(message+' Unsaved file validation was cleared. Reload saved metadata to reconnect.');controls();});
@@ -12,8 +13,8 @@ export function createReferenceEditor({$,isBusy=()=>false,onBusy=()=>{},reposito
  const changed=()=>{cancel();$('reference-report').textContent='';status('Inputs changed. Attest and inspect again before saving metadata.');};
  for(const id of ['reference-label','reference-scope','reference-provenance'])$(id).addEventListener('input',changed);
  for(const id of ['reference-authority','reference-permission','reference-disclosure','reference-file'])$(id).addEventListener('change',()=>{revision++;controller?.abort();receipt=null;$('reference-report').textContent='';controls();});
- async function operation(action){if(controller||isBusy())return;const active=new AbortController(),token=++revision;controller=active;onBusy();controls();const check=()=>assertActive({signal:active.signal,isCurrent:()=>token===revision});
-  try{await action(active,check);check();}catch(error){if(token===revision)status(error.name==='AbortError'?'Reference operation cancelled. No audio was saved.':error.message);}finally{if(controller===active)controller=null;onBusy();controls();}
+ async function operation(action){if(controller||isBusy())return;const restore=capturePanelFocus(['reference-inspect','reference-save','reference-reload','reference-revoke','reference-forget'],$('reference-label')),active=new AbortController(),token=++revision;controller=active;onBusy();controls();const check=()=>assertActive({signal:active.signal,isCurrent:()=>token===revision});
+  try{await action(active,check);check();}catch(error){if(token===revision)status(error.name==='AbortError'?'Reference operation cancelled. No audio was saved.':error.message);}finally{if(controller===active)controller=null;onBusy();controls();if(!controller&&!isBusy())restore();}
  }
  $('reference-inspect').onclick=()=>operation(async(active,check)=>{
   receipt=null;const file=$('reference-file').files?.[0],input={label:$('reference-label').value,authority:$('reference-authority').value,scope:$('reference-scope').value,provenance:$('reference-provenance').value,permission:$('reference-permission').checked,aiDisclosure:$('reference-disclosure').checked};

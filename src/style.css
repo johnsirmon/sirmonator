@@ -22,3 +22,4 @@
 #review-anchor{overflow-wrap:anywhere}
 
 #reference-preparation>label{display:block;margin-top:12px}#reference-scope,#reference-provenance{height:6rem;min-height:4rem;font-size:14px}#reference-report,#reference-saved{overflow-wrap:anywhere}#reference-label{width:100%}
+.source-preview:focus-visible{outline:3px solid #9a5c29;outline-offset:2px}

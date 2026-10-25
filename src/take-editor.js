@@ -2,6 +2,7 @@ import {changePassage} from './passage-takes.js';
 import {requireTakeJob,takeRevision,selectedTake,TAKES_PER_PASSAGE,TAKE_BYTES,TAKE_COUNT} from './take-selection.js';
 import {assertSupportedManifest} from './render-provenance.js';
 import {spokenPassage} from './pronunciation.js';
+import {capturePanelFocus} from './panel-focus.js';
 // UI only: inference and atomic selection live in independently testable modules.
 export function createTakeEditor({$,getStore,getJob,isBusy,withLease,generate,owner,onChanged,notify,onBusy}){
  let job=null,takes=[],generation=0,controller=null,reason='',canRender=false;
@@ -11,6 +12,7 @@ export function createTakeEditor({$,getStore,getJob,isBusy,withLease,generate,ow
   $('take-regenerate').disabled=blocked||!canRender||count>=TAKES_PER_PASSAGE||takes.length>=TAKE_COUNT||takes.reduce((n,t)=>n+t.blob.size,0)>=TAKE_BYTES;
   $('take-select').disabled=blocked||$('take-choice').value===selectedTake(job??{},index);
   $('take-undo').disabled=blocked||!job?.takeSelection?.history?.length;
+  $('take-action-hint').textContent=reason||(!job?'Open a saved recording to repair passages.':isBusy()||controller?'Passage actions are unavailable while another operation is running.':!canRender?'New regeneration is unavailable for this historical render contract. Existing takes remain selectable.':count>=TAKES_PER_PASSAGE?'Regeneration is unavailable: this passage already has two alternatives. Original audio and existing takes remain available.':takes.length>=TAKE_COUNT||takes.reduce((n,t)=>n+t.blob.size,0)>=TAKE_BYTES?'Regeneration is unavailable: the recording has reached its alternative-take budget.':'Regeneration is available. Use selected take is unavailable when that take is already active; Undo requires a previous selection change.');
  }
  function passage(){
   if(!job)return;const index=Number($('take-passage').value),p=job.passages[index];
@@ -37,7 +39,7 @@ export function createTakeEditor({$,getStore,getJob,isBusy,withLease,generate,ow
  }
  async function act(action){
   if(isBusy()||controller||reason||!job)return;
-  const snapshot=job,index=Number($('take-passage').value),takeId=$('take-choice').value;
+  const restore=capturePanelFocus(['take-regenerate','take-select','take-undo'],$('take-passage')),snapshot=job,index=Number($('take-passage').value),takeId=$('take-choice').value;
   const active=new AbortController();controller=active;onBusy();controls();notify(action==='regenerate'?'Regenerating the exact selected passage. Stop keeps the existing take.':'Saving passage selection.');
   try{
    const result=await withLease(async lost=>changePassage({store:getStore(),id:snapshot.id,index,action,takeId,revision:takeRevision(snapshot),owner,signal:active.signal,generate:async(...args)=>{const audio=await generate(...args);if(lost())throw Error('Generation ownership lost. Original audio kept.');return audio;}}));
@@ -45,7 +47,7 @@ export function createTakeEditor({$,getStore,getJob,isBusy,withLease,generate,ow
    if(getJob()?.id===snapshot.id){await onChanged(result);await update(result);}
    notify('Passage selection saved. Playback and exports use the selected immutable takes.');
   }catch(error){notify(error.name==='AbortError'?'Passage change stopped. Previously committed takes were kept.':error.message);}
-  finally{if(controller===active)controller=null;onBusy();controls();}
+  finally{if(controller===active)controller=null;onBusy();controls();if(!controller&&getJob()?.id===snapshot.id)restore();}
  }
  $('take-passage').onchange=passage;$('take-choice').onchange=controls;
  $('take-regenerate').onclick=()=>act('regenerate');$('take-select').onclick=()=>act('select');$('take-undo').onclick=()=>act('undo');
