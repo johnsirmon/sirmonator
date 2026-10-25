@@ -1,0 +1,12 @@
+{
+  "schema":1,
+  "baseMain":"0a71bd47b7527ff9a9eb3114257ad6fb7bdc6c59",
+  "branch":"codex/mvp-integration-20261025",
+  "reviewedInputs":{"draftRecovery":"5f52da7f8f39ed648167fc3561567d67ee5b6ec3","localAsr":"ca8bf32382ee830fc582b119872802feb2377fb5"},
+  "history":"Both exact reviewed heads are ancestors via no-fast-forward feature-branch merges; active source branches unchanged.",
+  "staticChecks":{"draftSaveFunctionsMatchReviewedCorrection":true,"reconnectFunctionMatchesReviewedCorrection":true,"autosaveIntentHandlerMatchesReviewedCorrection":true,"asrEditorWiringMatchesReviewedAsr":true,"indexHtmlMatchesReviewedAsr":true,"dependencyAndReferenceAudioChanges":false},
+  "validation":{"focusedCommand":"node --test tests/draft-autosave-ordering.test.js tests/local-asr.test.js tests/fixture-lease.test.js","focusedPassed":22,"defaultCommand":"npm test","tests":403,"passed":403,"failed":0,"skipped":0,"durationMs":36179.7774,"build":"npm run build passed","diffCheck":"passed","ci":"No CI result claimed; local-only integration verification"},
+  "behaviorLimits":["ASR remains separately opted-in, local English, selected saved PCM passage at most 30 seconds; manual supplied-transcript review remains separate.","ASR can hallucinate on silence and does not certify spoken accuracy, completeness, pronunciation or rights.","No combined native inference run or additional model download was performed in this integration checkpoint; reviewed branch evidence remains scoped to its own exact head.","Cloning and four-stage UX branches are still active and are not integrated here.","No main merge, release, deployment or final integration PR; release approval remains pending."],
+  "sharedFileIntegrationNotes":["Retain main.js scheduleSave/flushDraft/remember handler/initialize autosave guards and the autosaveOffNotice helper when integrating UX.","Retain ASR editor options in main.js and separate manual/ASR controls in index.html; do not overwrite manual input with uncertain ASR output.","Preserve ASR abortable capture deadline, selected audio/source/take/revision anchors and late-publication guards.","Personal cloning remains disabled in this checkpoint; do not infer future cloning branch acceptance from this integration."],
+  "next":"Accept only independently reviewed exact cloning/UX heads, then run final combined regression and supported native workflow QA before any separately authorized release."
+}
