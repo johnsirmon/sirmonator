@@ -78,3 +78,8 @@ offline encoder experiment uses real cached model inference on synthetic input.
 UI tests use DOM stubs; this milestone has not had a new browser integration or
 personal speech/subjective acoustic test. Existing browser transport problems
 were not retried. No merge or deployment is included.
+
+Startup correction: initial recording selection now begins before constructing
+the reference editor, so it cannot cancel the editor's initial metadata reload.
+An actual-main bootstrap regression verifies restored Revoke/Forget controls and
+preserves cancellation on later selections.

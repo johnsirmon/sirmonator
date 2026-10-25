@@ -57,6 +57,17 @@ test('guard-only renderer changes preserve archived no-reference jobs and both p
  for(const pronunciation of [undefined,parsePronunciation('Paul => pawl'),{...parsePronunciation('Paul => pawl'),matcher:LEGACY_PRONUNCIATION_MATCHER}]){const settings={...base,...(pronunciation?{pronunciation}:{})},manifest=currentManifest(settings);manifest.source=archived.source;const job=await makeRecording('Paul spoke.',{...settings,renderManifest:manifest});assertSupportedManifest(job.settings);assert.equal(job.source,'Paul spoke.');}
 });
 function elements(){const map=new Map();return id=>{if(!map.has(id))map.set(id,{value:'',checked:false,disabled:false,textContent:'',files:[],listeners:{},addEventListener(type,fn){this.listeners[type]=fn;}});return map.get(id);};}
+test('actual main bootstrap restores reference metadata after initial selection and later selections still cancel',async()=>{
+ const store=await openReferenceStorage(indexedDB,'reference-bootstrap-'+crypto.randomUUID()),receipt=await prepareReference(file(wave()),consent);await store.save(receipt,0);
+ const $=elements(),main=await readFile('src/main.js','utf8'),bootstrap=main.slice(main.indexOf('async function initialize(){'),main.indexOf('\npronunciationEditor=createPronunciationEditor')),
+  selection=main.split('\n').find(line=>line.startsWith('function beginSelection()')),
+  calls=main.split('\n').filter(line=>line==='initialize();'||line.startsWith('referenceEditor=createReferenceEditor(')).join('\n');
+ const context=vm.createContext({$,creating:false,auditionBusy:false,importing:false,quick:false,exporting:false,takeEditor:null,speechReview:null,referenceEditor:undefined,store:null,dirty:false,selectionToken:0,renderToken:0,cancelPreparations(){},controls(){},narratorNote(){},async openStorage(){return {async draft(){return null;}};},async refreshLibrary(){return [];},navigator:{storage:{}},status(){},warn:e=>e.message,
+  createReferenceEditor:options=>createReferenceEditor({...options,repository:store})});
+ vm.runInContext(selection+'\n'+bootstrap+'\n'+calls,context);await context.referenceEditor.ready;
+ assert.match($('reference-saved').textContent,/validated-local-only/);assert.equal($('reference-revoke').disabled,false);assert.equal($('reference-forget').disabled,false);
+ let cancelled=0;context.referenceEditor.cancel=()=>cancelled++;vm.runInContext('beginSelection()',context);assert.equal(cancelled,1);store.close();
+});
 test('actual preparation UI validates synthetic file, saves metadata, reloads and revokes without enabling a narrator',async()=>{
  const store=await openReferenceStorage(indexedDB,'reference-ui-'+crypto.randomUUID()),$=elements(),editor=createReferenceEditor({$,repository:store});await editor.ready;
  for(const [id,value] of [['reference-label',consent.label],['reference-authority','synthetic'],['reference-scope',consent.scope],['reference-provenance',consent.provenance]])$(id).value=value;$('reference-permission').checked=true;$('reference-disclosure').checked=true;$('reference-file').files=[file(wave())];await $('reference-inspect').onclick();assert.match($('reference-report').textContent,/Validated locally/);assert.equal($('reference-save').disabled,false);assert.equal(editor.capabilities.personalSynthesisEnabled,false);
