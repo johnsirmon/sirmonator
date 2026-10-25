@@ -3,7 +3,9 @@ import {loadTextToSpeech,loadVoiceStyle} from './vendor/supertonic.js';
 import {createSpeechRunner} from './speech-runner.js';
 const assets='https://huggingface.co/supertone-oss-archive/supertonic-3/resolve/aafc6e32416a594460b32413efc49d7fe4ce6d46';
 const styles=new Map();
+let runtime;
 const run=createSpeechRunner({
+  onMetrics:metrics=>{runtime={...metrics,dtype:'upstream-model'};},
   // Supertonic's multi-session GPU pipeline can lose its device on integrated
   // graphics. WASM is the compatible default, including embedded browsers.
   initialProvider:'wasm',
@@ -21,5 +23,5 @@ const run=createSpeechRunner({
   release:engine=>Promise.allSettled([engine.dpOrt,engine.textEncOrt,engine.vectorEstOrt,engine.vocoderOrt].map(s=>s.release()))
 });
 export async function supertonic(text,voice,speed,progress){
-  return run({text,voice,speed,progress},progress);
+  const audio=await run({text,voice,speed,progress},progress);return {...audio,runtime};
 }

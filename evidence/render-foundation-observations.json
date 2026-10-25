@@ -1,0 +1,152 @@
+{
+  "kind": "Foundation observability/provenance verification; no acoustic-quality claim",
+  "base": "696d97105416b87d517018e27712a230015a4b45",
+  "host": "DESKTOP-9BUQ5MF",
+  "workspace": "C:/source/Tina/sermon-reader",
+  "runtime": "v24.21.0",
+  "platform": "win32",
+  "manifestHash": "816e576c2d7ef6677e9d8d12f65954921862d1073b1f8c5ddbc6fb25337d4cb0",
+  "renderSourceHash": "6fec41d5f5006b8a66aa4f3d9f9a22d0ee1942268d78600f340d07a098b56343",
+  "model": "onnx-community/Kokoro-82M-v1.0-ONNX",
+  "revision": "1939ad2a8e416c0acfeecc08a694d14ef25f2231",
+  "verification": {
+    "kind": "Actual production worker adapted only for Node CPU/offline files; no new model download",
+    "verifiedLocalFiles": [
+      {
+        "name": "config.json",
+        "bytes": 44,
+        "hash": "790faf216e7e3f490e71e8bc80df79ed8941101c"
+      },
+      {
+        "name": "tokenizer.json",
+        "bytes": 3497,
+        "hash": "4280f55fc1c32211bc9bb4d55545759a00054ecd"
+      },
+      {
+        "name": "tokenizer_config.json",
+        "bytes": 113,
+        "hash": "5c81e9a3a06db9139900d6ee5b60e8bb701ccb0b"
+      },
+      {
+        "name": "onnx/model_quantized.onnx",
+        "bytes": 92361116,
+        "hash": "fbae9257e1e05ffc727e951ef9b9c98418e6d79f1c9b6b13bd59f5c9028a1478"
+      }
+    ],
+    "workerSourceSHA256": "70e2942de00918fd186ead596e2ca24f943ce8ffb27ecdc94c9796155345c0e1",
+    "workerCreations": 1,
+    "sourceExact": true,
+    "voice": "af_sarah",
+    "limitations": "One local run, not a speedup benchmark, browser/phone test or acoustic quality/word-accuracy validation."
+  },
+  "performance": {
+    "passages": 2,
+    "measured": 2,
+    "missing": 0,
+    "renderMs": 15234.558300000002,
+    "loadMs": 1230.005,
+    "inferenceMs": 13941.5528,
+    "modelLoadAttempts": 1,
+    "providers": [
+      "cpu"
+    ],
+    "note": "Measured successful passages only; cancelled/failed attempts are not retained. Render time includes loading. Timing does not measure spoken accuracy."
+  },
+  "passages": [
+    {
+      "index": 0,
+      "start": 0,
+      "end": 68,
+      "seconds": 5.53,
+      "format": "pcm-s16le",
+      "sampleRate": 24000,
+      "sampleCount": 132720,
+      "renderManifestHash": "816e576c2d7ef6677e9d8d12f65954921862d1073b1f8c5ddbc6fb25337d4cb0",
+      "metrics": {
+        "schema": 1,
+        "engine": "kokoro",
+        "provider": "cpu",
+        "dtype": "q8",
+        "renderMs": 9678.954300000001,
+        "loadMs": 1230.005,
+        "inferenceMs": 8386.1906,
+        "postprocessMs": 5.5645999999997,
+        "encodingMs": 0,
+        "totalMs": 9684.518900000001,
+        "modelLoadAttempts": 1,
+        "retries": 0,
+        "modelState": "loaded-this-request",
+        "synthesisAudioSeconds": 5.05,
+        "outputAudioSeconds": 5.53,
+        "format": "pcm-s16le",
+        "renderRTF": 1.9166246138613865,
+        "encoding": "deferred-to-artifact"
+      }
+    },
+    {
+      "index": 1,
+      "start": 68,
+      "end": 134,
+      "seconds": 5.05,
+      "format": "pcm-s16le",
+      "sampleRate": 24000,
+      "sampleCount": 121200,
+      "renderManifestHash": "816e576c2d7ef6677e9d8d12f65954921862d1073b1f8c5ddbc6fb25337d4cb0",
+      "metrics": {
+        "schema": 1,
+        "engine": "kokoro",
+        "provider": "cpu",
+        "dtype": "q8",
+        "renderMs": 5555.604000000001,
+        "loadMs": 0,
+        "inferenceMs": 5555.3622,
+        "postprocessMs": 5.393199999998615,
+        "encodingMs": 0,
+        "totalMs": 5560.9972,
+        "modelLoadAttempts": 0,
+        "retries": 0,
+        "modelState": "reused",
+        "synthesisAudioSeconds": 5.05,
+        "outputAudioSeconds": 5.05,
+        "format": "pcm-s16le",
+        "renderRTF": 1.1001196039603964,
+        "encoding": "deferred-to-artifact"
+      }
+    }
+  ],
+  "preparations": [
+    {
+      "chapter": null,
+      "through": 2,
+      "metrics": {
+        "schema": 1,
+        "encodingMs": 389.52779999999984,
+        "initializationMs": 30.830299999999625,
+        "workerElapsedMs": 424.3048999999992,
+        "inputSamples": 253920,
+        "sampleRate": 24000,
+        "passages": 2,
+        "bytes": 85056,
+        "phase": "single-artifact-mp3",
+        "preparationMs": 473.511599999998,
+        "preparedAt": 1792886921423
+      }
+    }
+  ],
+  "decodeExit": 0,
+  "ui": {
+    "browser": "Edge",
+    "origin": "http://127.0.0.1:4184/",
+    "reportDownloadedAndParsed": true,
+    "fixture": "Offline CPU-rendered PCM and actual observations imported to real browser storage; no browser TTS or model downloads",
+    "note": "The UI fixture predates the final catalog refresh, exercising readable historical manifest/report handling. Current catalog inference was verified separately offline."
+  },
+  "limits": [
+    "No new weights downloaded",
+    "No subjective listening or acoustic transcript check",
+    "No browser WebGPU/WASM inference using new pinned URLs",
+    "No Supertonic/Pocket inference",
+    "No phone/long-form stress run",
+    "The final real-render run overlapped local validation work; timings are observations, not an isolated cold/warm speed comparison."
+  ]
+}

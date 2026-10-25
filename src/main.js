@@ -1,14 +1,15 @@
 import {createSynthesisClient} from './synthesis-client.js';
-import {CONTINUITY_PIPELINE,LEGACY_PIPELINE,abortable,assertActive} from './continuity.js';
+import {abortable,assertActive} from './continuity.js';
+import {FOUNDATION_PIPELINE} from './engine-specs.js';
 import {createChapterCache} from './chapter-cache.js';
 import {episodePackage,packageZip,appleValidationUrl,publicUrl} from './podcast.js';
 import './style.css';
 import {voices as catalog,getVoice,voiceCapabilities} from './voices.js';
 import {auditionUrl,createAuditionPlayer} from './audition-player.js';
 import {characterVoice} from './character-settings.js';
-import {chaptersFor,selectedText,makeRecording,MAX_DOCUMENT,MAX_READING,safeFilename} from './recording.js';
+import {chaptersFor,selectedText,makeRecording,normalizeSettings,MAX_DOCUMENT,MAX_READING,safeFilename} from './recording.js';
 import {openStorage} from './storage.js';
-import {runRecording,recordingBlob,validateCheckpoint} from './job-runner.js';
+import {runRecording,recordingBlob,validateCheckpoint,renderReport} from './job-runner.js';
 import {importDocument} from './import-document.js';
 const $=id=>document.getElementById(id),base=import.meta.env.BASE_URL;
 let store,chapters=[],deviceVoices=[],selectedJob=null;
@@ -29,13 +30,13 @@ function controls(){
   $('stop').textContent=exporting||playbackController||chapterCache.preparing?'Cancel audio preparation':'Cancel creation';
   $('delete-recording').disabled=busy()||!$('saved-recordings').value;
   if(!busy())$('open-recording').disabled=!$('saved-recordings').value;
-  for(const id of ['download','download-chapter','share'])$(id).disabled=exporting||!selectedJob?.next;
+  for(const id of ['download','download-chapter','share','render-report'])$(id).disabled=exporting||!selectedJob?.next;
   document.querySelectorAll('#podcast-prep input,#podcast-prep select,#podcast-prep textarea').forEach(input=>input.disabled=busy());
   $('pod-export').disabled=busy()||!selectedJob||selectedJob.next!==selectedJob.passages.length;
   podcastHandoff();
 }
 const audition=createAuditionPlayer({audio:$('audition-audio'),setBusy:value=>{auditionBusy=value;controls();},notify:status});
-function settings(){return {voice:$('voice').value,edition:$('voice-edition').value,speed:Number($('speed').value),delivery:$('delivery').value,pipeline:CONTINUITY_PIPELINE};}
+function settings(){return {voice:$('voice').value,edition:$('voice-edition').value,speed:Number($('speed').value),delivery:$('delivery').value,pipeline:FOUNDATION_PIPELINE};}
 function fillVoices(){
   const prior=$('voice').value;deviceVoices=window.speechSynthesis?.getVoices()??[];$('voice').replaceChildren();
   const entries=$('engine').value==='studio'?catalog.map(v=>[v.id,`${v.name} · ${v.detail}`]):deviceVoices.map((v,i)=>[String(i),`${v.name} · ${v.lang}`]);
@@ -75,8 +76,8 @@ function preflight(){
   const text=rangeText();if(!text.trim()){$('preflight').textContent='Add text to see listening time and download details.';return;}
   const minutes=countWords(text)/150,profile=$('engine').value==='studio'?getVoice($('voice').value):null;
   if(!profile){$('preflight').textContent=`About ${Math.ceil(minutes)} minutes of device speech. No download or saved audio.`;return;}
-  const mb=profile.engine==='pocket'?150:profile.engine==='supertonic'?400:100;
-  $('preflight').textContent=`About ${Math.ceil(minutes/Number($('speed').value))} min listening · estimated MP3 ${(minutes/Number($('speed').value)*.48).toFixed(1)} MB. Smooth recordings keep uncompressed local checkpoints (about 3–6 MB/min); MP3 preparation takes additional time. First voice use may download about ${mb} MB; cached files may be reused. Creation time depends on your device.`;
+  const mb=profile.engine==='pocket'?150:profile.engine==='supertonic'?400:'93–326';
+  $('preflight').textContent=`About ${Math.ceil(minutes/Number($('speed').value))} min listening · estimated MP3 ${(minutes/Number($('speed').value)*.48).toFixed(1)} MB. Smooth recordings keep uncompressed local checkpoints (about 3–6 MB/min); MP3 preparation takes additional time. First voice use may download about ${mb} MB; pinned model URLs may need a fresh cache even after earlier versions. Creation time depends on your device.`;
 }
 function draft(){return {text:$('text').value,title:$('title').value,settings:settings(),engine:$('engine').value,review:$('review').checked,from:Number($('range-from').value),to:Number($('range-to').value),updatedAt:Date.now()};}
 function scheduleSave(){dirty=true;clearTimeout(draftTimer);if(!$('remember').checked){$('save-status').textContent='Draft autosave is off. Created recordings are saved separately.';return;}$('save-status').textContent='Saving draft…';draftTimer=setTimeout(()=>queueSave(),350);}
@@ -98,6 +99,7 @@ async function refreshLibrary(){
 }
 function availableChapters(job){return [...new Set(job.passages.slice(0,job.next).map(p=>p.chapter))];}
 function displayProgress(job){
+  renderDetails(job);
   $('recording-title').textContent=job.title;
   $('recording-status').textContent=`${getVoice(job.settings.voice).name} · ${job.settings.edition} · ${job.next} of ${job.passages.length} passages saved · ${job.next===job.passages.length?'Complete recording':'Incomplete — saved audio only'}. ${Math.round(job.seconds/60)} min saved.`;
   $('resume-recording').hidden=job.next===job.passages.length||creating;
@@ -127,7 +129,8 @@ async function loadChapter(chapter,time=0){
   try{const job=await abortable(store.job(id),controller.signal);if(!current())return;
     if(job?.id!==id)throw Error('The selected recording is no longer available.');
     await abortable(validateCheckpoint(store,job),controller.signal);if(!current())return;
-    const {blob}=await abortable(chapterCache.get(job,chapter),controller.signal);if(!current()||controller.signal.aborted)return;
+    const {blob,metrics,metricsPersisted}=await abortable(chapterCache.get(job,chapter),controller.signal);if(!current()||controller.signal.aborted)return;
+    renderDetails(job,metrics,metricsPersisted);
     $('audio').pause();if(audioURL)URL.revokeObjectURL(audioURL);audioURL=URL.createObjectURL(blob);loadedChapter=chapter;loadedThrough=job.next;loadedJobId=job.id;selectedJob=job;$('play-chapter').value=String(chapter);
     $('audio').onloadedmetadata=()=>{if(current()&&loadedJobId===id&&Number.isFinite($('audio').duration))$('audio').currentTime=Math.max(0,Math.min(time,$('audio').duration-.05));};
     $('audio').src=audioURL;$('audio').playbackRate=Number($('playback-speed').value);mediaControls(job);
@@ -135,6 +138,15 @@ async function loadChapter(chapter,time=0){
     return true;
   }catch(error){if(current())$('export-status').textContent=warn(error);}
   finally{if(playbackController===controller)playbackController=null;controls();}
+}
+function renderDetails(job,preparation,persisted){
+ const note=job.settings?.renderManifest?'Frozen render inputs saved. Pinned inputs do not guarantee identical speech across devices.':'Legacy recording: historical model/voice revision was not recorded. Playback and export are preserved; new recordings use pinned inputs.';
+ $('render-provenance').textContent=note;
+ const p=job.performance;
+ $('render-performance').textContent=p?`Measured ${p.measured} of ${job.next} saved passages: ${(p.renderMs/1000).toFixed(2)} s render including ${(p.loadMs/1000).toFixed(2)} s loading; ${(p.inferenceMs/1000).toFixed(2)} s engine calls; ${p.providers.join(', ')}. Cancelled attempts are not included.`:'No durable render timing was recorded for these passages.';
+ if(preparation)$('artifact-performance').textContent=`This artifact: ${(preparation.preparationMs/1000).toFixed(2)} s preparation, ${(preparation.encodingMs/1000).toFixed(2)} s MP3 encoding (separate from synthesis). Timing does not measure speech accuracy.${persisted===false?' Preparation timing could not be retained on this device.':''}`;
+ else $('artifact-performance').textContent='MP3 preparation timing appears when an artifact is prepared.';
+ $('render-report').disabled=busy()||!job.next;
 }
 function mediaControls(job){
   if(!navigator.mediaSession)return;
@@ -148,7 +160,7 @@ const synthesisClient=createSynthesisClient({
  onStage:status,onLoading:data=>status(`Downloading voice: ${Math.round(data.progress??0)}% of ${data.file??'file'}. Keep this page open.`)
 });
 function killWorker(){synthesisClient.cancel();}
-function generate(text,voiceSettings,last){return synthesisClient.generate({text,settings:voiceSettings,last},getVoice(voiceSettings.voice).engine);}
+function generate(text,voiceSettings,last,preview=false){const normalized=normalizeSettings(voiceSettings);return synthesisClient.generate({text,settings:normalized,last,preview},getVoice(normalized.voice).engine+':'+(normalized.pipeline===FOUNDATION_PIPELINE?'frozen':'legacy'));}
 async function withLease(action){
   const execute=async force=>{
     if(!await store.claim(owner,force))throw Error('Another window is creating audio. If it was closed, try Resume again in 20 seconds.');
@@ -206,7 +218,7 @@ async function exportAudio({chapter=null,share=false}={}){
   if(exporting||!selectedJob)return;exporting=true;controls();$('export-status').textContent='Preparing saved MP3 passages…';
   const id=selectedJob.id,selection=selectionToken,controller=new AbortController();exportController=controller;
   const options={signal:controller.signal,isCurrent:()=>selectedJob?.id===id&&selectionToken===selection},check=()=>assertActive(options);
-  try{const job=await abortable(store.job(id),controller.signal);check();const {blob}=await recordingBlob(store,job,chapter,undefined,options);check();
+  try{const job=await abortable(store.job(id),controller.signal);check();const {blob,metrics,metricsPersisted}=await recordingBlob(store,job,chapter,undefined,options);check();renderDetails(job,metrics,metricsPersisted);
     const partial=job.next<job.passages.length;const filename=safeFilename(job.title)+(chapter!==null?'-chapter-'+(chapter+1):'')+(partial?'-partial':'')+'.mp3';
     const file=new File([blob],filename,{type:'audio/mpeg'});
     if(share){if(!navigator.canShare?.({files:[file]}))throw Error('File sharing is unavailable here. Use Save MP3 instead.');await navigator.share({files:[file],title:job.title});$('export-status').textContent='Share sheet closed. Your saved recording is still available.';}
@@ -218,7 +230,7 @@ $('pause').onclick=()=>{if(quick){quickPaused=!quickPaused;quickPaused?window.sp
 $('stop').onclick=()=>{killWorker();cancelPreparations();renderToken++;if(creating){cancelled=true;status('Cancelled the current passage. Completed passages are saved.');}else if(quick){quick=false;window.speechSynthesis.cancel();controls();status('Quick listening stopped.');}else{audition.stop();status('Audio preparation cancelled. Saved passages were kept.');}};
 $('preview').onclick=()=>{if($('engine').value==='studio')audition.play(auditionUrl($('voice').value,base,$('voice-edition').value));else quickListen('Good morning, church. Let us begin.');};
 $('custom-preview').onclick=async()=>{if(busy())return;const first=rangeText().split(/\n\s*\n/)[0].slice(0,240);if(!first.trim()){status('Add text first.');return;}if($('engine').value==='device'){quickListen(first);return;}
-  creating=true;cancelled=false;controls();try{const audio=await generate(first,{...settings(),pipeline:LEGACY_PIPELINE},true);if(previewURL)URL.revokeObjectURL(previewURL);previewURL=URL.createObjectURL(new Blob([audio.bytes],{type:'audio/mpeg'}));$('audition-audio').src=previewURL;$('audition-audio').hidden=false;$('audition-audio').play().catch(()=>{});status('Your passage preview is ready. Press Play in the sample player.');}catch(error){status(warn(error));}finally{creating=false;synthesisClient.idle();controls();}
+  creating=true;cancelled=false;controls();try{const audio=await generate(first,settings(),true,true);if(previewURL)URL.revokeObjectURL(previewURL);previewURL=URL.createObjectURL(new Blob([audio.bytes],{type:'audio/mpeg'}));$('audition-audio').src=previewURL;$('audition-audio').hidden=false;$('audition-audio').play().catch(()=>{});status('Your passage preview is ready. Press Play in the sample player.');}catch(error){status(warn(error));}finally{creating=false;synthesisClient.idle();controls();}
 };
 $('engine').onchange=()=>{fillVoices();narratorNote();scheduleSave();};$('voice').onchange=()=>{$('voice-edition').value='refined';narratorNote();scheduleSave();};
 for(const id of ['voice-edition','delivery','speed'])$(id).onchange=()=>{narratorNote();scheduleSave();};$('speed').oninput=()=>{$('speed-value').textContent=Number($('speed').value)+'×';preflight();};
@@ -292,3 +304,10 @@ async function flushPodcast(){
 }
 $('podcast-prep').addEventListener('input',()=>{if(!selectedJob||!store)return;podcastPending={id:selectedJob.id,fields:podcastFields()};clearTimeout(podcastSaveTimer);podcastSaveTimer=setTimeout(()=>flushPodcast().catch(error=>{$('pod-status').textContent=warn(error);}),300);podcastHandoff();});
 window.addEventListener('pagehide',()=>flushPodcast().catch(()=>{}));
+
+$('render-report').onclick=async()=>{
+ if(busy()||!selectedJob||!store)return;const id=selectedJob.id,selection=selectionToken,controller=new AbortController();exportController=controller;exporting=true;controls();
+ const check=()=>assertActive({signal:controller.signal,isCurrent:()=>selectedJob?.id===id&&selectionToken===selection});
+ try{const job=await abortable(store.job(id),controller.signal);check();const report=await abortable(renderReport(store,job),controller.signal);check();saveFile(new Blob([JSON.stringify(report,null,2)],{type:'application/json'}),safeFilename(job.title)+'-render-report.json');$('export-status').textContent='Render report download started. Historical unknowns remain labeled.';}
+ catch(error){$('export-status').textContent=warn(error);}finally{if(exportController===controller)exportController=null;exporting=false;controls();}
+};

@@ -1,5 +1,6 @@
 export const LEGACY_PIPELINE='mp3-passages-v1-2026-10-23';
 export const CONTINUITY_PIPELINE='pcm-passages-v2-2026-10-24';
+export const isPcmPipeline=pipeline=>pipeline===CONTINUITY_PIPELINE||pipeline==='pcm-manifest-v3-2026-10-24';
 export function validatePcm({sampleRate,sampleCount,channels,format},bytes){
   if(format!=='pcm-s16le'||channels!==1||![22050,24000,44100,48000].includes(sampleRate)||
      !Number.isSafeInteger(sampleCount)||sampleCount<0||sampleCount>sampleRate*300||bytes!==sampleCount*2)
@@ -25,7 +26,8 @@ export function abortable(promise,signal){
     if(signal.aborted)abort();
   });
 }
-export async function encodePcmParts(parts,sampleRate,{createWorker=()=>new Worker(new URL('./mp3-export-worker.js',import.meta.url),{type:'module'}),isCurrent=()=>true,signal,maxBytes=96*1024*1024}={}){
+export async function encodePcmParts(parts,sampleRate,{createWorker=()=>new Worker(new URL('./mp3-export-worker.js',import.meta.url),{type:'module'}),isCurrent=()=>true,signal,onMetrics=()=>{},maxBytes=96*1024*1024}={}){
+  const started=performance.now();
   const check=()=>assertActive({signal,isCurrent});check();
   const worker=createWorker();let pending;
   const abort=()=>{worker.terminate();pending?.reject(new DOMException('Audio preparation cancelled.','AbortError'));pending=null;};
@@ -42,6 +44,7 @@ export async function encodePcmParts(parts,sampleRate,{createWorker=()=>new Work
       if(part.sampleRate!==sampleRate)throw Error('PCM checkpoint sample rate changed.');
       const bytes=await abortable(part.blob.arrayBuffer(),signal);check();await send({type:'part',bytes},[bytes]);check();
     }
-    check();const result=await send({type:'finish'});check();return new Blob(result.parts,{type:'audio/mpeg'});
+    check();const result=await send({type:'finish'});check();const blob=new Blob(result.parts,{type:'audio/mpeg'});
+    if(result.metrics)onMetrics({...result.metrics,preparationMs:performance.now()-started,preparedAt:Date.now()});return blob;
   }finally{signal?.removeEventListener('abort',abort);worker.terminate();}
 }
