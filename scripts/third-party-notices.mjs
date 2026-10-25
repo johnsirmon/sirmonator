@@ -1,9 +1,10 @@
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 
-// Emit canonical repository bytes rather than maintaining duplicate licenses.
+// Emit canonical repository/installed-package bytes without duplicate licenses.
 // These notices address the named components, not a complete license audit.
 export const noticeAssets=[
+ ['node_modules/kokoro-js/LICENSE','vendor/KOKORO-LICENSE.txt'],
  ['src/vendor/SOUNDTOUCH-LICENSE','vendor/SOUNDTOUCH-LICENSE.txt'],
  ['src/vendor/SUPERTONIC-LICENSE','vendor/SUPERTONIC-LICENSE.txt'],
  ['src/vendor/SUPERTONIC-MODEL-LICENSE','vendor/SUPERTONIC-MODEL-LICENSE.txt'],

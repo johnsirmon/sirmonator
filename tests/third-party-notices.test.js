@@ -11,7 +11,8 @@ import {noticeAssets,thirdPartyNotices} from '../scripts/third-party-notices.mjs
 test('notice evidence distinguishes canonical Git blobs from platform artifact bytes',async()=>{
  const evidence=JSON.parse(await readFile('evidence/shipped-notices-review.json','utf8')),hash=bytes=>createHash('sha256').update(bytes).digest('hex');
  assert.equal(evidence.schema,2);assert.equal(evidence.buildContext.platform,'win32');assert.match(evidence.buildContext.byteConvention,/No cross-platform artifact identity/);
- assert.equal(evidence.notices.length,noticeAssets.length);
+ // This is an archived five-file Windows build, not a current inventory count.
+ assert.equal(evidence.notices.length,5);for(const record of evidence.notices)assert.ok(noticeAssets.some(([source,target])=>source===record.source&&target===record.shipped));
  for(const record of evidence.notices){
   // HEAD also works in a shallow checkout; compare its bytes to the recorded
   // canonical digest rather than requiring the historical build commit locally.
@@ -24,6 +25,13 @@ test('notice evidence distinguishes canonical Git blobs from platform artifact b
   const windows=Buffer.from(canonical.toString('utf8').replaceAll('\n','\r\n'));
   assert.equal(hash(windows),record.checkout.sha256);assert.equal(windows.length,record.checkout.bytes);
  }
+});
+
+test('Kokoro runtime notice comes from the exact installed locked package, without assuming voice rights',async()=>{
+ const installed=JSON.parse(await readFile('node_modules/kokoro-js/package.json','utf8')),lock=JSON.parse(await readFile('package-lock.json','utf8'));
+ assert.equal(installed.version,'1.2.1');assert.equal(installed.version,lock.packages['node_modules/kokoro-js'].version);assert.equal(installed.license,'Apache-2.0');
+ assert.ok(noticeAssets.some(([source,target])=>source==='node_modules/kokoro-js/LICENSE'&&target==='vendor/KOKORO-LICENSE.txt'));
+ const notice=await readFile('public/vendor/THIRD-PARTY-NOTICES.html','utf8');assert.match(notice,/KOKORO-LICENSE\.txt/);assert.match(notice,/not a blanket voice license/);
 });
 
 test('development notice links serve the same canonical bytes without a catch-all route',async()=>{
