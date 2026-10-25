@@ -31,8 +31,19 @@ test('empty and malformed diagnostic inputs cannot fabricate measured speech',()
  const acc=createPcmReviewStats({sampleRate:rate});assert.equal(acc.finish().allNearSilence,false);assert.equal(acc.finish().peak,null);assert.throws(()=>acc.addPcm16(new ArrayBuffer(3)),/Invalid/);assert.throws(()=>createPcmReviewStats({sampleRate:1}));assert.equal(validPcmReview({schema:2}),false);assert.match(pcmReviewSummary(null),/not measured/);
 });
 test('report diagnostics mark historical or stale artifacts not measured and retain chapter scope',()=>{
- const acc=createPcmReviewStats({sampleRate:rate});acc.addPcm16(quantizePcm(tone(1)));const diag=acc.finish(),report={passages:[{}],takeSelection:{revision:0},preparations:[]};assert.equal(withPcmReviewReport(report).pcmReview.status,'not-measured');
- const preparation={chapter:2,through:1,takeRevision:0,metrics:{pcmReview:diag}};report.preparations.push(preparation);const measured=withPcmReviewReport(report);assert.equal(measured.pcmReview.status,'measured-artifacts');assert.equal(measured.pcmReview.artifacts[0].chapter,2);assert.match(measured.pcmReview.scope,/do not claim to cover the entire recording/);assert.equal(withPcmReviewReport({...report,takeSelection:{revision:1}}).pcmReview.status,'not-measured');assert.equal(withPcmReviewReport({...report,passages:[{},{}]}).pcmReview.status,'not-measured');assert.equal(report.pcmReview,undefined);
+ const acc=createPcmReviewStats({sampleRate:rate});acc.addPcm16(quantizePcm(tone(1)));const diag=acc.finish(),report={recordingId:'fixture',passages:[{index:0,start:0,end:1,format:'pcm-s16le',sampleCount:rate,sampleRate:rate}],takeSelection:{revision:0},preparations:[]},job={id:'fixture',passages:[{start:0,end:1,chapter:2}]};assert.equal(withPcmReviewReport(report,job).pcmReview.status,'not-measured');
+ const preparation={chapter:2,through:1,takeRevision:0,metrics:{sampleRate:rate,inputSamples:rate,passages:1,pcmReview:diag}};report.preparations.push(preparation);const measured=withPcmReviewReport(report,job);assert.equal(measured.pcmReview.status,'measured-artifacts');assert.equal(measured.pcmReview.artifacts[0].chapter,2);assert.match(measured.pcmReview.scope,/do not claim to cover the entire recording/);assert.equal(withPcmReviewReport({...report,takeSelection:{revision:1}},job).pcmReview.status,'not-measured');assert.equal(withPcmReviewReport({...report,passages:[{},{}]},job).pcmReview.status,'not-measured');assert.equal(report.pcmReview,undefined);
+});
+test('impossible persisted PCM16 levels, contradictory flags and non-string hints remain not measured',()=>{
+ const acc=createPcmReviewStats({sampleRate:rate});acc.addPcm16(quantizePcm(tone(1)));const value=acc.finish();
+ for(const changed of [{peak:100,rms:100},{outOfRangeSamples:1},{nonFiniteSamples:1,finiteSamples:value.sampleCount-1},{allNearSilence:true},{longQuietSpan:true},{reviewHints:[{}]},{thresholds:{quietAmplitude:.2,nearFullScaleAmplitude:.3,longQuietSeconds:0}},{analysisMs:Infinity}]){assert.equal(validPcmReview({...value,...changed}),false,JSON.stringify(changed));assert.match(pcmReviewSummary({...value,...changed}),/not measured/);}
+});
+test('report diagnostics reconcile current artifact samples/rate against included selected passages',()=>{
+ const acc=createPcmReviewStats({sampleRate:rate});acc.addPcm16(quantizePcm(tone(1)));const value=acc.finish(),base={recordingId:'fixture',passages:[{index:0,start:0,end:1,format:'pcm-s16le',sampleRate:rate,sampleCount:rate}],preparations:[{chapter:null,through:1,takeRevision:0,metrics:{pcmReview:value,sampleRate:rate,inputSamples:rate,passages:1}}]};
+ assert.equal(withPcmReviewReport(base).pcmReview.status,'measured-artifacts');
+ for(const sampleCount of [null,rate-1,rate+1])assert.equal(withPcmReviewReport({...base,passages:[{...base.passages[0],sampleCount}]}).pcmReview.status,'not-measured');
+ const chapter={...base,preparations:[{...base.preparations[0],chapter:0}]};assert.equal(withPcmReviewReport(chapter).pcmReview.status,'not-measured');assert.equal(withPcmReviewReport(chapter,{id:'fixture',passages:[{start:0,end:1,chapter:0}]}).pcmReview.status,'measured-artifacts');assert.equal(withPcmReviewReport(chapter,{id:'other',passages:[{start:0,end:1,chapter:0}]}).pcmReview.status,'not-measured');
+ assert.equal(base.passages[0].sampleCount,rate);
 });
 
 async function fixture(samples=tone(1)){
@@ -53,5 +64,5 @@ test('diagnostic calculation failure and optional metadata quota failure cannot 
 test('actual app preparation selects the diagnostic worker while preserving caller cancellation options',async()=>{
  const main=await readFile('src/main.js','utf8'),line=main.split('\n').find(line=>line.startsWith('function recordingBlob('));assert.ok(line.includes("'./mp3-review-worker.js'"));let captured;const signal=new AbortController().signal;
  const context=vm.createContext({signal,encodeRecordingBlob:(...args)=>captured=args,customWorker(){}});vm.runInContext(line.replaceAll('import.meta.url',"'https://example.invalid/app.js'")+'\nrecordingBlob({}, {}, 2, 1024, {signal,createWorker:customWorker});',context);assert.equal(captured[2],2);assert.equal(captured[3],1024);assert.equal(captured[4].createWorker,context.customWorker);assert.equal(captured[4].signal,signal);
- assert.match(main,/JSON\.stringify\(withPcmReviewReport\(report\),null,2\)/);assert.match(main,/pcmReviewSummary\(preparation\?\.pcmReview\)/);assert.equal(signal.aborted,false);
+ assert.match(main,/JSON\.stringify\(withPcmReviewReport\(report(?:,job)?\),null,2\)/);assert.match(main,/pcmReviewSummary\(preparation\?\.pcmReview\)/);assert.equal(signal.aborted,false);
 });

@@ -1,6 +1,7 @@
 export const PCM_REVIEW_METHOD='pcm-review-v1';
 export const PCM_REVIEW_NOTE='Review hints only, not proof of omitted words, clipping or poor sound. Quiet spans include deliberate and engine pauses. PCM16 measurements cannot detect non-finite or over-range values before quantization. No audio is corrected or rejected by these diagnostics.';
 const rates=[22050,24000,44100,48000],quiet=.001,nearFullScale=.999,longQuietSeconds=3;
+function expectedHints(value){const hints=[];if(value.allNearSilence)hints.push('all-near-silence');if(value.longQuietSpan)hints.push('long-quiet-span-may-be-intentional');if(value.nearFullScaleSamples)hints.push('near-full-scale-not-clipping-proof');if(value.nonFiniteSamples)hints.push('non-finite-input');if(value.outOfRangeSamples)hints.push('over-range-float-input');return hints;}
 
 // Constant-memory, single-pass statistics; chunks never need concatenation.
 export function createPcmReviewStats({sampleRate,domain='pcm-s16le'}={}){
@@ -19,7 +20,7 @@ export function createPcmReviewStats({sampleRate,domain='pcm-s16le'}={}){
   addFloat32(samples){for(const value of samples)add(value);},
   finish(){
    const finiteSamples=sampleCount-nonFiniteSamples,allNearSilence=sampleCount>0&&quietSamples===sampleCount,longQuietSpan=longestQuietSamples>=sampleRate*longQuietSeconds;
-   const reviewHints=[];if(allNearSilence)reviewHints.push('all-near-silence');if(longQuietSpan)reviewHints.push('long-quiet-span-may-be-intentional');if(nearFullScaleSamples)reviewHints.push('near-full-scale-not-clipping-proof');if(nonFiniteSamples)reviewHints.push('non-finite-input');if(outOfRangeSamples)reviewHints.push('over-range-float-input');
+   const reviewHints=expectedHints({allNearSilence,longQuietSpan,nearFullScaleSamples,nonFiniteSamples,outOfRangeSamples});
    return {schema:1,method:PCM_REVIEW_METHOD,status:'measured',domain,sampleRate,sampleCount,seconds:sampleCount/sampleRate,finiteSamples,nonFiniteSamples,peak:finiteSamples?peak:null,rms:finiteSamples?scale*Math.sqrt(sumSquares/finiteSamples):null,quietSamples,longestQuietSamples,longestQuietSeconds:longestQuietSamples/sampleRate,nearFullScaleSamples,outOfRangeSamples,allNearSilence,longQuietSpan,thresholds:{quietAmplitude:quiet,nearFullScaleAmplitude:nearFullScale,longQuietSeconds},rawFloatNonFiniteSamples:domain==='float32'?nonFiniteSamples:null,includesIntentionalPauses:true,reviewHints,note:PCM_REVIEW_NOTE};
   },
  };
@@ -31,7 +32,16 @@ export function validPcmReview(value){
  if(value.seconds!==value.sampleCount/value.sampleRate||value.longestQuietSeconds!==value.longestQuietSamples/value.sampleRate)return false;
  if(value.nearFullScaleSamples>value.finiteSamples||value.outOfRangeSamples>value.finiteSamples)return false;
  if(value.finiteSamples){if(!Number.isFinite(value.peak)||!Number.isFinite(value.rms)||value.rms<0||value.peak+1e-12<value.rms)return false;}else if(value.peak!==null||value.rms!==null)return false;
- return Array.isArray(value.reviewHints)&&value.reviewHints.length<=5&&value.includesIntentionalPauses===true;
+ if(value.domain==='pcm-s16le'&&(value.peak>1||value.rms>1||value.nonFiniteSamples!==0||value.outOfRangeSamples!==0||value.rawFloatNonFiniteSamples!==null))return false;
+ if(value.domain==='float32'&&value.rawFloatNonFiniteSamples!==value.nonFiniteSamples)return false;
+ if(value.thresholds?.quietAmplitude!==quiet||value.thresholds?.nearFullScaleAmplitude!==nearFullScale||value.thresholds?.longQuietSeconds!==longQuietSeconds)return false;
+ if(value.allNearSilence!==(value.sampleCount>0&&value.quietSamples===value.sampleCount)||value.longQuietSpan!==(value.longestQuietSamples>=value.sampleRate*longQuietSeconds))return false;
+ if((value.quietSamples===0)!==(value.longestQuietSamples===0)||(value.allNearSilence&&value.longestQuietSamples!==value.sampleCount)||value.quietSamples+value.nearFullScaleSamples>value.finiteSamples)return false;
+ if(value.finiteSamples&&((value.peak<=quiet)!==(value.quietSamples===value.finiteSamples)))return false;
+ if((value.nearFullScaleSamples>0)!==(value.peak>=nearFullScale)||(value.outOfRangeSamples>0)!==(value.peak>1))return false;
+ if(value.analysisMs!==undefined&&(!Number.isFinite(value.analysisMs)||value.analysisMs<0))return false;
+ const hints=expectedHints(value);
+ return Array.isArray(value.reviewHints)&&value.reviewHints.length===hints.length&&hints.every((hint,index)=>value.reviewHints[index]===hint)&&value.includesIntentionalPauses===true;
 }
 
 // Decorate the existing codec, rather than changing encoding or render inputs.
@@ -56,8 +66,20 @@ export function pcmReviewSummary(value){
  const levels=value.peak===null?'no finite samples':`peak ${value.peak.toFixed(3)}, RMS ${value.rms.toFixed(3)}`;
  return `PCM review: ${value.sampleCount.toLocaleString()} samples, ${value.seconds.toFixed(2)} s, ${levels}; ${value.reviewHints.length} review hints. Includes deliberate pauses; not a word or sound-quality check. Full details are in the render report.`;
 }
-export function withPcmReviewReport(report){
+function matchesArtifact(report,item,job){
+ const diagnostic=item.metrics.pcmReview,chapter=item.chapter;
+ if(chapter!==null&&(!Number.isSafeInteger(chapter)||chapter<0||!job||job.id!==report.recordingId))return false;
+ let sampleCount=0,passages=0;
+ for(const part of report.passages){
+  if(!part)return false;
+  if(chapter!==null){const plan=job.passages?.[part.index];if(!plan||plan.start!==part.start||plan.end!==part.end)return false;if(plan.chapter!==chapter)continue;}
+  if(part.format!=='pcm-s16le'||part.sampleRate!==diagnostic.sampleRate||!Number.isSafeInteger(part.sampleCount)||part.sampleCount<0)return false;
+  sampleCount+=part.sampleCount;if(!Number.isSafeInteger(sampleCount))return false;if(part.sampleCount)passages++;
+ }
+ return passages>0&&sampleCount===diagnostic.sampleCount&&item.metrics.inputSamples===sampleCount&&item.metrics.sampleRate===diagnostic.sampleRate&&item.metrics.passages===passages;
+}
+export function withPcmReviewReport(report,job){
  const preparations=Array.isArray(report.preparations)?report.preparations.slice(-4):[];
- const artifacts=preparations.filter(item=>item&&item.through===report.passages.length&&item.takeRevision===(report.takeSelection?.revision??0)&&item.metrics?.pcmReview?.domain==='pcm-s16le'&&validPcmReview(item.metrics.pcmReview)).map(item=>({chapter:item.chapter,through:item.through,takeRevision:item.takeRevision,diagnostics:item.metrics.pcmReview}));
+ const artifacts=preparations.filter(item=>item&&item.through===report.passages.length&&item.takeRevision===(report.takeSelection?.revision??0)&&item.metrics?.pcmReview?.domain==='pcm-s16le'&&validPcmReview(item.metrics.pcmReview)&&matchesArtifact(report,item,job)).map(item=>({chapter:item.chapter,through:item.through,takeRevision:item.takeRevision,diagnostics:item.metrics.pcmReview}));
  return {...report,pcmReview:{schema:1,status:artifacts.length?'measured-artifacts':'not-measured',artifacts,note:PCM_REVIEW_NOTE,scope:'Only saved preparation measurements matching this committed prefix and take revision. Chapter measurements do not claim to cover the entire recording.'}};
 }
