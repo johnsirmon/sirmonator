@@ -34,10 +34,12 @@ export function createCustomReferenceSession({engineFactory}){
      // Keep late-runtime cleanup inside the tracked promise: disposal must wait
      // for factory completion as well as any termination it adds afterwards.
      if(closed){loaded.destroy();terminations.push(loaded.waitForTerminations?.());check();}
+     // Transfer ownership before resolving: revoke in the await handoff must
+     // see and dispose this runtime, rather than finding a null engine.
+     engine=loaded;
      return loaded;
     })();
-    const loaded=await factoryWork;
-    engine=loaded;assertCustomReferenceContract(engine.referenceContract);
+    await factoryWork;check();assertCustomReferenceContract(engine.referenceContract);
     if(engine.sampleRate!==24000)throw Error('Reference runtime sample rate changed.');
     const voice=await abortable(engine.cloneVoice(pcm,{inputSampleRate:24000,name:'synthetic:'+frozen.id}),lifetime.signal);check();
     if(voice!=='synthetic:'+frozen.id)throw Error('Runtime returned a different reference identity.');

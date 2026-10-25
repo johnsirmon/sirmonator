@@ -66,6 +66,15 @@ test('disposal requested before factory completion waits for late runtime termin
  load.resolve(engine);await new Promise(r=>setImmediate(r));assert.equal(engine.destroyed,true);assert.equal(disposed,false);
  termination.resolve();await waiting;assert.equal(disposed,true);
 });
+test('revoke in the factory promise handoff cannot clone or leak the newly loaded runtime',async()=>{
+ const {file,receipt}=await fixture(),load=deferred(),entered=deferred(),termination=deferred();let cloned=false;
+ const {engine}=fake({cloneVoice(){cloned=true;throw Error('Must not clone after handoff revocation');},waitForTerminations:()=>termination.promise});
+ const session=createCustomReferenceSession({engineFactory:()=>{entered.resolve();return load.promise;}});
+ const pending=session.prepare(file,receipt);await entered.promise;
+ load.promise.then(()=>session.revoke());load.resolve(engine);await assert.rejects(pending,{name:'AbortError'});
+ assert.equal(session.disposed,true);assert.equal(engine.destroyed,true);assert.equal(cloned,false);
+ let finished=false;const waiting=session.waitForDisposal().then(()=>{finished=true;});await new Promise(r=>setImmediate(r));assert.equal(finished,false);termination.resolve();await waiting;
+});
 test('cancellation during conditioning clears input and rejects late completion',async()=>{
  const {file,receipt}=await fixture(),work=deferred(),entered=deferred(),abort=new AbortController();let input;
  const {engine,session}=fake({cloneVoice(pcm,{name}){input=pcm;entered.resolve();return work.promise.then(()=>name);}});
