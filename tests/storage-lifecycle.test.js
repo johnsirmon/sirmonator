@@ -76,3 +76,16 @@ test('unexpected close notifies once and rejects new transactions while explicit
  request.result=db;request.onsuccess();const connection=await pending;assert.equal(connection.transaction('prefs'),'transaction');db.onclose();db.onclose();
  assert.equal(events.filter(x=>x==='closed').length,1);assert.throws(()=>connection.transaction('prefs'),{name:'StorageClosedError'});assert.equal(closes,1);
 });
+test('newer database version explains backup and compatible reload instead of retry loop',async()=>{
+ const name='newer-'+crypto.randomUUID(),newer=await rawOpen(name,3);newer.close();const events=[];
+ await assert.rejects(openStorage(indexedDB,name,{onState:s=>events.push(s)}),error=>error.name==='StorageVersionError'&&/unsaved text backup/.test(error.message)&&/Retry cannot downgrade/.test(error.message));assert.equal(events.at(-1).state,'versionerror');
+});
+test('late draft save cannot overwrite an invalidation warning or acknowledge a newer draft',async()=>{
+ const main=await readFile('src/main.js','utf8'),flush=main.slice(main.indexOf('async function flushDraft(){'),main.indexOf('function queueSave()')),
+  lifecycle=main.slice(main.indexOf('function storageStateChanged('),main.indexOf('const audition=')),save=deferred(),started=deferred(),elements=new Map();
+ const $=id=>{if(!elements.has(id))elements.set(id,{checked:true,textContent:'',pause(){}});return elements.get(id);};
+ const context=vm.createContext({$,storageReady:true,store:{async saveDraft(){started.resolve();await save.promise;}},draftRevision:1,saveChain:Promise.resolve(),draftTimer:0,podcastSaveTimer:0,clearTimeout(){},draft:()=>({text:'Draft A'}),MAX_DOCUMENT:2000000,warn:e=>e.message,cancelled:false,pauseRequested:false,beginSelection(){},killWorker(){},takeEditor:null,status(){},controls(){}});
+ vm.runInContext(flush+'\n'+lifecycle,context);const pending=context.flushDraft();await started.promise;
+ context.draftRevision=2;context.storageStateChanged({state:'versionchange',message:'Connection changed'});const warning=$('save-status').textContent;save.resolve();await pending;assert.equal($('save-status').textContent,warning);assert.match(warning,/unsaved/);
+ const next=deferred();context.storageReady=true;context.store={saveDraft:()=>next.promise};const newer=context.flushDraft();await tick();context.draftRevision=3;$('save-status').textContent='Saving newer draft B';next.resolve();await newer;assert.equal($('save-status').textContent,'Saving newer draft B');
+});

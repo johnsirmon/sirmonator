@@ -6,7 +6,8 @@ export function openManagedDatabase({factory=globalThis.indexedDB,name,version,u
  return new Promise((resolve,reject)=>{
   let request,settled=false,timer;
   const clean=()=>{clearTimeout(timer);signal?.removeEventListener('abort',abort);};
-  const fail=(kind,message)=>{if(settled)return;settled=true;clean();notify(kind,message);reject(error(kind==='blocked'?'StorageBlockedError':kind==='timeout'?'StorageTimeoutError':kind==='aborted'?'AbortError':'StorageOpenError',message));};
+  const fail=(kind,message)=>{if(settled)return;settled=true;clean();notify(kind,message);reject(error(kind==='blocked'?'StorageBlockedError':kind==='timeout'?'StorageTimeoutError':kind==='aborted'?'AbortError':kind==='versionerror'?'StorageVersionError':'StorageOpenError',message));};
+  const openError=cause=>cause?.name==='VersionError'?fail('versionerror','A newer Sirmonator build upgraded this database. Download any unsaved text backup, then reload or update the app to a compatible build. Retry cannot downgrade it. Saved data was not reset.'):fail('error',cause?.message||'Local database could not open.');
   const abort=()=>fail('aborted','Local database opening cancelled. Saved data was not reset.');
   if(!factory){fail('error','Local storage is unavailable. Use a regular browser window.');return;}
   if(!Number.isFinite(timeoutMs)||timeoutMs<=0){fail('error','Invalid database opening timeout.');return;}
@@ -14,13 +15,13 @@ export function openManagedDatabase({factory=globalThis.indexedDB,name,version,u
   signal?.addEventListener('abort',abort,{once:true});
   notify('opening','Opening local recordings…');
   timer=setTimeout(()=>fail('timeout','Local database opening timed out. Close other Sirmonator tabs, then retry. Download a text backup before reloading. Saved data was not reset.'),timeoutMs);
-  try{request=factory.open(name,version);}catch(e){fail('error',e.message);return;}
+  try{request=factory.open(name,version);}catch(e){openError(e);return;}
   request.onblocked=()=>fail('blocked','Another Sirmonator tab is blocking a database upgrade. Close other tabs, then retry local storage. Saved data was not reset.');
   request.onupgradeneeded=event=>{
    if(settled){try{request.transaction.abort();}catch{}return;}
    try{upgrade(request.result,event);}catch(e){try{request.transaction.abort();}catch{}fail('error',e.message);}
   };
-  request.onerror=()=>{if(!settled)fail('error',request.error?.message||'Local database could not open.');};
+  request.onerror=()=>{if(!settled)openError(request.error);};
   request.onsuccess=()=>{
    const db=request.result;if(settled){db.close();return;}
    settled=true;clean();let active=true;

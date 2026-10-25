@@ -19,7 +19,7 @@ import {runRecording,recordingBlob,validateCheckpoint,renderReport} from './job-
 import {importDocument} from './import-document.js';
 const $=id=>document.getElementById(id),base=import.meta.env.BASE_URL;
 let store,chapters=[],deviceVoices=[],selectedJob=null;
-let storageReady=false,storageOpening=false;
+let storageReady=false,storageOpening=false,draftRevision=0;
 let creating=false,auditionBusy=false,importing=false,quick=false,quickPaused=false,pauseRequested=false,cancelled=false;
 let audioURL=null,previewURL=null,wake=null,owner=crypto.randomUUID(),draftTimer,saveChain=Promise.resolve(),dirty=false,undo=null;
 let renderToken=0,selectionToken=0,loadedChapter=0,loadedThrough=0,loadedJobId=null,positionSaved=0,exporting=false;
@@ -104,13 +104,13 @@ function preflight(){
   $('preflight').textContent=`About ${Math.ceil(minutes/Number($('speed').value))} min listening · estimated MP3 ${(minutes/Number($('speed').value)*.48).toFixed(1)} MB. Smooth recordings keep uncompressed local checkpoints (about 3–6 MB/min); MP3 preparation takes additional time. First voice use may download about ${mb} MB; pinned model URLs may need a fresh cache even after earlier versions. Creation time depends on your device.`;
 }
 function draft(){return {text:$('text').value,title:$('title').value,settings:settings(true),pronunciationDraft:pronunciationEditor?.snapshot(),engine:$('engine').value,review:$('review').checked,from:Number($('range-from').value),to:Number($('range-to').value),updatedAt:Date.now()};}
-function scheduleSave(){dirty=true;clearTimeout(draftTimer);if(!$('remember').checked){$('save-status').textContent='Draft autosave is off. Created recordings are saved separately.';return;}$('save-status').textContent='Saving draft…';draftTimer=setTimeout(()=>queueSave(),350);}
+function scheduleSave(){dirty=true;draftRevision++;clearTimeout(draftTimer);if(!$('remember').checked){$('save-status').textContent='Draft autosave is off. Created recordings are saved separately.';return;}$('save-status').textContent='Saving draft…';draftTimer=setTimeout(()=>queueSave(),350);}
 async function flushDraft(){
   clearTimeout(draftTimer);if(!$('remember').checked)return;if(!store||!storageReady){$('save-status').textContent='Draft is not saved while local storage is unavailable. Download a text backup.';return;}
   const snapshot=draft();if(snapshot.text.length>MAX_DOCUMENT){$('save-status').textContent='Draft exceeds 2 million characters. Download a text backup and reduce its size.';return;}
-  const target=store;saveChain=saveChain.catch(()=>{}).then(()=>target.saveDraft(snapshot));
-  try{await saveChain;$('save-status').textContent='Draft saved on this device. Private browsing or clearing site data can remove it.';}
-  catch(error){$('save-status').textContent='Draft not saved: '+warn(error);throw error;}
+  const target=store,revision=draftRevision,current=()=>storageReady&&store===target&&draftRevision===revision;saveChain=saveChain.catch(()=>{}).then(()=>target.saveDraft(snapshot));
+  try{await saveChain;if(current())$('save-status').textContent='Draft saved on this device. Private browsing or clearing site data can remove it.';}
+  catch(error){if(current())$('save-status').textContent='Draft not saved: '+warn(error);throw error;}
 }
 function queueSave(){flushDraft().catch(()=>{});}
 function saveFile(blob,filename){const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=filename;link.click();setTimeout(()=>URL.revokeObjectURL(url),10000);}
@@ -297,7 +297,7 @@ async function initialize(){
     $('save-status').textContent=dirty?'Your current draft was kept. Edit to autosave, or download a text backup.':saved?'Draft restored from this device. Download a text backup for safekeeping.':'Autosave ready. Drafts and recordings stay on this browser and device.';
     narratorNote();const jobs=await refreshLibrary();if(jobs?.length&&selection===selectionToken){document.body.classList.add('has-draft');$('saved-recordings').value=jobs[0].id;await showRecording(jobs[0],{selection});}
     const estimate=await navigator.storage?.estimate?.();if(estimate?.quota)$('storage-info').textContent=`Browser estimates ${Math.round((estimate.quota-estimate.usage)/1048576)} MB of storage quota available. This is not a device memory measurement.`;
-  }catch(error){$('storage-state').textContent=warn(error);if(storageReady){$('save-status').textContent='Saved data could not be fully restored. Download a text backup and check My recordings.';status(warn(error));}else{$('save-status').textContent='Local saving unavailable: '+warn(error);status('Close other Sirmonator tabs and retry local storage. Text backup and Quick listen remain available.');}}
+  }catch(error){$('storage-state').textContent=warn(error);if(storageReady){$('save-status').textContent='Saved data could not be fully restored. Download a text backup and check My recordings.';status(warn(error));}else{$('save-status').textContent='Local saving unavailable: '+warn(error);status(error.name==='StorageVersionError'?warn(error):'Close other Sirmonator tabs and retry local storage. Text backup and Quick listen remain available.');}}
   finally{storageOpening=false;controls();}
 }
 $('retry-storage').onclick=()=>{if(!busy())return initialize();};

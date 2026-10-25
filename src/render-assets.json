@@ -2,14 +2,15 @@
   "schema": 1,
   "source": {
     "files": {
-      "src/idb-lifecycle.js": "d8a7c4a762954c7fc32b5e44fb9002f58dd9e5ad30d61b80e931dfe3783b479d",
+      "src/render-contract-cbb8bd1.json": "5ffe8a9270a626f9d868b8fba47242b44e0d30bc746e0e36be248c0e33ac4c31",
+      "src/idb-lifecycle.js": "92fdea0a61f9decf22f62415aa2396856125a45e15168dee034e9ec98a24bdf2",
       "src/render-contract-40459e2.json": "e947dcd4f39efbfce359ccbb4298224c51df1e040e4e0d55859a5c3c9e28b88d",
       "src/engine-specs.js": "52790f6b8bf121172ddfc7428393eb2ed64ee303af55619047dfbfbf43bb1667",
       "src/asset-integrity.js": "bb74dd13c8908f33c55943fc7a70b7430146181a25e56bfe283e3026b7b9f951",
       "src/pinned-kokoro.js": "100b5eca066a536f621b46c9d92b8574f53297d35c4c7a24221a6bbb0db643cb",
       "src/tts-worker.js": "72acbdeec465445921cb13252d51cb45504bb85ba4167e75d6f6473f69057c6c",
       "src/speech-runner.js": "37f045c9b4572cfc6d5e715748b1d32b975743fa096e39dce4d4ba34e90fcebc",
-      "src/render-provenance.js": "0a37b96ec0a084f7432009db75fc0fb8e1360a2a9de1a2b8c7e73c7019c003c1",
+      "src/render-provenance.js": "1eb73c1d8b286ccd7400312dc28683c5356bfc503ad1e304ddaec90a11ac485c",
       "src/render-metrics.js": "e8caacfd6ee8a56db8e828d5f02d3826695ee2af4ff6e28ba35f4230b5c216e2",
       "src/core.js": "969b136d6e19fe0116f2c0cb8391257b123095d6068b1456f1d9b68a1b501a34",
       "src/recording.js": "bc05056098ea12fbee3b6e5a6bc6c1f877e6cd16639eeba28052a2a77002c8b8",
@@ -40,7 +41,7 @@
       "src/continuity.js": "7d9699b5a1ed38a1a6eef8c5ba1eea5945623cd2cedb5a34c26ee4b9ac02b6a3",
       "package-lock.json": "dc85b64b6a8d659211cf05af19e4d9bd396ecbe8f23a5294c377f39fe541424f"
     },
-    "sha256": "7564dd22203abe1cc8e586bc6036334ca5315a40f0eda397e8c14043c668bc97"
+    "sha256": "d781de2d2c4f8297e20ccbc7cd75af1c90f67c1d41c035aea667d6ddaf08ef65"
   },
   "packages": {
     "kokoro-js": {

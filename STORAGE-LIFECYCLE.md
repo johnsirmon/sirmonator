@@ -24,6 +24,10 @@ draft edits and offers recovery. Existing transactions may finish atomically;
 committed passages are retained. It does not claim that an unsaved passage or draft
 was saved. Lease renewal/release stays bound to the original connection, and a
 closed-connection release does not mask the interruption result.
+Draft-save success/error messages are guarded by both connection readiness and
+the current draft revision, so an older commit cannot acknowledge newer unsaved
+text or replace an invalidation warning. A newer database version reports explicit
+backup/reload-compatible-build guidance instead of a close-tabs/retry loop.
 
 If another build upgraded the database beyond this build's supported version,
 Retry cannot downgrade it. Close outdated tabs and reload a compatible build after
