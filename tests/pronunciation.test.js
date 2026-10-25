@@ -2,6 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
+import {assertEngineRequest} from '../src/engine-capabilities.js';
 import {indexedDB,IDBKeyRange} from 'fake-indexeddb';
 import {normalizePronunciation,parsePronunciation,spokenPassage,PRONUNCIATION_MATCHER,LEGACY_PRONUNCIATION_MATCHER} from '../src/pronunciation.js';
 import {createPronunciationEditor} from '../src/pronunciation-editor.js';
@@ -73,13 +74,13 @@ test('source and dictionary revisions produce immutable identities; source routi
 });
 test('no-rule compatibility overrides are exact pins and the old worker path is structurally unchanged',async()=>{
  const snapshot=await sourceSnapshot();for(const [name,hash] of Object.entries(compatibility.noRulesOverrides))assert.equal(snapshot.files[name],hash);
- let worker=await readFile('src/tts-worker.js','utf8');worker=worker.replace("import {spokenPassage} from './pronunciation.js';\n",'').replace("import {spokenPassage} from './pronunciation.js';\r\n",'').replace(/    const spoken=spokenPassage\(data.text,data.settings.pronunciation\).text;\r?\n/u,'').replace(/    if\(data.settings.pronunciation\)provenance.spokenText=spoken;\r?\n/u,'').replace('.pocket(spoken,','.pocket(data.text,').replace('.supertonic(spoken,','.supertonic(data.text,').replace(':await kokoro(spoken,',':await kokoro(data.text,');assert.equal(await digest(worker.replaceAll('\r\n','\n')),baseline.source.files['src/tts-worker.js']);
+ let worker=await readFile('src/tts-worker.js','utf8');worker=worker.replace(/import \{assertEngineRequest\} from '.\/engine-capabilities.js';\r?\n/u,'').replace(/    assertEngineRequest\(profile.engine,data.settings\);\r?\n/u,'');worker=worker.replace("import {spokenPassage} from './pronunciation.js';\n",'').replace("import {spokenPassage} from './pronunciation.js';\r\n",'').replace(/    const spoken=spokenPassage\(data.text,data.settings.pronunciation\).text;\r?\n/u,'').replace(/    if\(data.settings.pronunciation\)provenance.spokenText=spoken;\r?\n/u,'').replace('.pocket(spoken,','.pocket(data.text,').replace('.supertonic(spoken,','.supertonic(data.text,').replace(':await kokoro(spoken,',':await kokoro(data.text,');assert.equal(await digest(worker.replaceAll('\r\n','\n')),baseline.source.files['src/tts-worker.js']);
  const manifest=currentManifest(settings);manifest.source=baseline.source;assertSupportedManifest({...settings,renderManifest:manifest});manifest.source=structuredClone(baseline.source);manifest.source.files['src/tts-worker.js']='a'.repeat(64);assert.throws(()=>assertSupportedManifest({...settings,renderManifest:manifest}),/not supported/);
 });
 test('actual worker handler sends resolved text to the stub engine, retains original pause accounting and provenance',async()=>{
  const source='Paul?\n\n',job=await makeRecording(source,{...settings,pronunciation:rules('Paul? => pawl')}),messages=[],calls=[];
  const worker=await readFile('src/tts-worker.js','utf8'),handler=worker.slice(worker.indexOf('self.onmessage=async')).replaceAll('import.meta.url',JSON.stringify('file:///test/worker.js'));
- const context=vm.createContext({self:{postMessage:m=>messages.push(m)},performance:{now:()=>10},getVoice,LEGACY_PIPELINE,CONTINUITY_PIPELINE,FOUNDATION_PIPELINE,assertSupportedManifest,spokenPassage,renderMetrics,characterEffect,pauseAfter,quantizePcm,isPcmPipeline:p=>p===FOUNDATION_PIPELINE,Float32Array,ArrayBuffer,family:null,kokoro:async(text)=>{calls.push(text);return {samples:new Float32Array(24),sampleRate:24000,runtime:{provider:'cpu',dtype:'q8',loadMs:0,inferenceMs:0,modelLoadAttempts:0,retries:0}};}});
+ const context=vm.createContext({assertEngineRequest,self:{postMessage:m=>messages.push(m)},performance:{now:()=>10},getVoice,LEGACY_PIPELINE,CONTINUITY_PIPELINE,FOUNDATION_PIPELINE,assertSupportedManifest,spokenPassage,renderMetrics,characterEffect,pauseAfter,quantizePcm,isPcmPipeline:p=>p===FOUNDATION_PIPELINE,Float32Array,ArrayBuffer,family:null,kokoro:async(text)=>{calls.push(text);return {samples:new Float32Array(24),sampleRate:24000,runtime:{provider:'cpu',dtype:'q8',loadMs:0,inferenceMs:0,modelLoadAttempts:0,retries:0}};}});
  vm.runInContext(handler,context);await context.self.onmessage({data:{requestId:1,text:source,settings:job.settings,last:false}});
  const passage=messages.find(m=>m.type==='passage');assert.deepEqual(calls,['pawl\n\n']);assert.equal(passage.spokenText,'pawl\n\n');assert.equal(passage.sampleCount,24+Math.round(pauseAfter(source,'natural')*24000));assert.deepEqual(passage.renderManifest,job.settings.renderManifest);
 });

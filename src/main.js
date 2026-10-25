@@ -1,6 +1,7 @@
 import {createSynthesisClient} from './synthesis-client.js';
 import {abortable,assertActive} from './continuity.js';
 import {FOUNDATION_PIPELINE} from './engine-specs.js';
+import {createReferenceEditor} from './reference-editor.js';
 import {createSpeechReviewEditor} from './speech-review-editor.js';
 import {reviewSelectionMatches} from './speech-review.js';
 import {createPronunciationEditor} from './pronunciation-editor.js';
@@ -22,18 +23,18 @@ let creating=false,auditionBusy=false,importing=false,quick=false,quickPaused=fa
 let audioURL=null,previewURL=null,wake=null,owner=crypto.randomUUID(),draftTimer,saveChain=Promise.resolve(),dirty=false,undo=null;
 let renderToken=0,selectionToken=0,loadedChapter=0,loadedThrough=0,loadedJobId=null,positionSaved=0,exporting=false;
 let exportController=null,playbackController=null;
-var takeEditor,pronunciationEditor,speechReview;
+var takeEditor,pronunciationEditor,speechReview,referenceEditor;
 const chapterCache=createChapterCache({prepare:(job,chapter,options)=>recordingBlob(store,job,chapter,undefined,options),onChange:()=>controls()});
 function cancelPreparations(){exportController?.abort();playbackController?.abort();chapterCache.clear();}
 const status=message=>$('status').textContent=message;
 const warn=error=>error?.name==='QuotaExceededError'?'This device is low on storage. Saved passages are safe. Download them, delete an older recording, then resume.':(error?.message||'Could not save on this device.');
-const busy=()=>creating||auditionBusy||importing||quick||exporting||(typeof takeEditor!=='undefined'&&takeEditor?.busy)||(typeof speechReview!=='undefined'&&speechReview?.busy);
+const busy=()=>creating||auditionBusy||importing||quick||exporting||(typeof takeEditor!=='undefined'&&takeEditor?.busy)||(typeof speechReview!=='undefined'&&speechReview?.busy)||(typeof referenceEditor!=='undefined'&&referenceEditor?.busy);
 function controls(){
   for(const id of ['text','title','file','sample','clear','undo-clear','engine','voice','voice-edition','delivery','speed','review','start','preview','custom-preview','range-from','range-to','remember','open-recording','saved-recordings','pronunciation-rules','pronunciation-case'])$(id).disabled=busy();
   document.querySelectorAll('[data-voice]').forEach(b=>b.disabled=busy());
   $('pause').disabled=!(creating||quick)||pauseRequested;$('pause').textContent=quick?(quickPaused?'Resume listening':'Pause listening'):(pauseRequested?'Saving current passage…':'Pause creation');
-  $('stop').disabled=!(creating||quick||auditionBusy||exporting||playbackController||chapterCache.preparing||(typeof takeEditor!=='undefined'&&takeEditor?.busy)||(typeof speechReview!=='undefined'&&speechReview?.busy));$('resume-recording').disabled=busy();
-  $('stop').textContent=(typeof speechReview!=='undefined'&&speechReview?.busy)?'Cancel review operation':exporting||playbackController||chapterCache.preparing?'Cancel audio preparation':'Cancel creation';
+  $('stop').disabled=!(creating||quick||auditionBusy||exporting||playbackController||chapterCache.preparing||(typeof takeEditor!=='undefined'&&takeEditor?.busy)||(typeof speechReview!=='undefined'&&speechReview?.busy)||(typeof referenceEditor!=='undefined'&&referenceEditor?.busy));$('resume-recording').disabled=busy();
+  $('stop').textContent=(typeof referenceEditor!=='undefined'&&referenceEditor?.busy)?'Cancel reference operation':(typeof speechReview!=='undefined'&&speechReview?.busy)?'Cancel review operation':exporting||playbackController||chapterCache.preparing?'Cancel audio preparation':'Cancel creation';
   $('delete-recording').disabled=busy()||!$('saved-recordings').value;
   if(!busy())$('open-recording').disabled=!$('saved-recordings').value;
   for(const id of ['download','download-chapter','share','render-report'])$(id).disabled=busy()||!selectedJob?.next;
@@ -42,6 +43,7 @@ function controls(){
   podcastHandoff();
   if(typeof takeEditor!=='undefined')takeEditor?.controls();
   if(typeof speechReview!=='undefined')speechReview?.controls();
+  if(typeof referenceEditor!=='undefined')referenceEditor?.controls();
 }
 const audition=createAuditionPlayer({audio:$('audition-audio'),setBusy:value=>{auditionBusy=value;controls();},notify:status});
 function settings(allowInvalid=false){const config={voice:$('voice').value,edition:$('voice-edition').value,speed:Number($('speed').value),delivery:$('delivery').value,pipeline:FOUNDATION_PIPELINE};try{const pronunciation=pronunciationEditor?.config();if(pronunciation)config.pronunciation=pronunciation;}catch(error){if(!allowInvalid)throw error;}return config;}
@@ -117,7 +119,7 @@ function displayProgress(job){
   $('play-chapter').disabled=!chapters.length;$('refresh-audio').disabled=!job.next;
   $('share').hidden=typeof navigator.share!=='function';controls();
 }
-function beginSelection(){if(typeof speechReview!=='undefined')speechReview?.cancel();cancelPreparations();renderToken++;return ++selectionToken;}
+function beginSelection(){if(typeof speechReview!=='undefined')speechReview?.cancel();if(typeof referenceEditor!=='undefined')referenceEditor?.cancel();cancelPreparations();renderToken++;return ++selectionToken;}
 async function showRecording(job,{keepAudio=false,selection=beginSelection()}={}){
   // Cancel old reads before validation or metadata saving can yield to another selection.
   if(selection!==selectionToken)return;
@@ -237,7 +239,7 @@ async function exportAudio({chapter=null,share=false}={}){
 }
 $('start').onclick=()=>createAudio();$('resume-recording').onclick=()=>createAudio(selectedJob?.id);
 $('pause').onclick=()=>{if(quick){quickPaused=!quickPaused;quickPaused?window.speechSynthesis.pause():window.speechSynthesis.resume();}else{pauseRequested=true;status('Pausing after the current passage is saved…');}controls();};
-$('stop').onclick=()=>{killWorker();if(typeof takeEditor!=='undefined')takeEditor?.cancel();if(typeof speechReview!=='undefined')speechReview?.cancel();cancelPreparations();renderToken++;if(creating){cancelled=true;status('Cancelled the current passage. Completed passages are saved.');}else if(quick){quick=false;window.speechSynthesis.cancel();controls();status('Quick listening stopped.');}else{audition.stop();status('Audio preparation cancelled. Saved passages were kept.');}};
+$('stop').onclick=()=>{killWorker();if(typeof takeEditor!=='undefined')takeEditor?.cancel();if(typeof speechReview!=='undefined')speechReview?.cancel();if(typeof referenceEditor!=='undefined')referenceEditor?.cancel();cancelPreparations();renderToken++;if(creating){cancelled=true;status('Cancelled the current passage. Completed passages are saved.');}else if(quick){quick=false;window.speechSynthesis.cancel();controls();status('Quick listening stopped.');}else{audition.stop();status('Audio preparation cancelled. Saved passages were kept.');}};
 $('preview').onclick=()=>{if($('engine').value==='studio')audition.play(auditionUrl($('voice').value,base,$('voice-edition').value));else quickListen('Good morning, church. Let us begin.');};
 $('custom-preview').onclick=async()=>{if(busy())return;const first=chunkText(rangeText())[0]??'';if(!first.trim()){status('Add text first.');return;}if($('engine').value==='device'){quickListen(first);return;}
   creating=true;cancelled=false;controls();try{const audio=await generate(first,settings(),true,true);if(previewURL)URL.revokeObjectURL(previewURL);previewURL=URL.createObjectURL(new Blob([audio.bytes],{type:'audio/mpeg'}));$('audition-audio').src=previewURL;$('audition-audio').hidden=false;$('audition-audio').play().catch(()=>{});status('Your passage preview is ready. Press Play in the sample player.');}catch(error){status(warn(error));}finally{creating=false;synthesisClient.idle();controls();}
@@ -268,7 +270,7 @@ $('audio').onended=async()=>{if(!selectedJob||selectedJob.id!==loadedJobId)retur
 };
 $('download').onclick=()=>exportAudio();$('download-chapter').onclick=()=>exportAudio({chapter:loadedChapter});$('share').onclick=()=>exportAudio({share:true});
 $('transcript').onclick=()=>{if(selectedJob)saveFile(new Blob([selectedJob.source],{type:'text/plain;charset=utf-8'}),safeFilename(selectedJob.title)+'-reviewed-source.txt');};
-window.addEventListener('pagehide',()=>{speechReview?.cancel();takeEditor?.cancel();cancelPreparations();queueSave();savePosition().catch(()=>{});cancelled=true;killWorker();store?.release(owner).catch(()=>{});window.speechSynthesis?.cancel();});
+window.addEventListener('pagehide',()=>{referenceEditor?.cancel();speechReview?.cancel();takeEditor?.cancel();cancelPreparations();queueSave();savePosition().catch(()=>{});cancelled=true;killWorker();store?.release(owner).catch(()=>{});window.speechSynthesis?.cancel();});
 window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();queueSave();}});
 fillVoices();window.speechSynthesis?.addEventListener('voiceschanged',()=>{if(!busy()){fillVoices();narratorNote();}});narratorNote();controls();
 async function initialize(){
@@ -281,8 +283,9 @@ async function initialize(){
   }catch(error){if(store){$('save-status').textContent='Saved data could not be fully restored. Download a text backup and check My recordings.';status(warn(error));}else{$('save-status').textContent='Local saving unavailable: '+warn(error);status('Use a regular browser window for saved recordings. Text backup and Quick listen remain available.');}}
 }
 pronunciationEditor=createPronunciationEditor({$,source:rangeText,onChange:()=>{$('review').checked=false;scheduleSave();}});
-takeEditor=createTakeEditor({$,getStore:()=>store,getJob:()=>selectedJob,isBusy:()=>creating||auditionBusy||importing||quick||exporting||speechReview?.busy,withLease,generate,owner,notify:status,onBusy:controls,onChanged:async job=>{const chapter=loadedChapter;beginSelection();$('audio').pause();$('audio').removeAttribute('src');$('audio').onloadedmetadata=null;if(audioURL)URL.revokeObjectURL(audioURL);audioURL=null;loadedJobId=null;selectedJob=job;displayProgress(job);await loadChapter(chapter);await refreshLibrary();}});
-speechReview=createSpeechReviewEditor({$,getStore:()=>store,getJob:()=>selectedJob,getSelection:()=>selectionToken,isBusy:()=>creating||auditionBusy||importing||quick||exporting||takeEditor?.busy,onBusy:controls,onListen:async snapshot=>{if(!reviewSelectionMatches(selectedJob,snapshot))throw Error('Load current selected audio first.');if(!await loadChapter(snapshot.anchor.chapter,snapshot.chapterOffsetSeconds))throw Error('Audio preparation did not finish. Saved audio was kept.');if(!reviewSelectionMatches(selectedJob,snapshot))throw Error('Selection changed while preparing audio; load the current review again.');},onRepair:snapshot=>{$('passage-takes').open=true;$('take-passage').value=String(snapshot.anchor.passage);$('take-passage').onchange();$('take-passage').focus();},onExport:payload=>saveFile(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),safeFilename(selectedJob?.title??'Recording')+'-manual-review-'+(payload.snapshot?'passage-'+(payload.snapshot.anchor.passage+1)+'-r'+payload.snapshot.anchor.selectionRevision:'archive')+'.json')});
+takeEditor=createTakeEditor({$,getStore:()=>store,getJob:()=>selectedJob,isBusy:()=>creating||auditionBusy||importing||quick||exporting||speechReview?.busy||referenceEditor?.busy,withLease,generate,owner,notify:status,onBusy:controls,onChanged:async job=>{const chapter=loadedChapter;beginSelection();$('audio').pause();$('audio').removeAttribute('src');$('audio').onloadedmetadata=null;if(audioURL)URL.revokeObjectURL(audioURL);audioURL=null;loadedJobId=null;selectedJob=job;displayProgress(job);await loadChapter(chapter);await refreshLibrary();}});
+speechReview=createSpeechReviewEditor({$,getStore:()=>store,getJob:()=>selectedJob,getSelection:()=>selectionToken,isBusy:()=>creating||auditionBusy||importing||quick||exporting||takeEditor?.busy||referenceEditor?.busy,onBusy:controls,onListen:async snapshot=>{if(!reviewSelectionMatches(selectedJob,snapshot))throw Error('Load current selected audio first.');if(!await loadChapter(snapshot.anchor.chapter,snapshot.chapterOffsetSeconds))throw Error('Audio preparation did not finish. Saved audio was kept.');if(!reviewSelectionMatches(selectedJob,snapshot))throw Error('Selection changed while preparing audio; load the current review again.');},onRepair:snapshot=>{$('passage-takes').open=true;$('take-passage').value=String(snapshot.anchor.passage);$('take-passage').onchange();$('take-passage').focus();},onExport:payload=>saveFile(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),safeFilename(selectedJob?.title??'Recording')+'-manual-review-'+(payload.snapshot?'passage-'+(payload.snapshot.anchor.passage+1)+'-r'+payload.snapshot.anchor.selectionRevision:'archive')+'.json')});
+referenceEditor=createReferenceEditor({$,isBusy:()=>creating||auditionBusy||importing||quick||exporting||takeEditor?.busy||speechReview?.busy,onBusy:controls});
 initialize();
 
 function podcastFields(){return {showTitle:$('pod-show-title').value,showDescription:$('pod-show-description').value,author:$('pod-author').value,episodeTitle:$('pod-episode-title').value,episodeDescription:$('pod-episode-description').value,language:$('pod-language').value,category:$('pod-category').value,explicit:$('pod-explicit').value,audioUrl:$('pod-audio-url').value,artworkUrl:$('pod-artwork-url').value,feedUrl:$('pod-feed-url').value,websiteUrl:$('pod-website-url').value,rightsConfirmed:$('pod-rights').checked,spokenDisclosureConfirmed:$('pod-spoken').checked,artworkConfirmed:$('pod-artwork').checked};}

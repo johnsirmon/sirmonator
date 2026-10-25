@@ -1,0 +1,94 @@
+{
+  "schema": 1,
+  "repository": "vlapky/pocket-tts-onnx",
+  "revision": "c469236dbc5f68287fa2fbf175b66de3b80123af",
+  "metadataUrl": "https://huggingface.co/api/models/vlapky/pocket-tts-onnx/revision/c469236dbc5f68287fa2fbf175b66de3b80123af?blobs=true",
+  "modelLicenseAtRevision": "cc-by-4.0",
+  "language": "english_2026-04",
+  "cachedBytes": 146243630,
+  "files": [
+    {
+      "name": "bundle.json",
+      "bytes": 24381,
+      "sha256": "bab643150f437f37df080a710520ff39ed9ebd9a339f8ebdc739f7eddfc28b3f",
+      "expectedSha256": null,
+      "gitBlob": "6c44c3f66eccff6f2875ed7e1c780bc522001e2d",
+      "verified": true
+    },
+    {
+      "name": "tokenizer.model",
+      "bytes": 59339,
+      "sha256": "d461765ae179566678c93091c5fa6f2984c31bbe990bf1aa62d92c64d91bc3f6",
+      "expectedSha256": "d461765ae179566678c93091c5fa6f2984c31bbe990bf1aa62d92c64d91bc3f6",
+      "gitBlob": "1820a7cbb15efc6a33dd365113c07e3df9d28d80",
+      "verified": true
+    },
+    {
+      "name": "bos_before_voice.npy",
+      "bytes": 4224,
+      "sha256": "f46edf4f7007b7ba4ea58831f49d003e59e167b4641c44bb3addfe9231a780b1",
+      "expectedSha256": "f46edf4f7007b7ba4ea58831f49d003e59e167b4641c44bb3addfe9231a780b1",
+      "gitBlob": "b03d986b681d7b28fa082a57e923426422aff032",
+      "verified": true
+    },
+    {
+      "name": "mimi_encoder_int8.onnx",
+      "bytes": 20779616,
+      "sha256": "abb46f1ad0b83c3840fe38c3652ab0eda7d1d97a63f1953bbbff5d04d8f4c855",
+      "expectedSha256": "abb46f1ad0b83c3840fe38c3652ab0eda7d1d97a63f1953bbbff5d04d8f4c855",
+      "gitBlob": "92a8c02ba62d384025fc12770dffd0637b3d300a",
+      "verified": true
+    },
+    {
+      "name": "text_conditioner_int8.onnx",
+      "bytes": 16388384,
+      "sha256": "24c0642bff11a4e1435c004d0c2aa6c68e093fadfa35f0f0dba849ac67f25ac3",
+      "expectedSha256": "24c0642bff11a4e1435c004d0c2aa6c68e093fadfa35f0f0dba849ac67f25ac3",
+      "gitBlob": "8b3fd8ae12f91a3336780931a26d7ccb22dcb7a4",
+      "verified": true
+    },
+    {
+      "name": "flow_lm_main_int8.onnx",
+      "bytes": 76341079,
+      "sha256": "f9bd8106b79a0192c1c43399ab938fb24900a95c1c599870d75a884e99000116",
+      "expectedSha256": "f9bd8106b79a0192c1c43399ab938fb24900a95c1c599870d75a884e99000116",
+      "gitBlob": "bbcf41dc5040c44fddcf83cd125d98a1fd7e4a67",
+      "verified": true
+    },
+    {
+      "name": "flow_lm_flow_int8.onnx",
+      "bytes": 9962530,
+      "sha256": "3dd781ee5abee9e195320bf0106bebd6372a852b3b36352524ee78b40554635d",
+      "expectedSha256": "3dd781ee5abee9e195320bf0106bebd6372a852b3b36352524ee78b40554635d",
+      "gitBlob": "7ca07daee0085a1d0300e1dd444c28e5ed931018",
+      "verified": true
+    },
+    {
+      "name": "mimi_decoder_int8.onnx",
+      "bytes": 22684077,
+      "sha256": "3630450a3297a101792a6ac66619ebc70ab916b265e6220c2afaef8b1673f925",
+      "expectedSha256": "3630450a3297a101792a6ac66619ebc70ab916b265e6220c2afaef8b1673f925",
+      "gitBlob": "2c72e2baa86687adf94346aad5a5bde97ec362e2",
+      "verified": true
+    }
+  ],
+  "dependencies": {
+    "pocket-tts-js": {
+      "version": "0.1.0",
+      "license": "MIT"
+    },
+    "onnxruntime-web": {
+      "version": "1.30.0",
+      "license": "MIT"
+    },
+    "onnxruntime-node": {
+      "version": "1.21.0",
+      "license": "MIT"
+    }
+  },
+  "referenceEncodingCodePresent": true,
+  "personalSynthesisEnabled": false,
+  "newModelBytesDownloaded": 0,
+  "audioReadOrTransmitted": false,
+  "limitations": "Disk-cache integrity inventory only. Does not prove browser cache presence, runtime/model compatibility, successful enrollment, likeness, speech quality or reference rights."
+}

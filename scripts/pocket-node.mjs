@@ -6,7 +6,7 @@ import {pathToFileURL} from 'node:url';
 import {Worker as NodeWorker} from 'node:worker_threads';
 import {CharacterTTS} from '../src/pocket-client.js';
 const root=resolve(import.meta.dirname,'..'),cache=resolve(root,'.cache/pocket-node');
-export async function createPocketNode(){
+export async function createPocketNode({offline=false,signal}={}){
   await mkdir(cache,{recursive:true});
   const sourceDir=resolve(root,'src/vendor/pocket');
   let source=await readFile(resolve(sourceDir,'worker.js'),'utf8');
@@ -24,23 +24,29 @@ globalThis.self=globalThis;
 self.postMessage=(message,transfer)=>parentPort.postMessage(message,transfer);
 const originalFetch=fetch;
 globalThis.fetch=async(input,options)=>{
- const url=String(input);if(!url.startsWith('https://huggingface.co/vlapky/pocket-tts-onnx/resolve/'))return originalFetch(input,options);
+ const url=String(input);if(!url.startsWith('https://huggingface.co/vlapky/pocket-tts-onnx/resolve/')){if(${JSON.stringify(offline)})throw Error('External network disabled for reference verification');return originalFetch(input,options);}
  const path=resolve(${JSON.stringify(cache)},'models',new URL(url).pathname.split('/').slice(4).join('/'));
  try{return new Response(await readFile(path));}catch{}
+ if(${JSON.stringify(offline)})throw Error('Required Pocket asset is not in the existing local cache');
  const response=await originalFetch(input,options);if(!response.ok)throw Error('Pocket model download '+response.status);
  const data=new Uint8Array(await response.arrayBuffer());await mkdir(dirname(path),{recursive:true});await writeFile(path,data);return new Response(data);
 };
 await import('./inference.mjs');
 parentPort.on('message',data=>self.onmessage({data}));
 `);
+  const terminations=[];
   class BridgeWorker{
     constructor(){this.worker=new NodeWorker(pathToFileURL(resolve(cache,'entry.mjs')));this.worker.on('message',data=>this.onmessage?.({data}));this.worker.on('error',error=>this.onerror?.(error));}
     postMessage(data,transfer){this.worker.postMessage(data,transfer);}
-    terminate(){return this.worker.terminate();}
+    terminate(){const finished=this.worker.terminate();terminations.push(finished);return finished;}
   }
   const previous=globalThis.Worker;globalThis.Worker=BridgeWorker;
   const tts=new CharacterTTS({language:'english_2026-04',quantized:true,voiceCloning:true,maxThreads:1,modelBaseUrl:'https://huggingface.co/vlapky/pocket-tts-onnx/resolve/c469236dbc5f68287fa2fbf175b66de3b80123af/onnx'});
-  tts._ensureWorker();globalThis.Worker=previous;
-  await tts.load(p=>{if(p.type==='status')console.log(p.status);});
+  try{tts._ensureWorker();}finally{globalThis.Worker=previous;}
+  const destroy=tts.destroy.bind(tts),abort=()=>tts.destroy();
+  tts.destroy=()=>{signal?.removeEventListener('abort',abort);for(const pending of tts._pending.values())pending.reject(new DOMException('Pocket verification cancelled.','AbortError'));destroy();};
+  tts.waitForTerminations=()=>Promise.all(terminations);
+  signal?.addEventListener('abort',abort,{once:true});
+  try{if(signal?.aborted)throw new DOMException('Pocket verification cancelled.','AbortError');await tts.load(p=>{if(p.type==='status')console.log(p.status);});}catch(error){tts.destroy();await tts.waitForTerminations();throw error;}
   return tts;
 }

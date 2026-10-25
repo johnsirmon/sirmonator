@@ -20,3 +20,5 @@
 
 #review-transcript{height:7rem;min-height:4rem;font-size:14px}#review-notes{height:5rem;min-height:3rem;font-size:14px}#speech-review>label{display:block;margin-top:12px}#speech-review .source-preview{max-height:18rem;overflow:auto;overflow-wrap:anywhere}
 #review-anchor{overflow-wrap:anywhere}
+
+#reference-preparation>label{display:block;margin-top:12px}#reference-scope,#reference-provenance{height:6rem;min-height:4rem;font-size:14px}#reference-report,#reference-saved{overflow-wrap:anywhere}#reference-label{width:100%}

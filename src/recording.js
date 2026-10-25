@@ -3,6 +3,7 @@ import {getVoice} from './voices.js';
 import {LEGACY_PIPELINE,CONTINUITY_PIPELINE} from './continuity.js';
 import {FOUNDATION_PIPELINE,currentManifest,validateManifest} from './render-provenance.js';
 import {normalizePronunciation,spokenPassage} from './pronunciation.js';
+import {assertEngineRequest} from './engine-capabilities.js';
 export const MAX_DOCUMENT=2_000_000, MAX_READING=150_000, CHAPTER_SIZE=6000;
 export const PIPELINE=FOUNDATION_PIPELINE;
 export function chaptersFor(text,target=CHAPTER_SIZE){
@@ -23,6 +24,7 @@ export async function digest(text){
 }
 export function normalizeSettings(settings){
   const profile=getVoice(settings.voice);
+  assertEngineRequest(profile.engine,settings);
   if(!['refined','previous'].includes(settings.edition))throw Error('Unknown voice edition.');
   if(!['natural','reflective','continuous'].includes(settings.delivery))throw Error('Unknown delivery.');
   const speed=Number(settings.speed);if(!Number.isFinite(speed)||speed<.7||speed>1.3)throw Error('Invalid narration speed.');

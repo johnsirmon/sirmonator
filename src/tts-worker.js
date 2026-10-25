@@ -7,6 +7,7 @@ import {renderMetrics} from './render-metrics.js';
 import {characterEffect,pauseAfter} from './audio-effects.js';
 import {createSpeechRunner} from './speech-runner.js';
 import {spokenPassage} from './pronunciation.js';
+import {assertEngineRequest} from './engine-capabilities.js';
 let kokoroRunner,kokoroLoads=0,kokoroProvider=null,kokoroRuntime,family=null;
 async function kokoro(text,voice,speed,progress,frozen){
   if(!kokoroRunner){
@@ -29,6 +30,7 @@ self.onmessage=async({data})=>{
   const progress=message=>self.postMessage({type:'stage',requestId,message});
   try{
     const profile=getVoice(data.settings.voice),speed=data.settings.speed,pipeline=data.settings.pipeline??LEGACY_PIPELINE;
+    assertEngineRequest(profile.engine,data.settings);
     if(![LEGACY_PIPELINE,CONTINUITY_PIPELINE,FOUNDATION_PIPELINE].includes(pipeline))throw Error('Unknown audio pipeline.');
     assertSupportedManifest(data.settings);
     const frozen=pipeline===FOUNDATION_PIPELINE,nextFamily=profile.engine+':'+(frozen?'frozen':'legacy');

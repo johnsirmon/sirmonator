@@ -2,6 +2,7 @@ import assets from './render-assets.json' with {type:'json'};
 import previous from './render-contract-944aa8e.json' with {type:'json'};
 import takesContract from './render-contract-1458c2e.json' with {type:'json'};
 import pronunciationContract from './render-contract-8e3e830.json' with {type:'json'};
+import preparationContract from './render-contract-0bd2d4a.json' with {type:'json'};
 import compatibility from './pronunciation-compatibility.json' with {type:'json'};
 import {normalizePronunciation} from './pronunciation.js';
 import {getVoice} from './voices.js';
@@ -35,13 +36,13 @@ export function assertSupportedManifest(settings){
  // Explicit bridge from the reviewed foundation release: only orchestration,
  // storage and provenance code changed. Every synthesis/voice/DSP/dependency
  // hash must still match, and all non-source manifest fields must be identical.
- const orchestration=new Set(['src/render-provenance.js','src/job-runner.js','src/storage.js','src/take-selection.js','src/passage-takes.js','src/render-contract-944aa8e.json','src/render-contract-1458c2e.json','src/render-contract-8e3e830.json','src/pronunciation-compatibility.json']);
+ const orchestration=new Set(['src/render-provenance.js','src/job-runner.js','src/storage.js','src/take-selection.js','src/passage-takes.js','src/render-contract-944aa8e.json','src/render-contract-1458c2e.json','src/render-contract-8e3e830.json','src/render-contract-0bd2d4a.json','src/pronunciation-compatibility.json']);
  // Old contracts have no aliases. Reviewed adapter overrides are pinned to
  // exact current file hashes; future audio edits cannot inherit this bridge.
  const pinned=Object.entries(compatibility.noRulesOverrides).every(([name,hash])=>assets.source.files[name]===hash);
- for(const archived of [previous,takesContract,pronunciationContract]){
+ for(const archived of [previous,takesContract,pronunciationContract,preparationContract]){
   const sameAudio=Object.entries(archived.source.files).every(([name,hash])=>orchestration.has(name)||assets.source.files[name]===hash||(pinned&&name in compatibility.noRulesOverrides))&&Object.keys(assets.source.files).every(name=>orchestration.has(name)||name in archived.source.files||(pinned&&name in compatibility.noRulesOverrides));
-  const supportedDictionary=!saved?.pronunciation||(archived===pronunciationContract&&saved.pronunciation.matcher==='literal-unicode-token-longest-v1');
+  const supportedDictionary=!saved?.pronunciation||(archived===pronunciationContract&&saved.pronunciation.matcher==='literal-unicode-token-longest-v1')||(archived===preparationContract&&['literal-unicode-token-longest-v1','literal-unicode-token-longest-v2'].includes(saved.pronunciation.matcher));
   if(supportedDictionary&&pinned&&sameAudio&&JSON.stringify(saved?.source)===JSON.stringify(archived.source)&&JSON.stringify({...saved,source:current.source})===JSON.stringify(current))return;
  }
  throw Error('These saved render inputs are not supported by this build. Saved audio can still be played and exported. Start a new recording to use updated inputs.');
