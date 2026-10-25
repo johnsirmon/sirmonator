@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "kind": "Native Edge isolated app with procedural CC0 tone TTS; actual metadata/Blob-size measurement",
+  "origin": "http://127.0.0.1:4207",
+  "initial": {"originalPayload": "75.9 KiB", "originalParts": 3, "alternativePayload": "0 B", "alternativeRows": 0, "metadataJsonApproximate": "10.7 KiB", "takeRevision": 0},
+  "afterSyntheticRegeneration": {"previousSummaryCleared": true, "originalPayload": "75.9 KiB", "originalParts": 3, "alternativePayload": "32.3 KiB", "alternativeRows": 1, "metadataJsonApproximate": "12.3 KiB", "takeRevision": 1},
+  "scanRequests": 3,
+  "additionalFreshnessReads": 1,
+  "applicationAudioByteReads": 0,
+  "keyboardFocusAfterRefresh": "recording-usage-refresh",
+  "audioAndSourceExportControlsEnabled": true,
+  "labelsVerified": ["shared-origin estimate", "approximate usage/quota", "unknown individual model-cache costs", "not actual disk allocation", "no generation-success guarantee"],
+  "limits": "No browser disk-speed, real-model synthesis, actual quota exhaustion, download completion, phone or acoustic-quality claim. Native browser cancellation was covered by deterministic tests rather than forcing a slow read."
+}

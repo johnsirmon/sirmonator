@@ -46,7 +46,7 @@ test('unresponsive optional timing write is bounded without cancelling prepared 
  finally{clearTimeout(guard);controller.abort();store.close();}
 });
 test('quota warning reports recovery and preserved committed passages',async()=>{
- const main=await readFile('src/main.js','utf8'),line=main.split('\n').find(line=>line.startsWith('const warn=')),context=vm.createContext({});vm.runInContext(line+'\nglobalThis.warning=warn;',context);assert.match(context.warning(new DOMException('Quota','QuotaExceededError')),/Saved passages are safe.*Download.*resume/);
+ const main=await readFile('src/main.js','utf8'),line=main.split('\n').find(line=>line.startsWith('const warn=')),context=vm.createContext({});vm.runInContext(line+'\nglobalThis.warning=warn;',context);assert.match(context.warning(new DOMException('Quota','QuotaExceededError')),/Previously committed passages were kept.*Export available audio and source text.*Browser estimates do not guarantee success/);
 });
 test('cancel during optional timing persistence rejects the export and aborts its write signal',async()=>{
  const {store,job,audio}=await fixture(),entered=deferred(),controller=new AbortController();let writeSignal,observed=0;

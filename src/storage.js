@@ -5,6 +5,7 @@ import {requireTakeJob,selectionState,changeSelection,takeRevision,validateTake,
 import {spokenPassage} from './pronunciation.js';
 import {sha256Bytes} from './asset-integrity.js';
 import {openManagedDatabase} from './idb-lifecycle.js';
+import {scanRecordingUsage} from './storage-usage.js';
 const DATABASE='sirmonator-recordings-v1',LEASE_MS=20000;
 function complete(tx){const done=new Promise((resolve,reject)=>{tx.oncomplete=()=>resolve();tx.onabort=()=>reject(tx.error??Error('Could not save on this device.'));tx.onerror=()=>{};});done.catch(()=>{});return done;}
 const value=request=>new Promise((resolve,reject)=>{request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
@@ -16,6 +17,7 @@ export async function openStorage(factory=globalThis.indexedDB,name=DATABASE,opt
     close:()=>db.close(),draft:()=>read('prefs','draft'),saveDraft:data=>put('prefs',data,'draft'),
     async deleteDraft(){const tx=db.transaction('prefs','readwrite'),done=complete(tx);tx.objectStore('prefs').delete('draft');await done;},
     job:id=>read('jobs',id),part:(id,index)=>read('parts',[id,index]),
+    usage:(id,options)=>scanRecordingUsage(db,id,options),
     take:(id,index,takeId)=>read('takes',[id,index,takeId]),
     async takes(id){const tx=db.transaction('takes'),done=complete(tx);const result=await value(tx.objectStore('takes').getAll(IDBKeyRange.bound([id,0,''],[id,Number.MAX_SAFE_INTEGER,'\uffff'])));await done;return result;},
     async changeTake({id,index,takeId,undo=false,owner,revision,take,signal},now){

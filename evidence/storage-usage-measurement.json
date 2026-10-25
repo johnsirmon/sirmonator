@@ -1,0 +1,98 @@
+{
+  "schema": 1,
+  "kind": "Production read-only scanner + fake-indexeddb, 2000 procedural PCM parts and 16 alternatives; no model",
+  "sourceBuildSha256": "c5ee6149db3bbb13325c340598a29485f6f1712de4e43dece2110bc7b4203c07",
+  "runs": [
+    {
+      "elapsedMs": 189.39280000000008,
+      "observed": {
+        "transactions": 1,
+        "requests": 18,
+        "audioByteReads": 0
+      },
+      "summary": {
+        "schema": 1,
+        "originalBytes": 192000,
+        "alternativeBytes": 2304,
+        "originalRows": 2000,
+        "alternativeRows": 16,
+        "unmeasurableAudioRows": 0,
+        "metadataJsonBytes": 1323389,
+        "metadataComplete": false,
+        "scanComplete": true,
+        "rowsFetched": 2016,
+        "requests": 18,
+        "audioByteReads": 0,
+        "rowLimit": 10000,
+        "batchSize": 128,
+        "anchor": "[\"ff82be370eabca5c4c07821328df15ebad2fdec6c2dd01b29a29332b22bd0d24\",1792910538898,2000,192000,1]",
+        "recordingId": "ff82be370eabca5c4c07821328df15ebad2fdec6c2dd01b29a29332b22bd0d24",
+        "through": 2000,
+        "takeRevision": 1,
+        "measuredAt": 1792910539478,
+        "elapsedMs": 188.79090000000008
+      }
+    },
+    {
+      "elapsedMs": 399.82680000000005,
+      "observed": {
+        "transactions": 1,
+        "requests": 18,
+        "audioByteReads": 0
+      },
+      "summary": {
+        "schema": 1,
+        "originalBytes": 192000,
+        "alternativeBytes": 2304,
+        "originalRows": 2000,
+        "alternativeRows": 16,
+        "unmeasurableAudioRows": 0,
+        "metadataJsonBytes": 1323389,
+        "metadataComplete": false,
+        "scanComplete": true,
+        "rowsFetched": 2016,
+        "requests": 18,
+        "audioByteReads": 0,
+        "rowLimit": 10000,
+        "batchSize": 128,
+        "anchor": "[\"ff82be370eabca5c4c07821328df15ebad2fdec6c2dd01b29a29332b22bd0d24\",1792910538898,2000,192000,1]",
+        "recordingId": "ff82be370eabca5c4c07821328df15ebad2fdec6c2dd01b29a29332b22bd0d24",
+        "through": 2000,
+        "takeRevision": 1,
+        "measuredAt": 1792910539878,
+        "elapsedMs": 399.78
+      }
+    },
+    {
+      "elapsedMs": 166.2953,
+      "observed": {
+        "transactions": 1,
+        "requests": 18,
+        "audioByteReads": 0
+      },
+      "summary": {
+        "schema": 1,
+        "originalBytes": 192000,
+        "alternativeBytes": 2304,
+        "originalRows": 2000,
+        "alternativeRows": 16,
+        "unmeasurableAudioRows": 0,
+        "metadataJsonBytes": 1323389,
+        "metadataComplete": false,
+        "scanComplete": true,
+        "rowsFetched": 2016,
+        "requests": 18,
+        "audioByteReads": 0,
+        "rowLimit": 10000,
+        "batchSize": 128,
+        "anchor": "[\"ff82be370eabca5c4c07821328df15ebad2fdec6c2dd01b29a29332b22bd0d24\",1792910538898,2000,192000,1]",
+        "recordingId": "ff82be370eabca5c4c07821328df15ebad2fdec6c2dd01b29a29332b22bd0d24",
+        "through": 2000,
+        "takeRevision": 1,
+        "measuredAt": 1792910540044,
+        "elapsedMs": 166.24209999999994
+      }
+    }
+  ],
+  "limits": "Timings measure this Node/fake-indexeddb environment, not native browser disk IO. Blob-handle retrieval/engine internals may have costs not visible to application arrayBuffer counters. UI adds one freshness metadata read and one optional browser estimate; neither reads audio bytes."
+}

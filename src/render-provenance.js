@@ -10,6 +10,7 @@ import browserTimerContract from './render-contract-584b0cd.json' with {type:'js
 import quotaContract from './render-contract-4b09441.json' with {type:'json'};
 import resilienceContract from './render-contract-23d62a8.json' with {type:'json'};
 import boundaryContract from './render-contract-d71b201.json' with {type:'json'};
+import visibilityContract from './render-contract-ede13ba.json' with {type:'json'};
 import {LEGACY_BOUNDARIES,wordBoundaryManifest} from './text-boundaries.js';
 import compatibility from './pronunciation-compatibility.json' with {type:'json'};
 import {normalizePronunciation} from './pronunciation.js';
@@ -59,10 +60,16 @@ export function assertSupportedManifest(settings){
  orchestration.add('src/render-contract-4b09441.json');
  orchestration.add('src/render-contract-23d62a8.json');
  orchestration.add('src/render-contract-d71b201.json');
- for(const archived of [previous,takesContract,pronunciationContract,preparationContract,storageContract,recoveryContract,preparationRecoveryContract,browserTimerContract,quotaContract,resilienceContract,boundaryContract]){
+ orchestration.add('src/storage-usage.js');orchestration.add('src/render-contract-ede13ba.json');
+ for(const archived of [previous,takesContract,pronunciationContract,preparationContract,storageContract,recoveryContract,preparationRecoveryContract,browserTimerContract,quotaContract,resilienceContract,boundaryContract,visibilityContract]){
   const sameAudio=Object.entries(archived.source.files).every(([name,hash])=>orchestration.has(name)||assets.source.files[name]===hash||(pinned&&name in compatibility.noRulesOverrides))&&Object.keys(assets.source.files).every(name=>orchestration.has(name)||name in archived.source.files||(pinned&&name in compatibility.noRulesOverrides));
-  const supportedDictionary=!saved?.pronunciation||(archived===pronunciationContract&&saved.pronunciation.matcher==='literal-unicode-token-longest-v1')||([preparationContract,storageContract,recoveryContract,preparationRecoveryContract,browserTimerContract,quotaContract,resilienceContract,boundaryContract].includes(archived)&&['literal-unicode-token-longest-v1','literal-unicode-token-longest-v2'].includes(saved.pronunciation.matcher));
-  if(saved?.chunker?.revision===LEGACY_BOUNDARIES&&supportedDictionary&&pinned&&sameAudio&&JSON.stringify(saved?.source)===JSON.stringify(archived.source)&&JSON.stringify({...saved,source:current.source})===JSON.stringify(current))return;
+  const supportedDictionary=!saved?.pronunciation||(archived===pronunciationContract&&saved.pronunciation.matcher==='literal-unicode-token-longest-v1')||([preparationContract,storageContract,recoveryContract,preparationRecoveryContract,browserTimerContract,quotaContract,resilienceContract,boundaryContract,visibilityContract].includes(archived)&&['literal-unicode-token-longest-v1','literal-unicode-token-longest-v2'].includes(saved.pronunciation.matcher));
+  // The reviewed Word-policy build is bridged only across read-only storage/UI
+  // changes. Unlike legacy adapter bridges, EVERY non-orchestration hash must
+  // match exactly; changed boundary/matcher/renderer code cannot inherit it.
+  const exactAudio=archived===visibilityContract&&Object.entries(archived.source.files).every(([name,hash])=>orchestration.has(name)||assets.source.files[name]===hash)&&Object.keys(assets.source.files).every(name=>orchestration.has(name)||name in archived.source.files);
+  const compatible=saved?.chunker?.revision===LEGACY_BOUNDARIES?pinned&&sameAudio:exactAudio;
+  if(compatible&&supportedDictionary&&JSON.stringify(saved?.source)===JSON.stringify(archived.source)&&JSON.stringify({...saved,source:current.source})===JSON.stringify(current))return;
  }
  throw Error('These saved render inputs are not supported by this build. Saved audio can still be played and exported. Start a new recording to use updated inputs.');
 }

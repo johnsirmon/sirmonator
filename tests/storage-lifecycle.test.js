@@ -1,3 +1,4 @@
+import {browserStorageEstimate,storageEstimateText} from '../src/storage-usage.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {indexedDB,IDBKeyRange} from 'fake-indexeddb';
@@ -49,7 +50,7 @@ test('versionchange guards subsequent operations and preserves committed passage
 test('actual main lifecycle handler interrupts generation, editors and exports while preserving source',async()=>{
  const main=await readFile('src/main.js','utf8'),start=main.indexOf('function storageStateChanged('),end=main.indexOf('const audition=',start),elements=new Map(),calls=[];
  const $=id=>{if(!elements.has(id))elements.set(id,{textContent:'',value:id==='text'?'Current unsaved source':'',pause(){calls.push('pause');}});return elements.get(id);};
- const context=vm.createContext({$,storageReady:true,cancelled:false,pauseRequested:false,draftTimer:1,podcastSaveTimer:2,clearTimeout(){},beginSelection(){calls.push('cancel selections and exports');},killWorker(){calls.push('kill worker');},takeEditor:{cancel(){calls.push('cancel take');}},status:message=>calls.push(message),controls(){calls.push('controls');}});
+ const context=vm.createContext({browserStorageEstimate,storageEstimateText,$,storageReady:true,cancelled:false,pauseRequested:false,draftTimer:1,podcastSaveTimer:2,clearTimeout(){},beginSelection(){calls.push('cancel selections and exports');},killWorker(){calls.push('kill worker');},takeEditor:{cancel(){calls.push('cancel take');}},status:message=>calls.push(message),controls(){calls.push('controls');}});
  vm.runInContext(main.slice(start,end),context);context.storageStateChanged({state:'versionchange',message:'Close other tabs and retry'});
  assert.equal(context.storageReady,false);assert.equal(context.cancelled,true);assert.equal(context.pauseRequested,true);assert.equal($('text').value,'Current unsaved source');assert.match($('save-status').textContent,/unsaved/);
  for(const expected of ['cancel selections and exports','kill worker','cancel take','pause','controls'])assert.ok(calls.includes(expected));
@@ -63,7 +64,7 @@ test('storage-only contract bridge keeps archived original and pronunciation rec
 test('actual bootstrap retries a failed open without replacing an unsaved draft',async()=>{
  const main=await readFile('src/main.js','utf8'),start=main.indexOf('async function initialize(){'),end=main.indexOf('\npronunciationEditor=createPronunciationEditor',start),elements=new Map();let attempts=0;
  const $=id=>{if(!elements.has(id))elements.set(id,{value:id==='text'?'Current unsaved exact text':'',textContent:''});return elements.get(id);};
- const context=vm.createContext({$,storageOpening:false,storageReady:false,store:null,dirty:true,selectionToken:0,
+ const context=vm.createContext({browserStorageEstimate,storageEstimateText,$,storageOpening:false,storageReady:false,store:null,dirty:true,selectionToken:0,
   controls(){},beginSelection(){return ++context.selectionToken;},storageStateChanged(){},
   async openStorage(){attempts++;if(attempts===1)throw Object.assign(Error('Close other tabs, then retry local storage.'),{name:'StorageBlockedError'});return {close(){},async draft(){return {text:'Older saved text'};}};},
   narratorNote(){},async refreshLibrary(){return [];},navigator:{storage:{}},status(){},warn:e=>e.message,busy:()=>false});
@@ -84,7 +85,7 @@ test('late draft save cannot overwrite an invalidation warning or acknowledge a 
  const main=await readFile('src/main.js','utf8'),flush=main.slice(main.indexOf('async function flushDraft(){'),main.indexOf('function queueSave()')),
   lifecycle=main.slice(main.indexOf('function storageStateChanged('),main.indexOf('const audition=')),save=deferred(),started=deferred(),elements=new Map();
  const $=id=>{if(!elements.has(id))elements.set(id,{checked:true,textContent:'',pause(){}});return elements.get(id);};
- const context=vm.createContext({$,storageReady:true,store:{async saveDraft(){started.resolve();await save.promise;}},draftRevision:1,saveChain:Promise.resolve(),draftTimer:0,podcastSaveTimer:0,clearTimeout(){},draft:()=>({text:'Draft A'}),MAX_DOCUMENT:2000000,warn:e=>e.message,cancelled:false,pauseRequested:false,beginSelection(){},killWorker(){},takeEditor:null,status(){},controls(){}});
+ const context=vm.createContext({browserStorageEstimate,storageEstimateText,$,storageReady:true,store:{async saveDraft(){started.resolve();await save.promise;}},draftRevision:1,saveChain:Promise.resolve(),draftTimer:0,podcastSaveTimer:0,clearTimeout(){},draft:()=>({text:'Draft A'}),MAX_DOCUMENT:2000000,warn:e=>e.message,cancelled:false,pauseRequested:false,beginSelection(){},killWorker(){},takeEditor:null,status(){},controls(){}});
  vm.runInContext(flush+'\n'+lifecycle,context);const pending=context.flushDraft();await started.promise;
  context.draftRevision=2;context.storageStateChanged({state:'versionchange',message:'Connection changed'});const warning=$('save-status').textContent;save.resolve();await pending;assert.equal($('save-status').textContent,warning);assert.match(warning,/unsaved/);
  const next=deferred();context.storageReady=true;context.store={saveDraft:()=>next.promise};const newer=context.flushDraft();await tick();context.draftRevision=3;$('save-status').textContent='Saving newer draft B';next.resolve();await newer;assert.equal($('save-status').textContent,'Saving newer draft B');

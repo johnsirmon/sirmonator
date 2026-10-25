@@ -1,3 +1,5 @@
+import {createStorageUsageEditor} from './storage-usage-editor.js';
+import {browserStorageEstimate,storageEstimateText} from './storage-usage.js';
 import {createSynthesisClient} from './synthesis-client.js';
 import {abortable,assertActive} from './continuity.js';
 import {FOUNDATION_PIPELINE} from './engine-specs.js';
@@ -26,11 +28,11 @@ let creating=false,auditionBusy=false,importing=false,quick=false,quickPaused=fa
 let audioURL=null,previewURL=null,wake=null,owner=crypto.randomUUID(),draftTimer,saveChain=Promise.resolve(),dirty=false,undo=null;
 let renderToken=0,selectionToken=0,loadedChapter=0,loadedThrough=0,loadedJobId=null,positionSaved=0,exporting=false;
 let exportController=null,playbackController=null;
-var takeEditor,pronunciationEditor,speechReview,referenceEditor;
+var takeEditor,pronunciationEditor,speechReview,referenceEditor,storageUsageEditor;
 const chapterCache=createChapterCache({prepare:(job,chapter,options)=>{const token=renderToken,selection=selectionToken;return recordingBlob(store,job,chapter,undefined,{...options,onProgress:value=>{if(token===renderToken&&selection===selectionToken&&selectedJob?.id===job.id&&!exporting)showPreparationProgress($,value,'Chapter '+(chapter+1));}});},onChange:()=>controls()});
 function cancelPreparations(){const active=exportController||playbackController||chapterCache.preparing;exportController?.abort();playbackController?.abort();chapterCache.clear();if(active){$('preparation-meter').hidden=true;$('preparation-status').textContent='Audio preparation interrupted. Saved audio remains available.';}}
 const status=message=>$('status').textContent=message;
-const warn=error=>error?.name==='QuotaExceededError'?'This device is low on storage. Saved passages are safe. Download them, delete an older recording, then resume.':(error?.message||'Could not save on this device.');
+const warn=error=>error?.name==='QuotaExceededError'?'Local storage could not accept this write. Previously committed passages were kept. Export available audio and source text before retrying; choose fewer chapters or another device. Browser estimates do not guarantee success.':(error?.message||'Could not save on this device.');
 const busy=()=>creating||auditionBusy||importing||quick||exporting||(typeof takeEditor!=='undefined'&&takeEditor?.busy)||(typeof speechReview!=='undefined'&&speechReview?.busy)||(typeof referenceEditor!=='undefined'&&referenceEditor?.busy);
 function controls(){
   for(const id of ['text','title','file','sample','clear','undo-clear','engine','voice','voice-edition','delivery','speed','review','start','preview','custom-preview','range-from','range-to','remember','open-recording','saved-recordings','pronunciation-rules','pronunciation-case','text-boundaries'])$(id).disabled=busy();
@@ -47,6 +49,7 @@ function controls(){
   if(typeof takeEditor!=='undefined')takeEditor?.controls();
   if(typeof speechReview!=='undefined')speechReview?.controls();
   if(typeof referenceEditor!=='undefined')referenceEditor?.controls();
+  if(typeof storageUsageEditor!=='undefined')storageUsageEditor?.controls();
   $('retry-storage').disabled=storageOpening||busy();$('retry-storage').hidden=storageReady;
   for(const id of ['refresh-audio','play-chapter'])$(id).disabled=busy()||!storageReady||!selectedJob?.next;
   if(!storageReady){for(const id of ['resume-recording','open-recording','delete-recording','download','download-chapter','share','render-report','pod-export','refresh-audio','play-chapter'])$(id).disabled=true;if($('engine').value==='studio')$('start').disabled=true;}
@@ -128,6 +131,7 @@ async function refreshLibrary(){
 }
 function availableChapters(job){return [...new Set(job.passages.slice(0,job.next).map(p=>p.chapter))];}
 function displayProgress(job){
+  if(typeof storageUsageEditor!=='undefined')storageUsageEditor?.update(job);
   renderDetails(job);
   $('recording-title').textContent=job.title;
   $('recording-status').textContent=`${getVoice(job.settings.voice).name} · ${job.settings.edition} · ${job.next} of ${job.passages.length} passages saved · ${job.next===job.passages.length?'Complete recording':'Incomplete — saved audio only'}. ${Math.round(job.seconds/60)} min saved.`;
@@ -138,7 +142,7 @@ function displayProgress(job){
   $('play-chapter').disabled=!chapters.length;$('refresh-audio').disabled=!job.next;
   $('share').hidden=typeof navigator.share!=='function';controls();
 }
-function beginSelection(){if(typeof speechReview!=='undefined')speechReview?.cancel();if(typeof referenceEditor!=='undefined')referenceEditor?.cancel();cancelPreparations();renderToken++;return ++selectionToken;}
+function beginSelection(){if(typeof storageUsageEditor!=='undefined')storageUsageEditor?.cancel();if(typeof speechReview!=='undefined')speechReview?.cancel();if(typeof referenceEditor!=='undefined')referenceEditor?.cancel();cancelPreparations();renderToken++;return ++selectionToken;}
 async function showRecording(job,{keepAudio=false,selection=beginSelection()}={}){
   // Cancel old reads before validation or metadata saving can yield to another selection.
   if(selection!==selectionToken)return;
@@ -221,8 +225,8 @@ async function createAudio(id){
       const text=rangeText();if(!$('review').checked){status('Review your selected text and check the confirmation.');$('review').focus();return;}
       if($('text').value.length>MAX_DOCUMENT)throw Error('Reduce the draft to under 2 million characters.');
       if($('engine').value==='device'){quickListen(text);return;}
-      const estimate=await navigator.storage?.estimate?.();const needed=countWords(text)/150/Number($('speed').value)*60*96000*1.5+2*1024*1024;
-      if(estimate?.quota&&estimate.quota-estimate.usage<needed)throw Error('Not enough estimated browser storage. Choose fewer chapters or delete an older downloaded recording.');
+      const estimate=await browserStorageEstimate({estimate:()=>navigator.storage?.estimate?.()});if(cancelled||pauseRequested){status(cancelled?'Cancelled before a new recording was saved. Existing passages were kept.':'Paused before a new recording was saved. Existing passages were kept.');return;}const needed=countWords(text)/150/Number($('speed').value)*60*96000*1.5+2*1024*1024;
+      if(estimate?.quota&&estimate.quota-estimate.usage<needed)throw Error('The shared-origin storage estimate is below this recording’s estimated needs. Export existing audio and source text first; choose fewer chapters or another device. Estimates do not guarantee success.');
       job=await store.ensureJob(await makeRecording(text,settings(),$('title').value));
     }
     if(!job)throw Error('Recording not found.');
@@ -307,12 +311,13 @@ async function initialize(){
     $('storage-state').textContent='Local recordings connected. Saved data was not reset.';
     $('save-status').textContent=dirty?'Your current draft was kept. Edit to autosave, or download a text backup.':saved?'Draft restored from this device. Download a text backup for safekeeping.':'Autosave ready. Drafts and recordings stay on this browser and device.';
     narratorNote();const jobs=await refreshLibrary();if(jobs?.length&&selection===selectionToken){document.body.classList.add('has-draft');$('saved-recordings').value=jobs[0].id;await showRecording(jobs[0],{selection});}
-    const estimate=await navigator.storage?.estimate?.();if(estimate?.quota)$('storage-info').textContent=`Browser estimates ${Math.round((estimate.quota-estimate.usage)/1048576)} MB of storage quota available. This is not a device memory measurement.`;
+    const estimate=await browserStorageEstimate({estimate:()=>navigator.storage?.estimate?.()});$('storage-info').textContent=storageEstimateText(estimate);
   }catch(error){$('storage-state').textContent=warn(error);if(storageReady){$('save-status').textContent='Saved data could not be fully restored. Download a text backup and check My recordings.';status(warn(error));}else{$('save-status').textContent='Local saving unavailable: '+warn(error);status(error.name==='StorageVersionError'?warn(error):'Close other Sirmonator tabs and retry local storage. Text backup and Quick listen remain available.');}}
   finally{storageOpening=false;controls();}
 }
 $('retry-storage').onclick=()=>{if(!busy())return initialize();};
 pronunciationEditor=createPronunciationEditor({$,source:rangeText,policy:draftBoundaryPolicy,onChange:()=>{$('review').checked=false;scheduleSave();}});
+storageUsageEditor=createStorageUsageEditor({$,getStore:()=>store,getJob:()=>selectedJob,getSelection:()=>selectionToken,isBusy:()=>!storageReady||busy(),onBusy:controls});
 takeEditor=createTakeEditor({$,getStore:()=>store,getJob:()=>selectedJob,isBusy:()=>!storageReady||creating||auditionBusy||importing||quick||exporting||speechReview?.busy||referenceEditor?.busy,withLease,generate,owner,notify:status,onBusy:controls,onChanged:async job=>{const chapter=loadedChapter;beginSelection();$('audio').pause();$('audio').removeAttribute('src');$('audio').onloadedmetadata=null;if(audioURL)URL.revokeObjectURL(audioURL);audioURL=null;loadedJobId=null;selectedJob=job;displayProgress(job);await loadChapter(chapter);await refreshLibrary();}});
 speechReview=createSpeechReviewEditor({$,getStore:()=>store,getJob:()=>selectedJob,getSelection:()=>selectionToken,isBusy:()=>!storageReady||creating||auditionBusy||importing||quick||exporting||takeEditor?.busy||referenceEditor?.busy,onBusy:controls,onListen:async snapshot=>{if(!reviewSelectionMatches(selectedJob,snapshot))throw Error('Load current selected audio first.');if(!await loadChapter(snapshot.anchor.chapter,snapshot.chapterOffsetSeconds))throw Error('Audio preparation did not finish. Saved audio was kept.');if(!reviewSelectionMatches(selectedJob,snapshot))throw Error('Selection changed while preparing audio; load the current review again.');},onRepair:snapshot=>{$('passage-takes').open=true;$('take-passage').value=String(snapshot.anchor.passage);$('take-passage').onchange();},onExport:payload=>saveFile(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),safeFilename(selectedJob?.title??'Recording')+'-manual-review-'+(payload.snapshot?'passage-'+(payload.snapshot.anchor.passage+1)+'-r'+payload.snapshot.anchor.selectionRevision:'archive')+'.json')});
 initialize();
