@@ -13,5 +13,5 @@ export async function importDocument(file){
   }else throw Error('Choose a .txt, .docx, or text-based .pdf document.');
   if(!text.trim())throw Error('No readable text found. Scanned PDFs need text copied from another source.');
   if(text.length>MAX_DOCUMENT)throw Error('Use a document under 2 million characters. Your previous draft has been kept.');
-  return {text,note:ext==='txt'?'Text loaded. Review the chapter range before creating audio.':'Check the imported text against your original. Columns, tables, notes, and text boxes may be out of order or missing.'};
+  return {text,note:ext==='txt'?'TXT decoded strictly. The editor uses LF line breaks; an encoding BOM is not manuscript text. Review the text and chapter range before creating audio.':'Check the imported text against your original. Columns, tables, notes, and text boxes may be out of order or missing.'};
 }
