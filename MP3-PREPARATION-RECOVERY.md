@@ -23,6 +23,10 @@ preparation updates the separate chapter status. Selection/render guards prevent
 late background work from overwriting another selection or active export. Stop
 hides the old meter; terminal failure/cancellation also hides it. Observer errors
 do not change encoded audio.
+Foreground chapter handoff resets the meter, including when navigation joins an
+already running prefetch whose original progress observer belongs to an older
+render token. Settled loads hide that meter and report current chapter readiness;
+they do not pretend to have replayed progress from a previous consumer.
 
 ## Timeout and resource lifecycle
 

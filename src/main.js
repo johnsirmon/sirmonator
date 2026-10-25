@@ -151,6 +151,7 @@ async function showRecording(job,{keepAudio=false,selection=beginSelection()}={}
 }
 async function loadChapter(chapter,time=0,preparation=null){
   if(!selectedJob?.next)return;const token=++renderToken,id=selectedJob.id,selection=selectionToken;
+  $('preparation-meter').hidden=true;$('preparation-status').textContent='Preparing chapter '+(chapter+1)+' audio.';
   playbackController?.abort();const controller=new AbortController();playbackController=controller;controls();
   const current=()=>token===renderToken&&selection===selectionToken&&selectedJob?.id===id;
   let handedOff=false;
@@ -162,9 +163,10 @@ async function loadChapter(chapter,time=0,preparation=null){
     $('audio').pause();if(audioURL)URL.revokeObjectURL(audioURL);audioURL=URL.createObjectURL(blob);loadedChapter=chapter;loadedThrough=job.next;loadedJobId=job.id;selectedJob=job;$('play-chapter').value=String(chapter);
     $('audio').onloadedmetadata=()=>{if(current()&&loadedJobId===id&&Number.isFinite($('audio').duration))$('audio').currentTime=Math.max(0,Math.min(time,$('audio').duration-.05));};
     $('audio').src=audioURL;$('audio').playbackRate=Number($('playback-speed').value);mediaControls(job);
+    $('preparation-status').textContent='Chapter '+(chapter+1)+' audio ready.';
     return true;
   }catch(error){if(current())$('export-status').textContent=warn(error);}
-  finally{if(!handedOff)preparation?.dispose();if(playbackController===controller)playbackController=null;controls();}
+  finally{if(current())$('preparation-meter').hidden=true;if(!handedOff)preparation?.dispose();if(playbackController===controller)playbackController=null;controls();}
 }
 function renderDetails(job,preparation,persisted){
  if(typeof takeEditor!=='undefined')takeEditor?.update(job);
