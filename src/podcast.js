@@ -20,7 +20,7 @@ export function podcastReadiness(fields){
  warnings.push('Loudness and true peak are not measured or normalized here. Review against Apple audio guidance (about -16 LKFS ±1; true peak at most -1 dBFS).');
  return warnings;
 }
-export async function episodePackage(job,audio,fields){
+export async function episodePackage(job,audio,fields,artifact=null){
  fields={...fields};
  for(const key of ['audioUrl','artworkUrl','feedUrl','websiteUrl']){
   let url;try{url=new URL(fields[key]);}catch{}
@@ -32,7 +32,9 @@ export async function episodePackage(job,audio,fields){
  if(!job.episodeGuid)throw Error('Save this episode identity before exporting.');
  if(audio.type!=='audio/mpeg')throw Error('Podcast export requires actual MP3 audio.');
  const bytes=new Uint8Array(await audio.arrayBuffer()),audioInfo=inspectMp3(bytes),seconds=audioInfo.seconds;if(!bytes.length||!seconds)throw Error('No valid MP3 audio.');
- if(Math.abs(seconds-job.seconds)>.2)throw Error('Saved audio duration does not match the complete checkpoint.');
+ const revision=job.takeSelection?.revision??0;
+ if((revision>0&&!artifact)||(artifact&&(!Number.isFinite(artifact.seconds)||artifact.seconds<0||artifact.takeRevision!==revision)))throw Error('Podcast preparation requires the matching frozen audio selection and duration.');
+ if(Math.abs(seconds-(artifact?.seconds??job.seconds))>.2)throw Error('Saved audio duration does not match the complete checkpoint.');
  const name=safeFilename(fields.episodeTitle||job.title),date=new Date(job.createdAt);if(!Number.isFinite(date.getTime()))throw Error('Invalid episode date.');
  const warnings=podcastReadiness(fields);if(audioInfo.sampleRates.some(rate=>![44100,48000].includes(rate)))warnings.push('This MP3 retains the model sample rate ('+audioInfo.sampleRates.join(', ')+' Hz). Check platform recommendations; no 44.1/48 kHz resampling was performed.');
  const description=(fields.episodeDescription||'')+'\n\n'+DISCLOSURE;

@@ -12,6 +12,8 @@ import {renderMetrics} from '../src/render-metrics.js';
 import {quantizePcm,CONTINUITY_PIPELINE} from '../src/continuity.js';
 import {chapterKey} from '../src/chapter-cache.js';
 import {createNodeExportWorker} from '../scripts/export-node.mjs';
+import {episodePackage,packageZip} from '../src/podcast.js';
+import JSZip from 'jszip';
 globalThis.IDBKeyRange=IDBKeyRange;
 const config={voice:'af_sarah',edition:'refined',delivery:'natural',speed:1,pipeline:FOUNDATION_PIPELINE};
 function audio(job,level=.1){const samples=new Float32Array(2400).fill(level);return {bytes:quantizePcm(samples),sampleRate:24000,sampleCount:2400,channels:1,format:'pcm-s16le',seconds:.1,renderManifest:job.settings.renderManifest,metrics:renderMetrics({started:0,synthesized:10,finished:11,audio:{samples,sampleRate:24000,runtime:{provider:'cpu',dtype:'q8',loadMs:2,inferenceMs:7,modelLoadAttempts:1,retries:0}},outputSeconds:.1,format:'pcm-s16le',engine:'kokoro'})};}
@@ -79,4 +81,19 @@ test('additional PCM budget rejects atomically and undo history remains bounded 
  const before=changed;await assert.rejects(changePassage({store,id:job.id,index:2,owner:'owner',revision:5,generate:async()=>large()}),/limit/);changed=await store.job(job.id);assert.equal(takeRevision(changed),5);assert.equal(changed.takeBytes,30_000_000);assert.deepEqual(changed.takeSelection,before.takeSelection);assert.equal((await store.takes(job.id)).length,5);
  const id=selectedTake(changed,2);for(let n=0;n<12;n++)changed=await changePassage({store,id:job.id,index:2,owner:'owner',revision:takeRevision(changed),action:'select',takeId:n%2?'original':id});
  assert.equal(changed.takeSelection.history.length,8);assert.equal((await store.parts(job.id)).length,3);assert.equal((await store.takes(job.id)).length,5);await store.deleteJob(job.id);assert.equal((await store.takes(job.id)).length,0);store.close();
+});
+test('podcast ZIP uses selected artifact duration for longer and shorter takes, freezes revisions, and exports after undo',async()=>{
+ for(const [originalSeconds,replacementSeconds] of [[.1,1],[1,.1]]){
+  const name='podcast-takes-'+crypto.randomUUID(),store=await openStorage(indexedDB,name);let job=await makeRecording('First original words.\n\nMiddle exact words.\n\nFinal original words.',config);await store.ensureJob(job);await store.claim('owner');
+  const durationAudio=seconds=>{const a=audio(job);return {...a,bytes:quantizePcm(new Float32Array(Math.round(seconds*24000)).fill(.2)),sampleCount:Math.round(seconds*24000),seconds,metrics:{...a.metrics,outputAudioSeconds:seconds}};};
+  while(job.next<job.passages.length)job=await store.commit(job.id,job.next,durationAudio(originalSeconds),'owner');await store.podcastGuid(job.id);job=await store.job(job.id);const originalDuration=job.seconds;
+  const changed=await changePassage({store,id:job.id,index:1,owner:'owner',revision:0,generate:async()=>durationAudio(replacementSeconds)});
+  const artifact=await recordingBlob(store,changed,null,undefined,{createWorker:createNodeExportWorker});assert.equal(changed.seconds,originalDuration);assert.ok(Math.abs(artifact.seconds-originalDuration)>.2);
+  await assert.rejects(episodePackage(changed,artifact.blob,{}),/frozen/);await assert.rejects(episodePackage(changed,artifact.blob,{},{seconds:originalDuration,takeRevision:1}),/duration/);
+  const result=await episodePackage(changed,artifact.blob,{},{seconds:artifact.seconds,takeRevision:artifact.takeRevision});const zip=await JSZip.loadAsync(await packageZip(result.files).arrayBuffer());const mp3=result.files.find(f=>f.name.endsWith('.mp3'));assert.deepEqual(await zip.file(mp3.name).async('uint8array'),new Uint8Array(await artifact.blob.arrayBuffer()));
+  const restored=await changePassage({store,id:job.id,owner:'owner',revision:1,action:'undo'});assert.equal(restored.seconds,originalDuration);
+  // An export begun before undo still packages its frozen old selection.
+  await episodePackage(changed,artifact.blob,{},{seconds:artifact.seconds,takeRevision:1});await assert.rejects(episodePackage(restored,artifact.blob,{},{seconds:artifact.seconds,takeRevision:1}),/frozen/);
+  const original=await recordingBlob(store,restored,null,undefined,{createWorker:createNodeExportWorker});const undone=await episodePackage(restored,original.blob,{},{seconds:original.seconds,takeRevision:original.takeRevision});assert.ok(packageZip(undone.files).size>0);assert.equal((await store.job(job.id)).seconds,originalDuration);store.close();
+ }
 });

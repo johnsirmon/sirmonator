@@ -33,3 +33,16 @@ Execution host: DESKTOP-9BUQ5MF. Checkout: `C:\source\Tina\sermon-reader`.
 Saved logs: `.cache/takes-tests-final.log` and `.cache/takes-build-final.log`. No subjective listening judgment, real-model regeneration, phone behavior, long-form soak or production smoke is claimed for this milestone. Production draft/recordings were not opened or modified in these checks. Browser QA should resume by inspecting the uncertain existing attempt before another download.
 
 Next gate: independent review of the pushed feature head, especially additive storage migration, manifest compatibility and selection/cancellation races. Later pronunciation/review/cloning work stays queued.
+
+## Independent review corrections and bounded QA follow-up
+
+The initial review head was `1aa0d486212bf528a5ea268a25d8dea44f75435d`. Two confirmed issues were corrected before release:
+
+- Podcast preparation now receives the encoded artifact's frozen selection revision and selected PCM duration, rather than comparing against immutable original `job.seconds`. Missing/mismatched selected-artifact metadata is rejected. Longer/shorter alternatives, undo, ZIP audio byte identity and a concurrent later undo are tested; original duration is unchanged. A handler-level test verifies the UI forwards the artifact fields.
+- The audio ended handler refuses a different take revision read from another tab. It keeps the acknowledged selection and asks the user to load latest audio; reaching the end cannot silently acknowledge unheard audio and defeat the export guard. A final-chapter two-tab regression test checks that subsequent export is blocked before encoding/publication.
+
+Final correction suite: 108 passed, zero failed/skipped; build and diff checks pass. Logs: `.cache/takes-review-tests.log`, `.cache/takes-review-build.log`.
+
+Supported browser recovery used a fresh Edge tab after the old ephemeral tab disappeared and restarted the same loopback test server. Reading the existing test recording showed **Original selected, revision 2**, confirming the earlier undo committed and survived reopening. The prior download result remains unknown. The browser policy denied `edge://downloads/all` (only HTTP/HTTPS permitted); no alternate download-history access or repeated download was attempted. The policy denial is an outstanding QA limitation, not an application test failure.
+
+A cache-only real-inference harness was prepared using the existing hash-verified q8 model/config/tokenizer/style files; no new weights were obtained. Navigation to that harness timed out at the explicit 10-second tool limit and reset the browser kernel. No regeneration command was sent in that attempt, so real-model passage regeneration remains unrun for this milestone. Synthetic-tone UI evidence and automated MP3/ZIP validation are not represented as real speech or listening QA.
