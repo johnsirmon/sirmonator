@@ -1,0 +1,159 @@
+{
+  "schema": 1,
+  "baseline": "f30fd6676d1d330402362720aabd38707d067caa",
+  "scope": "Attribution packaging only; no dependency/model/render changes or rights grant",
+  "notices": [
+    {
+      "source": "src/vendor/SOUNDTOUCH-LICENSE",
+      "shipped": "vendor/SOUNDTOUCH-LICENSE.txt",
+      "bytes": 27030,
+      "sha256": "510ccb0ba9b0a9bf99343901040a8ec42f92310704203d2068cea815cbbabb8f"
+    },
+    {
+      "source": "src/vendor/SUPERTONIC-LICENSE",
+      "shipped": "vendor/SUPERTONIC-LICENSE.txt",
+      "bytes": 1090,
+      "sha256": "4a00af603e7b278863a29cffbc5b4957433f0985c81a2e1ffcf3fcc86b870b7b"
+    },
+    {
+      "source": "src/vendor/SUPERTONIC-MODEL-LICENSE",
+      "shipped": "vendor/SUPERTONIC-MODEL-LICENSE.txt",
+      "bytes": 15216,
+      "sha256": "75d70017a6be9ba84e45af0d78f145a87fe372531d3e33076455dc520ce2cc4c"
+    },
+    {
+      "source": "src/vendor/pocket/LICENSE",
+      "shipped": "vendor/POCKET-LICENSE.txt",
+      "bytes": 1853,
+      "sha256": "347d8a85c2a28d02cf1692c6722fa25dadd17d294cace1504a76c0148d857c74"
+    },
+    {
+      "source": "src/vendor/pocket/README.md",
+      "shipped": "vendor/POCKET-SOURCE-NOTICE.txt",
+      "bytes": 695,
+      "sha256": "9ed58a527fd3b7e2ca3f8618c5bef706b72d779206b7b099753eafe40874a18f"
+    }
+  ],
+  "releaseReadiness": "NOT CLEARED by this change: character reference and audition redistribution evidence remains unresolved. The added notices address named code/model files, not a complete transitive-license or LGPL compliance determination.",
+  "unresolvedAssets": [
+    {
+      "path": "public/references/prime.wav",
+      "bytes": 274846,
+      "sha256": "7c502a358eba1c4d5a3abc1540d421b53773f16f66f3e4bfaa1f821c0b4313e8",
+      "unchangedFromBaseline": true,
+      "kind": "original conditioning/comparison reference",
+      "redistributionEvidence": "Unresolved: repository provenance and original-ownership statements do not establish a permission grant."
+    },
+    {
+      "path": "public/references/prime-v2.wav",
+      "bytes": 274846,
+      "sha256": "7c502a358eba1c4d5a3abc1540d421b53773f16f66f3e4bfaa1f821c0b4313e8",
+      "unchangedFromBaseline": true,
+      "kind": "original conditioning/comparison reference",
+      "redistributionEvidence": "Unresolved: repository provenance and original-ownership statements do not establish a permission grant."
+    },
+    {
+      "path": "public/references/fenix.wav",
+      "bytes": 232962,
+      "sha256": "8320d56915c94514f2586ed4ebe8c725f4f3a79d0c9d4704facc2d696bd0b3db",
+      "unchangedFromBaseline": true,
+      "kind": "original conditioning/comparison reference",
+      "redistributionEvidence": "Unresolved: repository provenance and original-ownership statements do not establish a permission grant."
+    },
+    {
+      "path": "public/references/fenix-v2.wav",
+      "bytes": 268432,
+      "sha256": "6f86d8ee85d4ce41617737e28c9b6ea8bf83ff3c73f62b7a1453c0ea8e30f26f",
+      "unchangedFromBaseline": true,
+      "kind": "original conditioning/comparison reference",
+      "redistributionEvidence": "Unresolved: repository provenance and original-ownership statements do not establish a permission grant."
+    },
+    {
+      "path": "public/auditions/prime.wav",
+      "bytes": 203564,
+      "sha256": "4c3723721e7ca637052456df13df19a1e1cd331ff9e84b0d91b2aa1354b16f64",
+      "unchangedFromBaseline": true,
+      "kind": "generated audition",
+      "redistributionEvidence": "Unresolved: repository provenance and original-ownership statements do not establish a permission grant."
+    },
+    {
+      "path": "public/auditions/prime-v2.wav",
+      "bytes": 203564,
+      "sha256": "83d7838cc9b4e9ea9ccc9384cdc1a552eba2b4ab4fa201da3cd6fe4df51240b7",
+      "unchangedFromBaseline": true,
+      "kind": "generated audition",
+      "redistributionEvidence": "Unresolved: repository provenance and original-ownership statements do not establish a permission grant."
+    },
+    {
+      "path": "public/auditions/fenix.wav",
+      "bytes": 284204,
+      "sha256": "5b71e063f64b891f1ae653788194b6bc04d91a0cd1b8408f2012052772ccb14b",
+      "unchangedFromBaseline": true,
+      "kind": "generated audition",
+      "redistributionEvidence": "Unresolved: repository provenance and original-ownership statements do not establish a permission grant."
+    },
+    {
+      "path": "public/auditions/fenix-v2.wav",
+      "bytes": 253484,
+      "sha256": "63e71ded0016038d07405c27c4f5040a49e15792c0bd8b3a79e655fac7f68872",
+      "unchangedFromBaseline": true,
+      "kind": "generated audition",
+      "redistributionEvidence": "Unresolved: repository provenance and original-ownership statements do not establish a permission grant."
+    }
+  ],
+  "selectableAt": [
+    {
+      "voiceId": "prime",
+      "label": "Prime Preacher",
+      "source": "src/voices.js:2",
+      "performance": "Optimus Prime / Peter Cullen"
+    },
+    {
+      "voiceId": "fenix",
+      "label": "Grit & Grace",
+      "source": "src/voices.js:3",
+      "performance": "Marcus Fenix / John DiMaggio"
+    },
+    {
+      "control": "index.html #voice and #voice-edition",
+      "editions": "Refined uses prime/fenix; Previous uses prime-v2/fenix-v2; mapping src/character-settings.js:2-5"
+    },
+    {
+      "control": "Original character reference audio",
+      "source": "src/main.js:90",
+      "asset": "references/{edition-specific-id}.wav?v=3"
+    },
+    {
+      "control": "Audition this voice",
+      "source": "src/main.js:277 and src/audition-player.js:5",
+      "asset": "auditions/{edition-specific-id}.wav"
+    },
+    {
+      "control": "Studio creation/custom preview",
+      "source": "src/main.js:74 and src/pocket-engine.js:16",
+      "asset": "edition-specific Pocket conditioning reference"
+    }
+  ],
+  "sourceRightsLocations": [
+    "VOICE-RESEARCH.md:13-16",
+    "src/voices.js:2-3",
+    "README.md:53-57"
+  ],
+  "validation": {
+    "fullSuite": {
+      "tests": 346,
+      "pass": 346,
+      "fail": 0
+    },
+    "productionBuild": true,
+    "canonicalNoticeBytesVerified": true,
+    "noticeLinkBase": "/sirmonator/",
+    "audioAssetsUnchanged": true
+  },
+  "unrun": [
+    "Browser interaction, inference and audio playback",
+    "Legal clearance, transitive license completeness or LGPL source/relinking sufficiency",
+    "Release, deployment, model/package updates"
+  ],
+  "limits": "Notice index and canonical source copies distinguish code, models and original recordings. No assets were removed or newly rendered; unresolved assets remain selectable pending the later user decision."
+}
