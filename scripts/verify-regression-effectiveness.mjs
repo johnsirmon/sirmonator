@@ -14,6 +14,9 @@ import {FOUNDATION_PIPELINE} from '../src/engine-specs.js';
 const prior={worker:'fb25d0c5ce41204522186f0b934506143efa1cf6',source:'0c803a57ddf96b3a8ee57b43b8efbac7989fd312',storage:'cbb8bd128edf1fcc619add6fbcb80d3aa161e165',checksum:'23d62a8e229a8fdbee6406c14b4330529f8fa9e2',takes:'1aa0d486212bf528a5ea268a25d8dea44f75435d'};
 const git=args=>execFileSync('git',['-c','core.fsmonitor=false',...args],{encoding:'utf8',maxBuffer:4*1024*1024,windowsHide:true}).trimEnd();
 const normalize=text=>text.replaceAll('\r\n','\n'),hash=text=>createHash('sha256').update(normalize(text)).digest('hex'),sources=new Map();
+const currentCheckpoint=git(['rev-parse','HEAD']);
+const initialProductionDiff=git(['diff','HEAD','--','src','index.html','package.json','package-lock.json','vite.config.js','public']);
+assert.equal(initialProductionDiff,'','Production inputs must match HEAD before evidence probes');
 async function source(commit,path){const key=commit+':'+path;if(!sources.has(key))sources.set(key,normalize(commit==='current'?await readFile(path,'utf8'):git(['show',commit+':'+path])));return sources.get(key);}
 function section(text,start,end){const a=text.indexOf(start),b=text.indexOf(end,a+start.length);assert.ok(a>=0&&b>a,'Explicit source section: '+start);return text.slice(a,b);}
 function line(text,start){const found=text.split('\n').find(value=>value.startsWith(start));assert.ok(found,'Explicit handler: '+start);return found;}
@@ -44,7 +47,7 @@ await evaluate({id:'source-import-stop-rejects-late-read',commit:prior.source,pa
   vm.runInContext(`let sourceImporter,importing=false,dirty=false,draftRevision=0,creating=false,quick=false,renderToken=0;${setup}\n${line(text,"$('file').onchange=")}\n${line(text,"$('stop').onclick=")}\nglobalThis.state=()=>({importing});`,context);
   $('text').value='Current source';$('file').files=[{name:'synthetic.txt'}];const pending=$('file').onchange();if(cancel){$('stop').onclick();$('text').value='Newer source';vm.runInContext('draftRevision++',context);}read.resolve({text:'Imported source',note:'Synthetic fixture'});await pending;return {text:$('text').value,reading:context.state().importing,message:context.message};
  }
- const control=await run(false),observed=await run(true);return {positiveControl:control.text==='Imported source'&&!control.reading,regressionPass:observed.text==='Newer source'&&!observed.reading,observed};
+ const control=await run(false),observed=await run(true);return {positiveControl:control.text==='Imported source'&&!control.reading&&control.message==='Document loaded. Review its chapter range.',regressionPass:observed.text==='Newer source'&&!observed.reading&&observed.message==='Document import cancelled. Your current text was kept.',observed};
 }});
 
 await evaluate({id:'undo-clear-invalidates-boundary-acknowledgment',commit:prior.source,path:'src/main.js',scope:'Actual Undo Clear handler; chapter replanning stub deliberately does not clear review',probe:async text=>{
@@ -71,10 +74,13 @@ await evaluate({id:'ended-event-cannot-acknowledge-unseen-take-export',commit:pr
  async function run(changed){const $=nodes(),job={id:'fixture',title:'Synthetic',next:1,passages:[{chapter:0}],takeSelection:{revision:0}},remote={...job,takeSelection:{revision:changed?1:0}};let prepared=0,published=0;
   const context=vm.createContext({$,AbortController,abortable,assertActive,Blob,File,busy:()=>false,controls(){},store:{job:async()=>structuredClone(remote)},recordingBlob:async()=>{prepared++;return {blob:new Blob(['synthetic bytes'])};},renderDetails(){},saveFile:()=>published++,safeFilename:v=>v,availableChapters:()=>[0],navigator:{},warn:e=>e.message,status(){},loadChapter(){throw Error('Unexpected audio load');},showPreparationProgress(){}});
   vm.runInContext(`let selectedJob=${JSON.stringify(job)},loadedJobId='fixture',loadedChapter=0,loadedThrough=1,selectionToken=0,renderToken=0,exporting=false,exportController=null;${section(text,"$('audio').onended=","$('download').onclick=")}\n${section(text,'async function exportAudio(',"$('start').onclick=")}\nglobalThis.start=()=>exportAudio();globalThis.revision=()=>selectedJob.takeSelection.revision;`,context);
-  await $('audio').onended();await context.start();return {revision:context.revision(),prepared,published};
+  await $('audio').onended();await context.start();return {revision:context.revision(),prepared,published,message:$('export-status').textContent};
  }
- const control=await run(false),observed=await run(true);return {positiveControl:control.prepared===1&&control.published===1,regressionPass:observed.revision===0&&observed.prepared===0&&observed.published===0,observed};
+ const control=await run(false),observed=await run(true);return {positiveControl:control.prepared===1&&control.published===1,regressionPass:observed.revision===0&&observed.prepared===0&&observed.published===0&&observed.message==='Passage selection changed in another window. Load latest saved audio before export.',observed};
 }});
 
-const currentCheckpoint=git(['rev-parse','HEAD']),report={schema:1,kind:'Historical-code regression effectiveness; no production mutants',currentCheckpoint,sourceHashConvention:'SHA-256 of source text normalized to LF',checks:results,allKnownBugsCaught:results.every(r=>r.knownBugCaught),productionCodeChanged:false,limits:'Injected worker, UI and storage seams; only PCM hashing uses actual byte integrity logic. Not native browser/media/IndexedDB, model, acoustic or deployment verification. Historical commits must exist locally; missing history fails without fetching.'};
+assert.equal(git(['rev-parse','HEAD']),currentCheckpoint,'HEAD changed during probes');
+assert.equal(git(['diff','HEAD','--','src','index.html','package.json','package-lock.json','vite.config.js','public']),'','Production inputs changed during probes');
+for(const [key,value] of sources){if(!key.startsWith('current:'))continue;const path=key.slice(8);assert.equal(hash(await readFile(path,'utf8')),hash(value),'Source changed during probes: '+path);assert.equal(hash(execFileSync('git',['show',currentCheckpoint+':'+path],{encoding:'utf8',windowsHide:true})),hash(value),'Tested source differs from exact HEAD: '+path);}
+const report={schema:2,kind:'Historical-code regression effectiveness; no production mutants',currentCheckpoint,productionInputsMatchHead:true,evidenceScriptSha256:hash(await readFile('scripts/verify-regression-effectiveness.mjs','utf8')),sourceHashConvention:'SHA-256 of source text normalized to LF',checks:results,allKnownBugsCaught:results.every(r=>r.knownBugCaught),limits:'Injected worker, UI and storage seams; only PCM hashing uses actual byte integrity logic. Not native browser/media/IndexedDB, model, acoustic or deployment verification. Historical commits must exist locally; missing history fails without fetching.'};
 await mkdir('evidence',{recursive:true});await writeFile('evidence/regression-effectiveness.json',JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({checks:results.length,allKnownBugsCaught:report.allKnownBugsCaught,currentCheckpoint}));

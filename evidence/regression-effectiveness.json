@@ -1,7 +1,9 @@
 {
-  "schema": 1,
+  "schema": 2,
   "kind": "Historical-code regression effectiveness; no production mutants",
-  "currentCheckpoint": "ce992cb519f8f523274d023f79241ef2e8b0ef68",
+  "currentCheckpoint": "aa4cbb398fff3b404f9ba0caa4f96390fad759bd",
+  "productionInputsMatchHead": true,
+  "evidenceScriptSha256": "0064878b462d97f1b20b18c71e3de1fa0fddec6d842ae1668c8450265ce4fd06",
   "sourceHashConvention": "SHA-256 of source text normalized to LF",
   "checks": [
     {
@@ -124,16 +126,17 @@
       "historicalObserved": {
         "revision": 1,
         "prepared": 1,
-        "published": 1
+        "published": 1,
+        "message": "Download started: Synthetic-takes-r1.mp3 (0.0 MB)."
       },
       "currentObserved": {
         "revision": 0,
         "prepared": 0,
-        "published": 0
+        "published": 0,
+        "message": "Passage selection changed in another window. Load latest saved audio before export."
       }
     }
   ],
   "allKnownBugsCaught": true,
-  "productionCodeChanged": false,
   "limits": "Injected worker, UI and storage seams; only PCM hashing uses actual byte integrity logic. Not native browser/media/IndexedDB, model, acoustic or deployment verification. Historical commits must exist locally; missing history fails without fetching."
 }
