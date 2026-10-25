@@ -14,7 +14,7 @@ for(const kind of ['audio','podcast'])for(const stage of ['blob','package']){
     const gate=deferred(),started=deferred(),elements=new Map(),publications=[];
     const job={id:'A',next:1,passages:[{}],title:'Synthetic test',settings:{}};
     const $=id=>{if(!elements.has(id))elements.set(id,{});return elements.get(id);};
-    const context=vm.createContext({$,AbortController,abortable,assertActive,store:{job:async()=>job,podcastGuid:async()=>{}},
+    const context=vm.createContext({importing:false,$,AbortController,abortable,assertActive,store:{job:async()=>job,podcastGuid:async()=>{}},
       recordingBlob:async()=>{if(stage==='blob'){started.resolve();await gate.promise;}return {blob:new Blob(['mp3'])};},
       episodePackage:async()=>{if(stage==='package'){started.resolve();await gate.promise;}return {files:[],metadata:{warnings:[]}};},
       Blob,File,packageZip:()=>new Blob(['zip']),saveFile:()=>publications.push('download'),navigator:{share:()=>publications.push('share')},
