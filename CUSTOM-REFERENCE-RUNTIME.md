@@ -26,6 +26,9 @@ bridge now rejects publication immediately, suppresses late messages, requests
 cooperative stop, and waits for active requests to settle before terminating the
 native worker. Disposal is asynchronous; it does not promise immediate resource
 release. A focused test exercises this ordering in the actual bridge source.
+Disposal also tracks a pending runtime factory, including cleanup of a runtime
+created after revocation. Its completion promise waits for that late runtime's
+termination rather than snapshotting an initially empty termination list.
 
 The explicit contract pins upstream worker hash, existing model inventory hash,
 model revision, Node ONNX runtime 1.21.0, language, sample rate and upstream

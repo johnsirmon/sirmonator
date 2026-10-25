@@ -68,7 +68,10 @@ parentPort.on('message',data=>self.onmessage({data}));
       });
       this.worker.on('error',error=>{this.active.clear();if(!this.closing)this.onerror?.(error);else this.finishTermination();});
     }
-    postMessage(data,transfer){if(this.closing)throw Error('Pocket runtime is disposing');this.active.add(data.id);this.worker.postMessage(data,transfer);}
+    postMessage(data,transfer){
+      if(this.closing)throw Error('Pocket runtime is disposing');this.active.add(data.id);
+      try{this.worker.postMessage(data,transfer);}catch(error){this.active.delete(data.id);throw error;}
+    }
     finishTermination(){if(this.terminating)return;this.terminating=true;this.worker.terminate().then(this.resolveTermination,this.rejectTermination);}
     terminate(){
       if(this.termination)return this.termination;

@@ -56,6 +56,16 @@ test('late runtime after revocation is destroyed and never enrolled',async()=>{
  load.resolve(engine);await new Promise(r=>setImmediate(r));await session.waitForDisposal();
  assert.equal(engine.destroyed,true);assert.equal(cloned,false);
 });
+test('disposal requested before factory completion waits for late runtime termination',async()=>{
+ const {file,receipt}=await fixture(),load=deferred(),entered=deferred(),termination=deferred();
+ const {engine}=fake({waitForTerminations:()=>termination.promise});
+ const session=createCustomReferenceSession({engineFactory:()=>{entered.resolve();return load.promise;}});
+ const pending=session.prepare(file,receipt);await entered.promise;session.revoke();await assert.rejects(pending,{name:'AbortError'});
+ let disposed=false;const waiting=session.waitForDisposal().then(()=>{disposed=true;});
+ await new Promise(r=>setImmediate(r));assert.equal(disposed,false);assert.equal(engine.destroyed,false);
+ load.resolve(engine);await new Promise(r=>setImmediate(r));assert.equal(engine.destroyed,true);assert.equal(disposed,false);
+ termination.resolve();await waiting;assert.equal(disposed,true);
+});
 test('cancellation during conditioning clears input and rejects late completion',async()=>{
  const {file,receipt}=await fixture(),work=deferred(),entered=deferred(),abort=new AbortController();let input;
  const {engine,session}=fake({cloneVoice(pcm,{name}){input=pcm;entered.resolve();return work.promise.then(()=>name);}});
@@ -85,4 +95,12 @@ test('actual Node bridge stops cooperatively before native termination and suppr
  const disposed=bridge.terminate();assert.equal(terminated,0);assert.equal(sent.at(-1).type,'stop');
  handlers.message({id:1,type:'chunk'});assert.equal(published,0);handlers.message({id:-1,type:'result'});assert.equal(terminated,0);
  handlers.message({id:1,type:'result'});await disposed;assert.equal(terminated,1);assert.throws(()=>bridge.postMessage({id:2}),/disposing/);
+});
+test('actual Node bridge removes a failed native send before disposal',async()=>{
+ const source=await readFile('scripts/pocket-node.mjs','utf8'),start=source.indexOf('  class BridgeWorker{'),end=source.indexOf('  const previous=',start);let terminated=0;
+ const failure=Error('Native postMessage failed');class Worker{on(){}postMessage(){throw failure;}async terminate(){terminated++;return 0;}}
+ const context=vm.createContext({NodeWorker:Worker,pathToFileURL:x=>x,resolve:(...x)=>x.join('/'),runtimeCache:'test',custom:true,terminations:[],Promise,Set,Error});
+ vm.runInContext(source.slice(start,end)+'\nglobalThis.Bridge=BridgeWorker;',context);const bridge=new context.Bridge();
+ assert.throws(()=>bridge.postMessage({id:1,type:'generate'}),e=>e===failure);assert.equal(bridge.active.size,0);
+ await bridge.terminate();assert.equal(terminated,1);
 });

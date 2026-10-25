@@ -6,7 +6,7 @@ import {assertActive,abortable} from '../src/continuity.js';
 import {CUSTOM_REFERENCE_CONTRACT,assertCustomReferenceContract} from './custom-reference-contract.mjs';
 const MAX_OUTPUT_SAMPLES=24000*60;
 export function createCustomReferenceSession({engineFactory}){
- let engine=null,reference=null,closed=false,busy=false;
+ let engine=null,reference=null,closed=false,busy=false,factoryWork=null;
  const lifetime=new AbortController(),terminations=[];
  const check=()=>{assertActive({signal:lifetime.signal});if(closed)throw new DOMException('Reference session disposed.','AbortError');};
  function dispose(){if(closed)return;closed=true;reference=null;lifetime.abort();if(engine){engine.destroy();terminations.push(engine.waitForTerminations?.());engine=null;}}
@@ -29,9 +29,14 @@ export function createCustomReferenceSession({engineFactory}){
     const inspected=await inspectReferenceWav(bytes,{signal:lifetime.signal});check();
     if(inspected.fileSha256!==frozen.inspection.fileSha256||inspected.pcmSha256!==frozen.inspection.pcmSha256)throw Error('Reference bytes do not match consent receipt.');
     pcm=decodePcmWav(bytes).samples;
-    const loaded=await engineFactory({signal:lifetime.signal});
-    // A factory finishing after cancellation must dispose its own late runtime.
-    if(closed){loaded.destroy();terminations.push(loaded.waitForTerminations?.());check();}
+    factoryWork=(async()=>{
+     const loaded=await engineFactory({signal:lifetime.signal});
+     // Keep late-runtime cleanup inside the tracked promise: disposal must wait
+     // for factory completion as well as any termination it adds afterwards.
+     if(closed){loaded.destroy();terminations.push(loaded.waitForTerminations?.());check();}
+     return loaded;
+    })();
+    const loaded=await factoryWork;
     engine=loaded;assertCustomReferenceContract(engine.referenceContract);
     if(engine.sampleRate!==24000)throw Error('Reference runtime sample rate changed.');
     const voice=await abortable(engine.cloneVoice(pcm,{inputSampleRate:24000,name:'synthetic:'+frozen.id}),lifetime.signal);check();
@@ -55,7 +60,7 @@ export function createCustomReferenceSession({engineFactory}){
    }finally{for(const part of parts)part.fill(0);parts.length=0;}
   });},
   revoke:dispose,dispose,
-  async waitForDisposal(){await Promise.all(terminations);},
+  async waitForDisposal(){await factoryWork?.catch(()=>{});await Promise.all(terminations);},
   get disposed(){return closed;}
  };
 }
