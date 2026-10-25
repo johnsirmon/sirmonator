@@ -1,0 +1,25 @@
+# Optional local ASR comparison
+
+Opt-in English-only Whisper Tiny q8 hints are available inside transcript review. Click **Download / retry local ASR & compare passage** to download model files, verify them, and transcribe the currently loaded saved PCM passage locally. **Cancel review operation** (or the application Stop control) terminates the worker, including download and inference. Retry creates a fresh worker and reuses completed verified cached files. Manual transcript input is retained. ASR results are separate, transient, and exportable as JSON; they do not enter the manual review archive or change source text, audio, take selection, or certification status.
+
+## Provenance and download policy
+
+- Converted model: https://huggingface.co/onnx-community/whisper-tiny.en/tree/2575352d61be1bf7225cf8f8b268a4678025fc58 (public Transformers.js-compatible ONNX community repository).
+- Pinned revision: `2575352d61be1bf7225cf8f8b268a4678025fc58`.
+- Base model identified by its pinned card: `openai/whisper-tiny.en`; official card https://huggingface.co/openai/whisper-tiny.en (Apache-2.0 metadata, checked 2026-10-25). Official Whisper source/license: https://github.com/openai/whisper/blob/main/LICENSE (MIT; the unchanged downloaded license is shipped in `vendor/WHISPER-LICENSE.txt`). The conversion card has no explicit license metadata; this records the base model and official license sources rather than asserting a separate conversion license.
+- 12 allowlisted model files, **45,081,321 bytes** total, plus approximately 22 MB of same-origin runtime files; quantized encoder plus merged decoder account for 40,843,851 bytes. `src/asr-assets.json` records exact size and SHA-256 for every file. During preparation, ONNX hashes matched published LFS SHA-256 values; small-file bytes matched pinned Git blob IDs before their SHA-256 values were recorded.
+- App fetches only pinned model URLs using GET with omitted credentials and no referrer. It never sends audio or transcripts to an external endpoint. Hugging Face/CDN still sees ordinary download requests and network metadata.
+- Model bytes stay in browser Cache Storage, outside Git. Each worker verifies size/SHA-256 again on cache read; corrupted entries are removed and retried. Failed cache persistence permits this run using verified memory bytes, with a warning that another download may be needed. Partial downloads are not cached.
+- Transformers.js remains **3.8.1**, with its own nested ORT **1.22.0-dev.20250409-89f8206ba4**. Direct ORT **1.30.0** is retained for existing engines. No deduplication or lockfile changes. The ASR worker explicitly bundles the nested runtime's matching WASM and module URLs, served from the app origin; remote model loading is disabled after verified loading.
+
+## Exact scope and limits
+
+Only a selected saved mono PCM16 passage at 22.05/24/44.1/48 kHz is accepted. Legacy MP3 remains available for manual review. Maximum 30 seconds, resampled to 16 kHz using bounded area averaging; this simple resampler is not a studio-grade anti-alias filter. Results include the exact original audio SHA-256, snapshot/source/take/selection revision, resampled PCM SHA-256, model/revision/runtime, elapsed time, and inference token cap. Selection is checked before and after capture/inference and before publication/export.
+
+Each invocation uses a fresh worker, single WASM thread, a 180-second watchdog and a 128-new-token cap. This bounds an MVP but may truncate speech even within 30 seconds; full completeness is never claimed. Memory use and inference speed depend on the device. No calibrated confidence, word timestamps, pronunciation score, acoustic validation, real-device performance guarantee or automatic correction is provided. Tiny English recognition may hallucinate on silence/tones and mishear names, numbers, accents or sermon vocabulary. No-difference output cannot certify audio. Listen and manually review every candidate.
+
+## Verification
+
+`node --test tests/local-asr.test.js` exercises resampling/duration, unsupported PCM, uncertain source alignment, immutable anchors, worker cancellation, concurrent-call exclusion, late replies, retry, timeout, integrity rejection, and the actual editor's separate manual/ASR state and stale-selection suppression. Full-suite and native QA outcomes are recorded in `evidence/local-asr-review.json`.
+
+Maintainer replay: `node scripts/prepare-local-asr-qa.mjs` explicitly downloads/verifies the pinned model into ignored `.cache/asr/`. Start `npm run dev`, then open `/scripts/local-asr-browser-fixture.html` through the supported native browser tools. Use the cache-seed button for offline-model loading or a fresh origin without seeding for actual downloads. Tone/silence need no audio file. The optional speech button reads only `.cache/asr-synthetic.wav` (24 kHz mono PCM16 WAV generated locally for the recorded run); it never plays or uploads it. Production-bundle replay should build this fixture as an additional Vite entry and serve its emitted HTML/assets on localhost. Do not count development reloads or browser detachment as completed inference.
