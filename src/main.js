@@ -191,10 +191,13 @@ async function openRecording(){
   if(busy())return;const id=$('saved-recordings').value;if(!id)return;
   const selection=beginSelection(),token=renderToken;
   playbackController?.abort();const controller=new AbortController();playbackController=controller;
-  const current=()=>selection===selectionToken&&token===renderToken&&!controller.signal.aborted;
+  let handedOff=false,handoffController;const ownsIntent=()=>selection===selectionToken&&token===renderToken;
+  const current=()=>ownsIntent()&&!controller.signal.aborted;
   $('preparation-meter').hidden=true;$('preparation-status').textContent='Preparing selected recording.';controls();
-  try{await abortable(savePosition(),controller.signal);if(!current())return;const job=await abortable(store.job(id),controller.signal);if(!current())return;if(!job)throw Error('The selected recording is no longer available.');await showRecording(job,{selection});}
-  catch(error){if(current()){const message=warn(error);$('preparation-status').textContent=message;status(message);}}
+  try{await abortable(savePosition(),controller.signal);if(!current())return;const job=await abortable(store.job(id),controller.signal);if(!current())return;if(!job)throw Error('The selected recording is no longer available.');handedOff=true;const opening=showRecording(job,{selection});handoffController=playbackController;await opening;}
+  // showRecording deliberately replaces/aborts this controller. The intent
+  // still owns its validation errors until Stop or newer navigation changes it.
+  catch(error){if(handedOff?ownsIntent()&&!handoffController?.signal.aborted:current()){const message=warn(error);$('preparation-status').textContent=message;status(message);}}
   finally{if(playbackController===controller){playbackController=null;controls();}}
 }
 async function changeChapter(){

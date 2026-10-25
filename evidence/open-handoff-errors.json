@@ -1,0 +1,138 @@
+{
+  "schema": 1,
+  "kind": "Actual main Open handoff error ownership with controlled read/flush/checkpoint failures",
+  "rows": [
+    {
+      "stage": "second-read",
+      "superseded": false,
+      "passed": true,
+      "retainedId": "A",
+      "controlsSettled": true
+    },
+    {
+      "stage": "second-read",
+      "superseded": "recording",
+      "passed": true,
+      "retainedId": "A",
+      "controlsSettled": true
+    },
+    {
+      "stage": "second-read",
+      "superseded": "chapter",
+      "passed": true,
+      "retainedId": "A",
+      "controlsSettled": true
+    },
+    {
+      "stage": "second-read",
+      "superseded": "stop",
+      "passed": true,
+      "retainedId": "A",
+      "controlsSettled": true
+    },
+    {
+      "stage": "flush",
+      "superseded": false,
+      "passed": true,
+      "retainedId": "A",
+      "controlsSettled": true
+    },
+    {
+      "stage": "flush",
+      "superseded": "recording",
+      "passed": true,
+      "retainedId": "A",
+      "controlsSettled": true
+    },
+    {
+      "stage": "flush",
+      "superseded": "chapter",
+      "passed": true,
+      "retainedId": "A",
+      "controlsSettled": true
+    },
+    {
+      "stage": "flush",
+      "superseded": "stop",
+      "passed": true,
+      "retainedId": "A",
+      "controlsSettled": true
+    },
+    {
+      "stage": "validation",
+      "superseded": false,
+      "passed": true,
+      "retainedId": "A",
+      "controlsSettled": true
+    },
+    {
+      "stage": "validation",
+      "superseded": "recording",
+      "passed": true,
+      "retainedId": "A",
+      "controlsSettled": true
+    },
+    {
+      "stage": "validation",
+      "superseded": "chapter",
+      "passed": true,
+      "retainedId": "A",
+      "controlsSettled": true
+    },
+    {
+      "stage": "validation",
+      "superseded": "stop",
+      "passed": true,
+      "retainedId": "A",
+      "controlsSettled": true
+    },
+    {
+      "stage": "active-abort-read",
+      "superseded": false,
+      "passed": true,
+      "retainedId": "A",
+      "controlsSettled": true
+    },
+    {
+      "stage": "active-abort-read",
+      "superseded": "recording",
+      "passed": true,
+      "retainedId": "A",
+      "controlsSettled": true
+    },
+    {
+      "stage": "active-abort-read",
+      "superseded": "chapter",
+      "passed": true,
+      "retainedId": "A",
+      "controlsSettled": true
+    },
+    {
+      "stage": "active-abort-read",
+      "superseded": "stop",
+      "passed": true,
+      "retainedId": "A",
+      "controlsSettled": true
+    }
+  ],
+  "passed": true,
+  "limits": "Same deterministic orchestration harness as player schedules; no browser, native storage, media or models.",
+  "baseline": "7d61fb7fbd12d6b92ce1579fd2a0efe9bdebc668",
+  "problem": "Open controller was intentionally aborted during showRecording handoff, so its current() suppressed active second-read, podcast-flush or validation failures.",
+  "fix": "Track navigation intent separately from controller ownership and capture the replacement handoff controller. Report active failures, including native transaction AbortError, while suppressing cancelled/superseded operations.",
+  "validation": {
+    "focusedCases": 16,
+    "fullTests": 375,
+    "pass": 375,
+    "fail": 0,
+    "productionBuild": true,
+    "renderCatalogExact": true,
+    "historicalNegativeControl": "Exact 7d61fb7 main fails the active post-handoff failure assertion using this harness."
+  },
+  "sourceHashesSha256Lf": {
+    "src/main.js": "2fe0994c3a1f8e90f72ef2745117d2a59ae341f9590afc9557caf30e15aabaf4",
+    "scripts/player-schedule-matrix.mjs": "2b10b51520f5c916454247a27e76df5bfa486f1cd4275234a3de04537847b3fb",
+    "tests/open-handoff-errors.test.js": "d2328e977133d0e4bcc507a0f4a502af738e56ed7693f06ab1219feb8294b588"
+  },
+  "readiness": "Deferred pending independent focused review. No merge/deployment or change to personal-cloning/reference-rights gates."
+}
