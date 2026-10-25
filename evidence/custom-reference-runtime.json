@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "kind": "Actual offline Node CPU custom-reference synthesis; procedural tone only",
+  "newModelBytesDownloaded": 0,
+  "externalFetchEnabled": false,
+  "fixture": {
+    "kind": "220 Hz procedural tone",
+    "license": "CC0-1.0",
+    "personUsed": false
+  },
+  "conditioningAndLoadMs": 1916.7012000000002,
+  "generationMs": 2249.1659,
+  "seconds": 3.04,
+  "peak": 0.373500794172287,
+  "outputPcmSha256": "7a0177d03e0644e260d82cb77aa89149a8ba21200c7eba59f50b50953a159a91",
+  "provenance": {
+    "contract": {
+      "schema": 1,
+      "provider": "pocket-custom-reference-node-v1",
+      "artifact": "experimental-reference-pcm-v1",
+      "runtime": "onnxruntime-node-1.21.0-cpu",
+      "package": "pocket-tts-js-0.1.0",
+      "workerSha256": "0e2d18c0f309c42099c3a56c0c54e3cf31605bee457f62433b0644776dc606dc",
+      "modelInventorySha256": "25491f670771aa597ed59bd5693edac00d88f6ce208603099150186125d366bd",
+      "modelRevision": "c469236dbc5f68287fa2fbf175b66de3b80123af",
+      "language": "english_2026-04",
+      "sampleRate": 24000,
+      "sampling": "upstream-v0.1.0-steps1-temperature0.7-eos-4",
+      "personalSynthesisEnabled": false,
+      "resumable": false
+    },
+    "referenceId": "9585386564f717b96971b9de77c004dee79a6a25242858ca57f9e90e6c58ead8",
+    "fileSha256": "bb94d7f55746ac917a146038ddd9ebecb942e07db7c77b10965952d18a2771c4",
+    "pcmSha256": "594d935ef63bbb0db28dccfb71f30337bde3ee42445546816d777ea9bb2aa997",
+    "text": "A short synthetic test.",
+    "consent": {
+      "schema": 1,
+      "notice": "reference-preparation-2026-10-25",
+      "attestationId": "2032c886-8068-43d1-9aee-bca3dfd05960",
+      "attestedAt": 1792898507708,
+      "label": "Procedural synthetic conditioning",
+      "authority": "synthetic",
+      "scope": "Local experimental synthesis and lifecycle verification only.",
+      "provenance": "220 Hz sine wave generated in scripts/verify-custom-reference.mjs; no person or recorded voice; CC0-1.0.",
+      "permissionAttested": true,
+      "aiDisclosure": true
+    },
+    "sampleCount": 72960,
+    "metrics": {
+      "rtfx": 1.541328831301102,
+      "genTime": 1.9723241000000016,
+      "audioDuration": 3.04,
+      "stopped": false
+    }
+  },
+  "personalSynthesisEnabled": false,
+  "browserRouteValidated": false,
+  "limitations": "Finite generated PCM from a tone is not proof of speech intelligibility, voice likeness, consent for a person, browser readiness or acoustic quality.",
+  "actualInferenceCancellation": {
+    "name": "AbortError",
+    "elapsedMs": 62.72180000000026,
+    "published": false
+  },
+  "disposed": true
+}
