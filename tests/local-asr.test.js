@@ -47,3 +47,37 @@ test('actual editor retains manual input, exports exact ASR evidence and rejects
  const staleStarted=started(),stale=$('review-asr').onclick();await staleStarted;selection++;resolve({transcript:'stale wrong words'});await stale;assert.equal($('review-asr-output').textContent,'');assert.equal(exports.length,1);
  }finally{store.close();}
 });
+import {captureAsr} from '../src/local-asr.js';
+import {captureReview} from '../src/speech-review.js';
+const gate=()=>{let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no;});return {promise,resolve,reject};};
+const settlesSoon=promise=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(Error('Cancellation remained blocked on native capture')),200))]);
+async function captureFixture(){const store=await openStorage(indexedDB,'asr-capture-'+crypto.randomUUID());let job=await makeRecording('Paul spoke with hope.',{voice:'af_sarah',edition:'refined',speed:1,delivery:'natural',pipeline:FOUNDATION_PIPELINE});await store.ensureJob(job);await store.claim('capture');job=await store.commit(job.id,0,await syntheticPassage({text:job.source,settings:job.settings,last:true}),'capture');return {store,job};}
+test('editor Cancel releases every held capture Blob read, allows retry before late failure, and preserves manual input',async()=>{
+ for(const targetRead of [1,2,3,4,5,6]){
+  const {store,job}=await captureFixture(),held=gate(),entered=gate();let read=0,hold=false,workerRuns=0;
+  class DelayedBlob extends Blob{async arrayBuffer(){if(hold&&++read===targetRead){entered.resolve();await held.promise;}return super.arrayBuffer();}}
+  const wrapped={...store,parts:async(...args)=>(await store.parts(...args)).map(p=>({...p,blob:new DelayedBlob([p.blob])}))};
+  const map=new Map(),$=id=>{if(!map.has(id))map.set(id,{id,value:'0',checked:false,textContent:'',addEventListener(){},replaceChildren(){},add(){},focus(){}});return map.get(id);};
+  const editor=createSpeechReviewEditor({$,getStore:()=>wrapped,getJob:()=>job,getSelection:()=>0,isBusy:()=>false,onBusy(){},onListen(){},onRepair(){},onExport(){},repository:{load:async()=>null},asrClient:{cancel(){},async run(){workerRuns++;return {transcript:'Paul spoke with hope.'};}}});
+  try{await editor.update(job);$('review-transcript').value='Retain my manual transcript';hold=true;const pending=$('review-asr').onclick();await settlesSoon(entered.promise);editor.cancel();await settlesSoon(pending);
+   assert.equal(editor.busy,false,'read '+targetRead);assert.equal($('review-asr').disabled,false);assert.equal($('review-compare').disabled,false);assert.equal(workerRuns,0);assert.equal($('review-transcript').value,'Retain my manual transcript');assert.equal($('review-asr-output').textContent,'');
+   // A fresh operation succeeds while the old native read still has not settled.
+   await $('review-asr').onclick();assert.equal(workerRuns,1);const text=$('review-asr-output').textContent,status=$('review-status').textContent;held.reject(Error('Late old native read failure'));await new Promise(r=>setImmediate(r));assert.equal($('review-asr-output').textContent,text);assert.equal($('review-status').textContent,status);assert.equal(editor.busy,false);
+  }finally{held.resolve();store.close();}
+ }
+});
+test('capture cancellation races the second job read and final resampled PCM hash without starting later work',async()=>{
+ const {store,job}=await captureFixture(),snapshot=await captureReview(store,job.id,0);
+ try{
+  const held=gate(),entered=gate(),controller=new AbortController();let jobs=0;
+  const wrapped={...store,job:async(...args)=>{if(++jobs===2){entered.resolve();await held.promise;}return store.job(...args);}};
+  const pending=captureAsr(wrapped,snapshot,{signal:controller.signal});await settlesSoon(entered.promise);controller.abort();await settlesSoon(assert.rejects(pending,{name:'AbortError'}));held.reject(Error('Late job failure'));await new Promise(r=>setImmediate(r));assert.equal(jobs,2);
+  const sampleBytes=asrPcm(await (await store.parts(job.id,1))[0].blob.arrayBuffer(),24000).byteLength,hashHeld=gate(),hashEntered=gate(),hashController=new AbortController(),original=crypto.subtle.digest;
+  crypto.subtle.digest=function(algorithm,bytes){if(bytes.byteLength===sampleBytes){hashEntered.resolve();return hashHeld.promise;}return original.call(this,algorithm,bytes);};
+  try{const hashing=captureAsr(store,snapshot,{signal:hashController.signal});await settlesSoon(hashEntered.promise);hashController.abort();await settlesSoon(assert.rejects(hashing,{name:'AbortError'}));hashHeld.reject(Error('Late hash failure'));await new Promise(r=>setImmediate(r));}finally{crypto.subtle.digest=original;hashHeld.resolve();}
+ }finally{store.close();}
+});
+test('capture deadline releases a permanently pending native read and a later failure stays observed',async()=>{
+ const {store,job}=await captureFixture(),snapshot=await captureReview(store,job.id,0),held=gate();
+ try{await assert.rejects(captureAsr({...store,job:()=>held.promise},snapshot,{timeoutMs:10}),/capture timed out/);held.reject(Error('Late timed-out storage failure'));await new Promise(r=>setImmediate(r));assert.ok((await captureAsr(store,snapshot)).samples.length);}finally{held.resolve();store.close();}
+});

@@ -1,8 +1,9 @@
 import {sha256Bytes} from './asset-integrity.js';
-import {assertActive} from './continuity.js';
+import {assertActive,abortable} from './continuity.js';
 import {captureReview,compareTranscript} from './speech-review.js';
 import {validateCheckpoint} from './job-runner.js';
 export const ASR_LIMIT_SECONDS=30;
+export const ASR_CAPTURE_TIMEOUT_MS=30000;
 export const ASR_NOTE='Experimental English-only local Whisper Tiny q8. Differences are uncertain review hints: recognition can omit, invent or mishear words, especially names, numbers, silence and religious language. No certification, acoustic accuracy score or automatic correction. Listen and use manual review.';
 // Bounded area-average resampling avoids point-sampling aliasing. No audio decoder,
 // microphone, remote URL or external audio upload is involved.
@@ -13,15 +14,26 @@ export function asrPcm(bytes,sampleRate){
  for(let i=0;i<result.length;i++){const from=i*ratio,to=(i+1)*ratio;let sum=0;for(let j=Math.floor(from);j<Math.ceil(to);j++)sum+=view.getInt16(j*2,true)/32768*(Math.min(to,j+1)-Math.max(from,j));result[i]=sum/ratio;}
  return result;
 }
-export async function captureAsr(store,snapshot,{signal}={}){
- const fresh=await captureReview(store,snapshot.anchor.recordingId,snapshot.anchor.passage,{signal});
- if(fresh.key!==snapshot.key)throw Error('Audio selection changed. Load current passage.');
- const job=await store.job(snapshot.anchor.recordingId),parts=await validateCheckpoint(store,job,{signal}),part=parts[snapshot.anchor.passage];
- if(part.format!=='pcm-s16le')throw Error('Local ASR supports saved PCM only. Use manual review for legacy MP3.');
- const bytes=await part.blob.arrayBuffer();assertActive({signal});
- if(await sha256Bytes(bytes)!==snapshot.anchor.audioHash)throw Error('Audio selection changed. Load current passage.');
- const samples=asrPcm(bytes,part.sampleRate);
- return {samples,pcmHash:await sha256Bytes(samples.buffer),sampleRate:16000,seconds:samples.length/16000};
+export async function captureAsr(store,snapshot,{signal,timeoutMs=ASR_CAPTURE_TIMEOUT_MS}={}){
+ assertActive({signal});if(!Number.isFinite(timeoutMs)||timeoutMs<=0)throw Error('Invalid ASR capture deadline.');
+ const active=new AbortController(),cancel=()=>active.abort();let timedOut=false;
+ signal?.addEventListener('abort',cancel,{once:true});if(signal?.aborted)cancel();
+ const timer=setTimeout(()=>{timedOut=true;active.abort();},timeoutMs);
+ // Race every native read/hash, including helpers with their own internal awaits.
+ // Native operations may finish later; their handlers stay observed and cannot
+ // continue capture, create a worker, or publish after cancellation/deadline.
+ const wait=action=>{assertActive({signal:active.signal});return abortable(Promise.resolve().then(()=>{assertActive({signal:active.signal});return action();}),active.signal);};
+ try{
+  const fresh=await wait(()=>captureReview(store,snapshot.anchor.recordingId,snapshot.anchor.passage,{signal:active.signal}));
+  if(fresh.key!==snapshot.key)throw Error('Audio selection changed. Load current passage.');
+  const job=await wait(()=>store.job(snapshot.anchor.recordingId)),parts=await wait(()=>validateCheckpoint(store,job,{signal:active.signal})),part=parts[snapshot.anchor.passage];
+  if(part.format!=='pcm-s16le')throw Error('Local ASR supports saved PCM only. Use manual review for legacy MP3.');
+  const bytes=await wait(()=>part.blob.arrayBuffer());
+  if(await wait(()=>sha256Bytes(bytes))!==snapshot.anchor.audioHash)throw Error('Audio selection changed. Load current passage.');
+  assertActive({signal:active.signal});const samples=asrPcm(bytes,part.sampleRate),pcmHash=await wait(()=>sha256Bytes(samples.buffer));assertActive({signal:active.signal});
+  return {samples,pcmHash,sampleRate:16000,seconds:samples.length/16000};
+ }catch(error){if(timedOut&&!signal?.aborted)throw Error('Local ASR audio capture timed out. Retry or use manual review.');throw error;}
+ finally{clearTimeout(timer);signal?.removeEventListener('abort',cancel);}
 }
 export async function compareAsr(snapshot,audio,transcript,{signal}={}){
  const comparison=await compareTranscript(snapshot,transcript,{signal,noWordsHeard:!transcript.trim()});

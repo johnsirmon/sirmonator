@@ -109,13 +109,13 @@
   "tests": {
     "full": {
       "command": "node --test --test-concurrency=1",
-      "passed": 394,
+      "passed": 397,
       "failed": 0,
-      "notes": "Full suite passed after editor stale-selection fix; subsequent export filename/payload and copy changes checked by final focused suite and build."
+      "notes": "Final full suite after P2 abort-raced capture/deadline fixes and P3 copy correction."
     },
     "focused": {
       "command": "node --test tests/local-asr.test.js tests/speech-review.test.js tests/panel-review-focus.test.js",
-      "passed": 21,
+      "passed": 24,
       "failed": 0
     },
     "build": {
@@ -165,5 +165,45 @@
       "No native cancellation specifically during a model streaming read was captured; worker termination and retry are tested; partial-file caching is prevented by implementation.",
       "Two successful synthetic speech observations differed substantially in elapsed time; no performance guarantee."
     ]
+  },
+  "reviewFix": {
+    "findings": [
+      "P2: capture read/job/hash waits were not abort-raced, leaving busy controls until native completion",
+      "P3: obsolete automatic-transcription-not-implemented copy"
+    ],
+    "captureDeadlineMs": 30000,
+    "regressions": {
+      "command": "node --test tests/local-asr.test.js",
+      "passed": 10,
+      "failed": 0,
+      "coverage": [
+        "Six held Blob read positions release controls on Cancel before native settlement",
+        "Retry succeeds while old read remains held; late rejection cannot overwrite result/status",
+        "Held second job read and final resampled PCM hash abort promptly",
+        "Pending native capture times out; late failure remains observed; retry works"
+      ]
+    },
+    "native": {
+      "browser": "Native Edge through supported browser tools",
+      "fixture": "scripts/local-asr-capture-fixture.html",
+      "realIndexedDB": true,
+      "realBlobRead": true,
+      "asrInference": "Counted stub only for this cancellation regression; prior real WASM inference evidence remains above",
+      "steps": [
+        "Final capture Blob read held; worker starts 0",
+        "Cancel: editor idle, ASR enabled true, manual enabled true, worker starts 0; manual transcript retained",
+        "Retry before old read release: editor idle, worker starts 1, new uncertain hints displayed",
+        "Old held read rejected: editor busy false, worker starts 1, new hints/status and manual transcript unchanged"
+      ],
+      "audioPlayback": false,
+      "externalAudioUpload": false
+    },
+    "validation": {
+      "fullPassed": 397,
+      "fullFailed": 0,
+      "focusedPassed": 24,
+      "focusedFailed": 0,
+      "build": "npm run build passed"
+    }
   }
 }
