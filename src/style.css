@@ -23,3 +23,11 @@
 
 #reference-preparation>label{display:block;margin-top:12px}#reference-scope,#reference-provenance{height:6rem;min-height:4rem;font-size:14px}#reference-report,#reference-saved{overflow-wrap:anywhere}#reference-label{width:100%}
 .source-preview:focus-visible{outline:3px solid #9a5c29;outline-offset:2px}
+
+/* Stages retain their original DOM controls, drafts and recording state. */
+.staged-reader .workspace{display:block}.staged-reader .workspace>.card{max-width:850px;margin:22px auto}.staged-reader #listen{max-width:850px;margin:22px auto}.staged-reader .create-panel{padding:24px;border:1px solid var(--line)}
+.steps a[aria-current=step]{background:var(--red);color:#fff8e9;border-color:var(--red)}
+.flow-actions,.return-entry{display:flex;gap:12px;margin-top:22px}.flow-actions>*{flex:1}.return-entry{margin-top:12px}.return-entry button{width:auto;font-size:12px;padding:10px}
+.flow-help{max-width:850px;margin:12px auto}.flow-activity{max-width:850px;margin:16px auto;padding:14px;border:1px solid var(--line);border-radius:10px;background:#fdf6e8}.flow-activity #status{margin:8px 0}.flow-activity #pause,.flow-activity #stop{display:inline-block;width:auto;margin:6px 8px 0 0}.flow-activity button:disabled{display:none}.flow-activity #retry-storage{width:auto;padding:10px;font-size:12px}
+.staged-reader .card,.library-controls,.workspace,select,input,textarea{min-width:0;max-width:100%}.staged-reader h2{scroll-margin-top:12px}.staged-reader :focus-visible{outline:3px solid #9a5c29;outline-offset:3px}.staged-reader .notice{overflow-wrap:anywhere}
+@media(max-width:760px){.staged-reader .workspace>.card,.staged-reader #listen{padding:18px}.flow-actions,.return-entry{flex-wrap:wrap}.flow-actions>*{flex-basis:100%}.return-entry>*{flex:1;min-width:120px}input[type=text],textarea,select{font-size:16px}.staged-reader .transport{flex-wrap:wrap}.steps{position:relative}.flow-activity{padding:12px}.flow-activity #pause,.flow-activity #stop{width:100%;margin:6px 0}.staged-reader .source-preview{max-width:100%}}
