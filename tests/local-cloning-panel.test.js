@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {createClonePanel} from '../src/cloning/panel.js';
 import {CLONE_CONTRACT} from '../src/cloning/contract.js';
 import {encodeWav} from '../src/core.js';
+import {createReferenceEditor} from '../src/reference-editor.js';
 function fixture(factory){
  const nodes=new Map();
  const root={querySelector(id){if(!nodes.has(id))nodes.set(id,Object.assign(new EventTarget(),{value:'',checked:false,files:[],hidden:true,disabled:false,textContent:'',pause(){},load(){},removeAttribute(name){delete this[name];}}));return nodes.get(id);}};
@@ -39,4 +40,35 @@ test('revoke during generation suppresses late output, clears attestation and fi
 test('runtime errors leave retry available and never expose an output',async()=>{
  const f=fixture(async()=>{throw Error('Model unavailable');});
  try{await f.$('generate').onclick();assert.match(f.$('status').textContent,/Model unavailable/);assert.equal(f.panel.busy,false);assert.equal(f.$('generate').disabled,false);assert.equal(f.$('output').hidden,true);}finally{f.panel.dispose();}
+});
+
+test('actual metadata editor revoke aborts active clone; forget removes preview and Blob URLs',async()=>{
+ const events=new EventTarget(),previous={};
+ for(const name of ['addEventListener','removeEventListener','dispatchEvent']){previous[name]=globalThis[name];globalThis[name]=events[name].bind(events);}
+ const entered=deferred(),late=deferred();let calls=0;
+ const held=runtime({async generate(text,{onChunk}){entered.resolve();await late.promise;onChunk(new Float32Array([.1]));return {};}});
+ const f=fixture(async()=>++calls===1?held:runtime());
+ const refs=new Map(),$=id=>{if(!refs.has(id))refs.set(id,Object.assign(new EventTarget(),{id,value:'',checked:false,textContent:'',focus(){}}));return refs.get(id);};
+ let row={version:1,receipt:{state:'validated-local-only',consent:{label:'Synthetic metadata'},inspection:{fileSha256:'test-only'}}};
+ let eventCount=0;events.addEventListener('sirmonator-reference-revoked',event=>{eventCount++;assert.equal(event.detail,undefined,'No private reference payload is dispatched');});
+ const metadata=createReferenceEditor({$,repository:{load:async()=>row,revoke:async()=>row={...row,version:2,receipt:{...row.receipt,state:'revoked'}},forget:async()=>row={version:3,receipt:null}}});
+ try{
+  await metadata.ready;const pending=f.$('generate').onclick();await entered.promise;
+  await $('reference-revoke').onclick();assert.equal(held.destroyed,true);assert.equal(f.panel.busy,false);assert.equal(f.$('permission').checked,false);
+  late.resolve();await pending;assert.equal(f.$('output').hidden,true);assert.equal(f.$('download').href,undefined);
+  f.$('permission').checked=true;await f.$('generate').onclick();assert.equal(f.$('output').hidden,false);
+  const audio=f.$('download').href,receipt=f.$('receipt').href;
+  await $('reference-forget').onclick();assert.equal(row.receipt,null);assert.equal(f.$('output').hidden,true);assert.equal(f.$('file').value,'');
+  await assert.rejects(fetch(audio));await assert.rejects(fetch(receipt));assert.equal(eventCount,2);
+ }finally{late.resolve();f.panel.dispose();for(const [name,value] of Object.entries(previous)){if(value===undefined)delete globalThis[name];else globalThis[name]=value;}}
+});
+
+test('metadata storage failure still invalidates clone before awaiting the mutation',async()=>{
+ const events=new EventTarget(),previous={};for(const name of ['addEventListener','removeEventListener','dispatchEvent']){previous[name]=globalThis[name];globalThis[name]=events[name].bind(events);}
+ const f=fixture(async()=>runtime()),refs=new Map(),$=id=>{if(!refs.has(id))refs.set(id,Object.assign(new EventTarget(),{id,value:'',textContent:'',focus(){}}));return refs.get(id);};
+ const row={version:1,receipt:{state:'validated-local-only',consent:{label:'Synthetic metadata'},inspection:{fileSha256:'test-only'}}};
+ const gate=deferred();const metadata=createReferenceEditor({$,repository:{load:async()=>row,revoke:()=>gate.promise}});
+ try{await metadata.ready;await f.$('generate').onclick();const url=f.$('download').href;const pending=$('reference-revoke').onclick();
+  assert.equal(f.$('output').hidden,true);await assert.rejects(fetch(url));gate.resolve(Promise.reject(Error('Storage unavailable')));await pending;assert.match($('reference-status').textContent,/Storage unavailable/);assert.equal(f.$('output').hidden,true);
+ }finally{gate.resolve();f.panel.dispose();for(const [name,value] of Object.entries(previous)){if(value===undefined)delete globalThis[name];else globalThis[name]=value;}}
 });

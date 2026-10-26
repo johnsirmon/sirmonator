@@ -660,6 +660,11 @@ async function generate(text, voiceRef) {
             }
         }
 
+        if (!chunkEnded && isGenerating) {
+            isGenerating = false;
+            throw new Error("Local reference reading reached the frame limit before completion. No complete audio was created. Try shorter text.");
+        }
+
         if (chunkEnded && isGenerating && chunkIdx < chunks.length - 1) {
             const gapSamples = Math.max(1, Math.floor(CHUNK_GAP_SEC * sampleRate));
             const silence = new Float32Array(gapSamples);
@@ -682,8 +687,9 @@ async function generate(text, voiceRef) {
     const audioSeconds = (totalFrames * samplesPerFrame) / sampleRate;
     const genTime = (totalFlowLmTime + totalDecodeTime) / 1000;
     const rtfx = genTime > 0 ? audioSeconds / genTime : 0;
+    const stopped = !isGenerating;
     isGenerating = false;
-    return { rtfx, genTime, audioDuration: audioSeconds, stopped: false };
+    return { rtfx, genTime, audioDuration: audioSeconds, stopped };
 }
 
 // ----- message dispatch -----

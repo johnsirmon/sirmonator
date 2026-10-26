@@ -76,3 +76,29 @@ changed-byte, authority-path, contract-mismatch and stopped-partial-output cases
 No real device acoustic or identity validation was performed. The browser file
 permission restriction and later command-dispatch timeouts are QA limitations;
 no permission, credential or security setting was changed.
+
+## Independent review corrections
+
+The initial draft omitted the metadata editor's revoke/forget event dispatch.
+Both actions now synchronously invalidate the cloning session before attempting
+the metadata mutation, including if that mutation fails. The event has no
+reference payload. Tests instantiate both actual editors, hold a generation
+across metadata revoke, and verify that metadata forget revokes both completed
+preview/receipt Blob URLs. These are same-page session controls, not remote or
+cross-tab revocation.
+
+The upstream worker previously reported `stopped:false` when its 500-frame loop
+exhausted without EOS completion. It now rejects that chunk with a frame-limit
+error, so partially streamed samples cannot become a completed session preview.
+An interrupted loop reports `stopped:true`, which the session rejects. Regression
+tests exercise the actual worker loop and message dispatch with fake ONNX calls:
+no EOS, EOS too late to complete its tail, normal completion and interruption.
+These tests do not constitute a new acoustic or native-browser validation.
+
+No browser actions were performed for these review fixes. Earlier file-picker,
+download and repeated native-flow acceptance limits remain open.
+
+Review-fix verification completed: 407/407 full serial tests passed (175.85 s),
+20/20 focused cloning tests passed (5.59 s), production build passed (12.92 s),
+and `git diff --check` passed. The full-suite summary was recovered from the
+retained log after the execution connection interrupted its final read.
