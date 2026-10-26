@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "baseline": "0a71bd47b7527ff9a9eb3114257ad6fb7bdc6c59",
+  "browser": "Native Microsoft Edge on Windows via supported browser tools",
+  "origin": "http://localhost:5176/.cache/clone-qa.html",
+  "fixture": {"path": "public/auditions/af_sarah.wav", "kind": "Generated Kokoro preset speech; no human reference recording", "sampleRate": 24000, "seconds": 4.4, "sha256": "b99e1835595e5f74ba483ca53eb75822f9deaca4aaaf5ec06452a178bc58ab94"},
+  "targetText": "The small lantern glows beside the open window.",
+  "synthesis": {"completed": true, "reportedSeconds": 3.04, "wavBlobUrlObserved": true, "audioPlayback": "Muted via explicit QA fixture button; no listening assessment"},
+  "cancel": {"statusObserved": "Cancelled. No late result will appear. You can retry with the selected file.", "outputHidden": true},
+  "retry": "Started, final result uncertain because later browser command dispatch timed out",
+  "nativeRevokeForget": "Not completed; covered by Node lifecycle tests only",
+  "filePicker": "Automation refused: extension Allow access to file URLs disabled. No setting changed. Explicit local QA button selected generated fixture into same input.",
+  "download": "Blob downloadMedia unsupported; receipt link click wait timed out. Actual browser download completion unverified.",
+  "tests": {"fullSerialPassed": 399, "fullSerialFailed": 0, "fullSerialMs": 60827, "focusedCloningPassedAfterAdditionalCases": 14, "buildPassed": true},
+  "reviewCorrections": {"metadataRevokeForget": "Immediate payload-free same-page invalidation before storage mutation, including storage failure; actual-editor regression tests", "frameCap": "Actual worker rejects exhausted 500-frame runs without completed EOS tail; interrupted runs report stopped and session rejects partial output", "fullSerialPassed": 407, "fullSerialFailed": 0, "fullSerialMs": 175851.5597, "focusedCloningPassed": 20, "buildPassed": true, "browserActions": false},
+  "limitations": "No human reference used, likeness/identity/rights/intelligibility/acoustic validation, real-device claim, merge or deployment. Public assets may have downloaded on first browser use; exact new download bytes were not measured. Existing cache was reused where present."
+}

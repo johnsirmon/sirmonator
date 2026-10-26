@@ -1,6 +1,18 @@
 // Navigation only: draft, recording and worker ownership stay in main.js.
 export const readerStages = ['add-text', 'choose-voice', 'create-audio', 'listen'];
 
+// Keep the optional session-only clone route in Voice without moving its own
+// controls outside their root. Leaving Voice cancels active work through the
+// existing guarded handler; completed previews and manual ASR review are kept.
+export function attachOptionalClone(document, voicePanel) {
+  const root = document.getElementById('local-cloning');
+  if (root) voicePanel.append(root);
+  return stage => {
+    const cancel = document.getElementById('clone-cancel');
+    if (root && stage !== 'choose-voice' && cancel && !cancel.disabled) cancel.click();
+  };
+}
+
 // Non-stage entries (including the landing page and #reader shortcut) always
 // represent Add text. Resolve from the URL, never the previously shown panel.
 export function installReaderHistory(window, show) {
@@ -24,6 +36,7 @@ export function installReaderFlow(document, window) {
   if (panels.some(panel => !panel)) return;
   // Create was nested inside Voice. Keep the same nodes and event handlers.
   panels[1].after(panels[2]);
+  const routeClone = attachOptionalClone(document, panels[1]);
   panels[2].classList.add('card');
   const publishing = document.createElement('details');
   const publishingTitle = document.createElement('summary');
@@ -36,6 +49,7 @@ export function installReaderFlow(document, window) {
   $('preflight').before(selection);
   function show(stage, focus = true) {
     if (!readerStages.includes(stage)) return;
+    routeClone(stage);
     selection.textContent = `${$('title').value.trim() || 'Untitled recording'} · ${$('voice').selectedOptions[0]?.textContent || 'Choose a voice'} · ${$('review').checked ? 'Text reviewed' : 'Review your text in Add text before creating audio'}`;
     for (const panel of panels) panel.hidden = panel.id !== stage;
     for (const link of links) {

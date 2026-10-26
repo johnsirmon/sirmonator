@@ -1,0 +1,2 @@
+export const CLONE_CONTRACT=Object.freeze({schema:1,provider:'pocket-local-browser-v1',runtime:'onnxruntime-web-1.21.0-wasm',package:'pocket-tts-js-0.1.0',modelRevision:'c469236dbc5f68287fa2fbf175b66de3b80123af',sampleRate:24000,personalSynthesisEnabled:true,resumable:false});
+export function assertCloneContract(value){if(JSON.stringify(value)!==JSON.stringify(CLONE_CONTRACT))throw Error('Unsupported local cloning runtime. Start a new session.');}

@@ -32,16 +32,16 @@
     "ASR remains separately opted-in, local English, selected saved PCM passage at most 30 seconds; manual supplied-transcript review remains separate.",
     "ASR can hallucinate on silence and does not certify spoken accuracy, completeness, pronunciation or rights.",
     "No combined native inference run or additional model download was performed in this integration checkpoint; reviewed branch evidence remains scoped to its own exact head.",
-    "Reviewed four-stage UX is now integrated; cloning correction remains the next separate reviewed input.",
+    "Reviewed corrected cloning is now integrated; combined native acceptance remains outstanding.",
     "No main merge, release, deployment or final integration PR; release approval remains pending."
   ],
   "sharedFileIntegrationNotes": [
     "Retain main.js scheduleSave/flushDraft/remember handler/initialize autosave guards and the autosaveOffNotice helper when integrating UX.",
     "Retain ASR editor options in main.js and separate manual/ASR controls in index.html; do not overwrite manual input with uncertain ASR output.",
     "Preserve ASR abortable capture deadline, selected audio/source/take/revision anchors and late-publication guards.",
-    "Personal cloning remains disabled in this checkpoint; do not infer future cloning branch acceptance from this integration."
+    "The separate session-only cloning route is now integrated. It does not enroll a saved-sermon narrator or alter stored recording contracts."
   ],
-  "next": "Accept only independently reviewed exact cloning/UX heads, then run final combined regression and supported native workflow QA before any separately authorized release.",
+  "next": "Independent review of the integrated exact head, especially stage-exit cloning cancellation and conflict resolution, followed by supported native acceptance. Release still requires separate explicit authorization.",
   "uxIntegration": {
     "priorCheckpoint": "f69a519c604d345d060c97ef33ca69f3131b33b4",
     "reviewedHead": "db11c3d707c2b9ee939aa8d8c625fa6345700724",
@@ -74,5 +74,60 @@
       "build": "passed",
       "browser": "Not rerun to avoid active browser interference. Prior synthetic flow/download evidence remains scoped to original UX feature head."
     }
+  },
+  "cloningIntegration": {
+    "reviewedHead": "91beb00e47261660bde15627ba073a72ed7684f0",
+    "featureHistory": [
+      "86feb0e",
+      "8e88d57",
+      "91beb00"
+    ],
+    "historyPolicy": "Merge exact reviewed cloning head; base 0a71bd47 already common, no duplicate prerequisite or force push.",
+    "conflictsResolved": [
+      "README combines the reviewed short-reading cloning scope and optional uncertain ASR scope",
+      "index.html retains the reviewed ASR/manual controls, adds cloning card once and loads both bootstraps once"
+    ],
+    "integrationBehavior": "Optional cloning root is moved intact into Voice by ID. Leaving Voice invokes existing Cancel only for active work; completed previews remain. Create stays a sibling of Voice. Manual/ASR state is separate.",
+    "reviewedFilesPreserved": [
+      "src/cloning/bootstrap.js",
+      "src/cloning/contract.js",
+      "src/cloning/panel.js",
+      "src/cloning/runtime.js",
+      "src/cloning/session.js",
+      "src/cloning/worker.js",
+      "src/reference-editor.js"
+    ],
+    "staticChecks": {
+      "mainMatchesUxIntegration": true,
+      "reviewedCloningFilesExact": true,
+      "uniqueHtmlIds": 180,
+      "asrManualAndCloneAnchorsPresent": true,
+      "dependencyAndReferenceAudioChanges": false
+    },
+    "validation": {
+      "focusedCommand": "node --test tests/reader-clone-integration.test.js tests/reader-flow-history.test.js tests/local-cloning-panel.test.js tests/local-cloning-worker.test.js tests/local-cloning.test.js tests/local-asr.test.js tests/draft-autosave-ordering.test.js",
+      "focusedPassed": 50,
+      "defaultCommand": "npm test",
+      "tests": 433,
+      "passed": 433,
+      "failed": 0,
+      "skipped": 0,
+      "durationMs": 34306.4868,
+      "build": "passed",
+      "newCases": [
+        "Actual panel/session cancels deferred cloning on stage exit and suppresses late publication",
+        "Completed preview survives returning through stages and does not change manual transcript",
+        "Optional panel absence leaves navigation valid"
+      ],
+      "ci": "No CI result claimed"
+    },
+    "nativeAcceptanceRemaining": [
+      "No combined native workflow replay was performed to avoid active browser interference",
+      "Native file picker automation was refused by extension permissions on the source task; no bypass or retry here",
+      "Real file selection, WAV download completion, repeat/cancel/retry and revoke/forget still require supported native acceptance",
+      "Revocation/forget are same-page lifecycle controls, not remote revocation of saved downloads or other browser tabs",
+      "Existing source-branch inference evidence does not establish likeness, speech accuracy, phone performance or combined memory behavior"
+    ],
+    "release": "Feature integration only; no main merge, deployment, model download or browser operation."
   }
 }
