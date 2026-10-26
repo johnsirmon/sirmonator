@@ -1,4 +1,5 @@
 import {pcmReviewSummary,withPcmReviewReport} from './pcm-review.js';
+import {installReaderFlow} from './reader-flow.js';
 import {createQuickListener} from './quick-listener.js';
 import {createSourceImporter} from './source-importer.js';
 import {createStorageUsageEditor} from './storage-usage-editor.js';
@@ -411,3 +412,4 @@ $('render-report').onclick=async()=>{
  try{const job=await abortable(store.job(id),controller.signal);check();if((job.takeSelection?.revision??0)!==(selectedJob.takeSelection?.revision??0))throw Error('Passage selection changed in another window. Load latest saved audio before export.');const report=await abortable(renderReport(store,job),controller.signal);check();saveFile(new Blob([JSON.stringify(withPcmReviewReport(report,job),null,2)],{type:'application/json'}),safeFilename(job.title)+'-render-report.json');$('export-status').textContent='Render report download started. Historical unknowns remain labeled.';}
  catch(error){$('export-status').textContent=warn(error);}finally{if(exportController===controller)exportController=null;exporting=false;controls();}
 };
+installReaderFlow(document,window);
