@@ -1,10 +1,104 @@
 {
-  "schema":1,
-  "baseline":"e20cc97f9187fa01906daa80189be4e6643dc7b1",
-  "purpose":"Order draft deletion with saves and bind delayed autosave actions/status to their original connection and latest intent.",
-  "selectionChecks":{"checkoutInstructions":"No AGENTS.md or .agents/skills found in isolated checkout or inspected original repository; user-provided standing instruction applies.","localCodexMemory":"Read-only project/Hermes-filtered memory query found zero matching memories; no private session logs read.","coordination":"No local Hermes coordination files or open repository issues found; original editor checkout/tabs/processes untouched."},
-  "regressionEvidence":{"beforeFix":{"focusedCases":5,"failed":2,"reasons":["save started/completed while older deletion remained held","off request used replacement connection after prior save completed"]},"afterFix":{"focusedCases":7,"passed":7,"scope":"Actual main flushDraft and remember-change handler, controlled completion gates/connection replacement; no duplicated persistence orchestration"}},
-  "native":{"browser":"Edge extension","origin":"http://127.0.0.1:4295","tab":"1497930539","fixture":"Current actual main handlers and native IndexedDB behind task-only pre-transaction gates; two procedural-PCM recordings; all media muted/zero/paused, no model or remote fetch.","cases":["Held old off deletion: later on save did not enter until release; saved exact Unicode editor text afterward","Repeated off/on/off ended off, saved draft absent, exact editor text retained","Held old save followed by off and injected save failure settled off without stale failure overwrite","Current draft deletion failure retained exact saved draft/editor text, displayed SIMULATED draft-delete failure","Repeated retry ended on with exact saved text and truthful saved status"],"final":{"remember":true,"savedTextEqualsEditor":true,"status":"Draft saved on this device. Private browsing or clearing site data can remove it.","loadedRecordingMp3HashMatchesIndependentExpected":true,"allMediaMutedZeroPaused":true,"heldOperations":0},"limits":"Delay/failure gates control calls before native transactions; this is not evidence that IndexedDB itself reorders transactions. Replacement-connection/lifecycle warning guard is deterministic-test coverage, not a native connection failure test."},
-  "checks":{"command":"npm test -- --test-concurrency=1","fullTests":387,"passed":387,"failed":0,"skipped":0,"build":"npm run build passed","diffCheck":"passed","earlierRuns":["Initial 385-test concurrent run passed before adding two final autosave failure/unavailable cases.","A later concurrent run reported an unexplained existing pcm-review.test.js process failure; that file and all new autosave cases passed together in isolation.","Another concurrent run failed existing cross-feature matrix after 42.49 seconds with Another window owns audio creation; final sequential full-suite run passed in 53.36 seconds. No tests disabled or application resource/lease limits raised."]},
-  "limits":["No native quota exhaustion, phone suspension or long-session durability guarantee","No personal audio, models, ASR, character asset changes, merge or deployment","Turning autosave off retains the existing explicit draft-removal behavior; it never deletes saved recordings"]
+  "schema": 1,
+  "baseline": "e20cc97f9187fa01906daa80189be4e6643dc7b1",
+  "purpose": "Order draft deletion with saves and bind delayed autosave actions/status to their original connection and latest intent.",
+  "selectionChecks": {
+    "checkoutInstructions": "No AGENTS.md or .agents/skills found in isolated checkout or inspected original repository; user-provided standing instruction applies.",
+    "localCodexMemory": "Read-only project/Hermes-filtered memory query found zero matching memories; no private session logs read.",
+    "coordination": "No local Hermes coordination files or open repository issues found; original editor checkout/tabs/processes untouched."
+  },
+  "regressionEvidence": {
+    "beforeFix": {
+      "focusedCases": 5,
+      "failed": 2,
+      "reasons": [
+        "save started/completed while older deletion remained held",
+        "off request used replacement connection after prior save completed"
+      ]
+    },
+    "afterFix": {
+      "focusedCases": 7,
+      "passed": 7,
+      "scope": "Actual main flushDraft and remember-change handler, controlled completion gates/connection replacement; no duplicated persistence orchestration"
+    }
+  },
+  "native": {
+    "browser": "Edge extension",
+    "origin": "http://127.0.0.1:4295",
+    "tab": "1497930539",
+    "fixture": "Current actual main handlers and native IndexedDB behind task-only pre-transaction gates; two procedural-PCM recordings; all media muted/zero/paused, no model or remote fetch.",
+    "cases": [
+      "Held old off deletion: later on save did not enter until release; saved exact Unicode editor text afterward",
+      "Repeated off/on/off ended off, saved draft absent, exact editor text retained",
+      "Held old save followed by off and injected save failure settled off without stale failure overwrite",
+      "Current draft deletion failure retained exact saved draft/editor text, displayed SIMULATED draft-delete failure",
+      "Repeated retry ended on with exact saved text and truthful saved status"
+    ],
+    "final": {
+      "remember": true,
+      "savedTextEqualsEditor": true,
+      "status": "Draft saved on this device. Private browsing or clearing site data can remove it.",
+      "loadedRecordingMp3HashMatchesIndependentExpected": true,
+      "allMediaMutedZeroPaused": true,
+      "heldOperations": 0
+    },
+    "limits": "Delay/failure gates control calls before native transactions; this is not evidence that IndexedDB itself reorders transactions. Replacement-connection/lifecycle warning guard is deterministic-test coverage, not a native connection failure test."
+  },
+  "checks": {
+    "command": "npm test -- --test-concurrency=1",
+    "fullTests": 387,
+    "passed": 387,
+    "failed": 0,
+    "skipped": 0,
+    "build": "npm run build passed",
+    "diffCheck": "passed",
+    "earlierRuns": [
+      "Initial 385-test concurrent run passed before adding two final autosave failure/unavailable cases.",
+      "A later concurrent run reported an unexplained existing pcm-review.test.js process failure; that file and all new autosave cases passed together in isolation.",
+      "Another concurrent run failed existing cross-feature matrix after 42.49 seconds with Another window owns audio creation; final sequential full-suite run passed in 53.36 seconds. No tests disabled or application resource/lease limits raised."
+    ]
+  },
+  "limits": [
+    "No native quota exhaustion, phone suspension or long-session durability guarantee",
+    "No personal audio, models, ASR, character asset changes, merge or deployment",
+    "Turning autosave off retains the existing explicit draft-removal behavior; it never deletes saved recordings"
+  ],
+  "reviewCorrection": {
+    "baseline": "60d0dea2a7c55fd56abff8ac3988ccef1c13200f",
+    "problem": "Text edits incremented draftRevision and suppressed a current off-deletion error; reconnect also lost the retained-draft warning.",
+    "fix": "Deletion completion guards use a separate autosave intent. Unconfirmed removal remains explicitly labeled through edits and reconnect; removal is not silently retried on a replacement connection.",
+    "deterministic": [
+      "Edit during delayed deletion: failure visible and old draft retained; success clears pending warning",
+      "Later on intent still suppresses older off outcome",
+      "Actual initialize/retry preserves off intent, warning, unsaved source and saved source until explicit retry",
+      "Fixture ownership reclaimed through real claim API before mutations after exports; no force or production lease changes",
+      "Full real-module matrix passes with 21 seconds advanced after each selected-chapter export",
+      "Negative control: a competing live lease blocks protected fixture action"
+    ],
+    "native": {
+      "browser": "Chrome extension (selected browser ID 2 at this run)",
+      "origin": "http://127.0.0.1:4297",
+      "appTab": "1668733506",
+      "actorTab": "1668733507",
+      "passed": [
+        "Saved synthetic source; turn off and hold deletion, edit source then reject: current removal failure remains visible and saved original retained",
+        "Native second-tab v3 open triggered app versionchange; upgrade transaction intentionally aborted with AbortError, retaining database version/data",
+        "Turn off while disconnected, edit source, actual Retry local storage: connected controls restored and explicit unconfirmed-removal warning remains; current source not overwritten"
+      ],
+      "observation": "AX reconnect diff showed Local recordings connected, enabled Open/Create controls and unconfirmed-removal message. Media was muted by fixture guard; no synthesis.",
+      "uncertain": "A later inspector/explicit-retry batch timed out at 10 seconds and reset the browser kernel. Follow-up read of own tab returned not found. That last optional retry outcome is not claimed; no blind repeat or production browser access.",
+      "cleanup": "Task server stopped; ephemeral task tabs unavailable after reset; no user tabs touched"
+    },
+    "checks": {
+      "command": "npm test",
+      "tests": 393,
+      "passed": 393,
+      "failed": 0,
+      "skipped": 0,
+      "durationMs": 40749.4036,
+      "build": "npm run build passed",
+      "ci": "Not run for this feature checkpoint; local tests are not CI"
+    },
+    "integrationNotes": "Preserve main.js scheduleSave off-notice guard, flushDraft.removalPending/autosaveIntent state and autosaveOffNotice helper, remember handler queue/connection guards, and initialize off-state warning when integrating stage UX. No cloning/ASR/UI-stage implementation duplicated."
+  }
 }
