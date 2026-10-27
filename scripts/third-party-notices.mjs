@@ -4,6 +4,7 @@ import {fileURLToPath} from 'node:url';
 // Emit canonical repository/installed-package bytes without duplicate licenses.
 // These notices address the named components, not a complete license audit.
 export const noticeAssets=[
+ ['src/vendor/WHISPER-LICENSE.txt','vendor/WHISPER-LICENSE.txt'],
  ['node_modules/kokoro-js/LICENSE','vendor/KOKORO-LICENSE.txt'],
  ['src/vendor/SOUNDTOUCH-LICENSE','vendor/SOUNDTOUCH-LICENSE.txt'],
  ['src/vendor/SUPERTONIC-LICENSE','vendor/SUPERTONIC-LICENSE.txt'],

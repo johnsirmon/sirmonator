@@ -1,9 +1,11 @@
+import {createAsrClient,captureAsr,compareAsr,ASR_NOTE} from './local-asr.js';
 import {captureReview,compareTranscript,reviewSelectionMatches,validateTranscriptInput} from './speech-review.js';
 import {openReviewStorage} from './review-storage.js';
 import {abortable,assertActive} from './continuity.js';
 import {createRepositoryAccess} from './repository-access.js';
 import {capturePanelFocus} from './panel-focus.js';
-export function createSpeechReviewEditor({$,getStore,getJob,getSelection,isBusy,onBusy,onListen,onRepair,onExport,confirmDiscard=message=>confirm(message),repository}){
+export function createSpeechReviewEditor({$,getStore,getJob,getSelection,isBusy,onBusy,onListen,onRepair,onExport,confirmDiscard=message=>confirm(message),repository,asrClient}){
+ const asr=asrClient??createAsrClient();let asrResult=null;
  let snapshot=null,comparison=null,context='',controller=null,generation=0,dirty=false,stale=false,pendingLoad=false;
  const storage=createRepositoryAccess(repository,options=>openReviewStorage(undefined,undefined,options),message=>{cancel();invalidate(message+' Unsaved review input was retained. Load current passage to reconnect.');onBusy();});
  const status=text=>$('review-status').textContent=text;
@@ -11,11 +13,14 @@ export function createSpeechReviewEditor({$,getStore,getJob,getSelection,isBusy,
   for(const id of ['review-passage','review-refresh'])$(id).disabled=blocked||noTarget;
   for(const id of ['review-archive','review-clear-archive'])$(id).disabled=blocked||noTarget;
   for(const id of ['review-transcript','review-no-words','review-listened','review-notes','review-compare','review-save','review-export','review-listen','review-repair','review-delete'])$(id).disabled=blocked||!snapshot||stale;
+  if($('review-asr'))$('review-asr').disabled=blocked||!snapshot||stale;
+  if($('review-asr-export'))$('review-asr-export').disabled=blocked||!asrResult||stale;
   $('review-cancel').disabled=!controller;
   if(pendingLoad&&!blocked&&!noTarget){pendingLoad=false;const token=generation;queueMicrotask(()=>{if(token===generation){pendingLoad=true;load(false);}});}
  }
- function invalidate(message){pendingLoad=false;stale=true;comparison=null;$('review-findings').textContent='';status(message);controls();}
- const cancel=()=>{pendingLoad=false;if(controller){controller.abort();status('Review operation cancelled. Saved reviews and audio were kept.');}generation++;};
+ function invalidate(message){clearAsr();pendingLoad=false;stale=true;comparison=null;$('review-findings').textContent='';status(message);controls();}
+ function clearAsr(){asrResult=null;if($('review-asr-output'))$('review-asr-output').textContent='';}
+ const cancel=()=>{asr.cancel();clearAsr();pendingLoad=false;if(controller){controller.abort();status('Review operation cancelled. Saved reviews and audio were kept.');}generation++;};
  const input=()=>{dirty=true;comparison=null;$('review-findings').textContent='';status('Transcript changed. Compare again. No audio has been verified.');};
  $('review-transcript').addEventListener('input',input);$('review-no-words').addEventListener('change',input);
  for(const id of ['review-notes','review-listened'])$(id).addEventListener(id==='review-notes'?'input':'change',()=>{dirty=true;});
@@ -41,15 +46,25 @@ export function createSpeechReviewEditor({$,getStore,getJob,getSelection,isBusy,
    assertActive({signal:active.signal,isCurrent:()=>token===generation&&selection===getSelection()});
    if(!reviewSelectionMatches(getJob(),next))throw Error('Load latest saved audio before reviewing its selected take.');
    let saved=null,storageError='';try{saved=await abortable((await storage()).load(next),active.signal);}catch(error){assertActive({signal:active.signal});storageError=' Review storage unavailable: '+error.message;}
-   assertActive({signal:active.signal,isCurrent:()=>token===generation&&selection===getSelection()});snapshot=next;comparison=saved?.comparison??null;dirty=false;stale=false;
+   assertActive({signal:active.signal,isCurrent:()=>token===generation&&selection===getSelection()});clearAsr();snapshot=next;comparison=saved?.comparison??null;dirty=false;stale=false;
    $('review-source').textContent=next.source;$('review-spoken').textContent=next.spoken;$('review-transcript').value=saved?.transcript??'';$('review-no-words').checked=saved?.noWordsHeard??false;$('review-listened').checked=saved?.listenedByUser??false;$('review-notes').value=saved?.notes??'';
    $('review-anchor').textContent=`${next.title} · passage ${next.anchor.passage+1} · ${next.anchor.takeId==='original'?'Original':'Take '+next.anchor.takeId} · selection revision ${next.anchor.selectionRevision}. Exact audio SHA-256 ${next.anchor.audioHash}.`;
-   showFindings();status((saved?'Saved manual review loaded for this exact selection. It is not acoustic verification.':'Paste a transcript for this passage, or listen and save manual notes. Automatic transcription is not implemented.')+storageError);
+   showFindings();status((saved?'Saved manual review loaded for this exact selection. It is not acoustic verification.':'Paste a transcript for this passage, or listen and save manual notes. Optional local ASR is available below; manual review remains available.')+storageError);
   }catch(error){if(token===generation)invalidate(error.message);}
   finally{if(controller===active)controller=null;onBusy();controls();if(!controller&&selection===getSelection())restore();}
  }
  function payload(){const transcript=$('review-transcript').value,notes=$('review-notes').value;validateTranscriptInput(transcript,{noWordsHeard:$('review-no-words').checked,allowEmpty:!comparison});if(notes.length>1000||!notes.isWellFormed())throw Error('Review notes are invalid or exceed 1,000 characters.');return {schema:1,method:'manual-review-v1',snapshot,transcript,noWordsHeard:$('review-no-words').checked,listenedByUser:$('review-listened').checked,notes,comparison,automaticTranscription:false,audioVerified:false,savedAt:Date.now()};}
  $('review-compare').onclick=()=>run(async active=>{status('Comparing supplied transcript text only. No automatic transcription or acoustic verification.');const result=await compareTranscript(snapshot,$('review-transcript').value,{noWordsHeard:$('review-no-words').checked,signal:active.signal});await current(active,getSelection(),generation);comparison=result;dirty=true;showFindings();status(result.candidateCount?`${result.candidateCount} possible text differences. ${result.truncated?'First 128 shown. ':''}Review against audio; these can be transcript/alignment errors.`:'No normalized text differences found. This does not verify audio, pronunciation or completeness.');});
+ if($('review-asr'))$('review-asr').onclick=()=>run(async active=>{
+  clearAsr();const selection=getSelection(),token=generation,frozen=snapshot,audio=await captureAsr(getStore(),frozen,{signal:active.signal});
+  status('Downloading/verifying optional local ASR model. Cancel is available; manual input is retained.');
+  const output=await asr.run(audio.samples,{signal:active.signal,onProgress:message=>{if(!active.signal.aborted)status(message);}});
+  const result=await compareAsr(frozen,audio,output.transcript,{signal:active.signal});await current(active,selection,token);
+  asrResult={...result,asr:{model:output.model,revision:output.revision,dtype:output.dtype,device:output.device,elapsedMs:output.elapsedMs,tokenLimit:output.tokenLimit}};
+  $('review-asr-output').textContent='Uncertain ASR transcript: '+(result.transcript||'[no words recognized]')+'\n\n'+result.candidateCount+' possible text differences.\n'+result.findings.map(f=>f.kind+': source characters '+f.sourceStart+'-'+f.sourceEnd+'; source: '+(f.expected||'[boundary]')+'; ASR: '+(f.observed||'[none]')).join('\n')+'\n\n'+ASR_NOTE;
+  status('Local ASR comparison ready for listening review. Manual transcript and source were unchanged.');
+ });
+ if($('review-asr-export'))$('review-asr-export').onclick=()=>run(async()=>{if(asrResult)onExport({...asrResult,snapshot});});
  $('review-save').onclick=()=>run(async active=>{const value=payload();await abortable((await storage()).save(value,{signal:active.signal}),active.signal);dirty=false;status('Manual review saved for this exact passage/take/revision. Audio and manuscript were unchanged.');});
  $('review-export').onclick=()=>run(async()=>{onExport(payload());status('Manual review JSON download started. Nothing was uploaded or acoustically verified.');});
  $('review-listen').onclick=()=>run(async()=>onListen(snapshot));$('review-repair').onclick=()=>run(async()=>onRepair(snapshot),{focusAfter:()=>$('take-passage')});
